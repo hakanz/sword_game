@@ -1,17 +1,25 @@
 class_name PlaceholderRig
 extends Node2D
-## Placeholder fighter visual (charter §27: build against placeholders first).
-## Draws a cartoonish gladiator from primitives via _draw() — big head,
-## oversized weapon, readable silhouette. Replaced by the real modular
-## layered-part rig (charter §12) when final art arrives; gameplay code only
-## talks to the animation methods below, so the swap is drop-in.
-##
-## Tracked in docs/ASSET_MANIFEST.md as asset_id "rig.gladiator_placeholder".
+## Procedural gladiator rig v3 (charter §12/§25/§27): muscular cartoon
+## anatomy with 3-tone shading, EQUIPPED ARMOUR drawn on the body per slot,
+## and detailed per-class weapons tinted by tier. All shapes are original —
+## the genre look is matched in quality, never in specific designs.
+## Gameplay talks only to the animation methods; final art swaps in behind
+## the same API (docs/ASSET_MANIFEST.md: rig.gladiator_placeholder).
 
-var body_color: Color = Color(0.82, 0.62, 0.45)
+const OUTLINE := Color(0.14, 0.09, 0.09, 0.95)
+const BOOT_LEATHER := Color(0.33, 0.21, 0.12)
+
+var body_color: Color = Color(0.85, 0.64, 0.47)
 var accent_color: Color = Color(0.35, 0.28, 0.5)
-var weapon_class: Enums.WeaponClass = Enums.WeaponClass.SWORD
+## The wielded weapon (null = bare fists). Tier tints the metal.
+var weapon: WeaponData = null
+## Worn armour, drawn per slot over the body (charter §12).
+var equipment: Array[ArmourData] = []
 var facing_left: bool = false
+
+## Kept for callers that only know a class (e.g. creation preview).
+var weapon_class: Enums.WeaponClass = Enums.WeaponClass.UNARMED
 
 var _defending: bool = false
 var _dead: bool = false
@@ -60,96 +68,335 @@ func play_death() -> void:
 	queue_redraw()
 
 
-func _draw() -> void:
-	var outline := Color(0.12, 0.08, 0.1, 0.95)
-	var skin := body_color.lightened(0.12)
-	var boot := Color(0.3, 0.19, 0.11)
+# --- Drawing ---------------------------------------------------------------
 
-	# Shadow
-	draw_set_transform(Vector2(0, 4), 0.0, Vector2(1.0, 0.32))
-	draw_circle(Vector2.ZERO, 34.0, Color(0.0, 0.0, 0.0, 0.3))
+func _worn(slot: Enums.EquipSlot) -> ArmourData:
+	for piece in equipment:
+		if piece.slot == slot:
+			return piece
+	return null
+
+
+## Armour metal/leather tone: class picks the material, tier the finish.
+func _armour_tone(piece: ArmourData) -> Color:
+	var tier_tint: Color = ItemIcons.tier_tint(piece.tier)
+	if piece.armour_class == Enums.ArmourClass.LIGHT:
+		return Color(0.52, 0.36, 0.22).lerp(tier_tint, 0.25)
+	if piece.armour_class == Enums.ArmourClass.MEDIUM:
+		return Color(0.45, 0.38, 0.3).lerp(tier_tint, 0.45)
+	return Color(0.52, 0.55, 0.6).lerp(tier_tint, 0.5)
+
+
+func _metal() -> Color:
+	if weapon != null:
+		return Color(0.78, 0.8, 0.85).lerp(ItemIcons.tier_tint(weapon.tier), 0.55)
+	return Color(0.78, 0.8, 0.85)
+
+
+func _draw() -> void:
+	var skin: Color = body_color
+	var skin_hi: Color = body_color.lightened(0.16)
+	var skin_sh: Color = body_color.darkened(0.2)
+
+	# Ground shadow
+	draw_set_transform(Vector2(0, 4), 0.0, Vector2(1.0, 0.3))
+	draw_circle(Vector2.ZERO, 36.0, Color(0.0, 0.0, 0.0, 0.32))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
-	# --- Cartoon limb rig: thick round-capped strokes over an outline pass ---
-	# Back leg + boot
-	_capsule(Vector2(-7, -40), Vector2(-13, -6), 12.0, outline)
-	_capsule(Vector2(-7, -40), Vector2(-13, -6), 9.0, accent_color.darkened(0.35))
-	draw_circle(Vector2(-14, -5), 7.0, boot.darkened(0.25))
-	# Front leg + boot
-	_capsule(Vector2(7, -40), Vector2(13, -6), 12.0, outline)
-	_capsule(Vector2(7, -40), Vector2(13, -6), 9.0, accent_color.darkened(0.12))
-	draw_circle(Vector2(14, -5), 7.5, boot)
-
-	# Back arm (behind torso), hand visible
-	_capsule(Vector2(-9, -72), Vector2(-24, -52), 8.5, skin.darkened(0.3))
-	draw_circle(Vector2(-25, -51), 5.0, skin.darkened(0.25))
-
-	# Torso: outlined capsule with a two-tone tunic + chest strap
-	_capsule(Vector2(0, -44), Vector2(0, -78), 40.0, outline)
-	_capsule(Vector2(0, -44), Vector2(0, -78), 36.0, body_color)
-	_capsule(Vector2(7, -46), Vector2(7, -76), 18.0, body_color.darkened(0.14))
-	draw_line(Vector2(-15, -74), Vector2(13, -48), accent_color.darkened(0.08), 7.0)
-	# Belt with buckle
-	_capsule(Vector2(-17, -42), Vector2(17, -42), 9.0, accent_color)
-	draw_circle(Vector2(0, -42), 5.0, Color(0.9, 0.76, 0.4))
-
-	# Front arm + hand (weapon hand)
-	_capsule(Vector2(10, -72), Vector2(25, -58), 9.5, outline)
-	_capsule(Vector2(10, -72), Vector2(25, -58), 7.5, skin)
-	draw_circle(Vector2(26, -58), 6.0, skin)
-
-	# Head: outlined, oversized, with ear, brow, eye and headband
-	draw_circle(Vector2(0, -104), 22.5, outline)
-	draw_circle(Vector2(0, -104), 20.0, skin)
-	draw_circle(Vector2(-14, -103), 5.0, skin.darkened(0.12))  # ear
-	draw_rect(Rect2(-19, -119, 38, 7), accent_color)
-	draw_circle(Vector2(-17, -115), 4.0, accent_color.darkened(0.2))  # band knot
-	if not _dead:
-		draw_circle(Vector2(10, -106), 3.6, Color(0.1, 0.1, 0.12))
-		draw_line(Vector2(5, -113), Vector2(15, -111), Color(0.1, 0.1, 0.12), 2.6)
-		draw_line(Vector2(14, -96), Vector2(19, -95), Color(0.55, 0.3, 0.25), 2.0)  # smirk
-	else:
-		var eye := Vector2(10, -106)
-		draw_line(eye + Vector2(-4, -4), eye + Vector2(4, 4), Color(0.1, 0.1, 0.12), 2.2)
-		draw_line(eye + Vector2(-4, 4), eye + Vector2(4, -4), Color(0.1, 0.1, 0.12), 2.2)
-
-	_draw_weapon()
-
-	# Guard/shield pose when defending
+	_draw_legs(skin, skin_sh)
+	_draw_back_arm(skin_sh)
+	_draw_torso(skin, skin_hi, skin_sh)
+	_draw_head(skin, skin_hi, skin_sh)
+	_draw_front_arm(skin, skin_hi)
+	_draw_weapon_detailed()
+	if weapon != null or weapon_class != Enums.WeaponClass.UNARMED:
+		_draw_grip_fist(skin)
 	if _defending:
-		draw_circle(Vector2(28, -66), 17.0, outline)
-		draw_circle(Vector2(28, -66), 15.0, Color(0.5, 0.53, 0.6))
-		draw_circle(Vector2(28, -66), 9.0, Color(0.62, 0.65, 0.72))
-		draw_circle(Vector2(28, -66), 3.5, Color(0.78, 0.8, 0.86))
+		_draw_shield()
 
 
-## Round-capped thick stroke — the building block of the cartoon rig.
-func _capsule(from: Vector2, to: Vector2, width: float, color: Color) -> void:
+func _draw_legs(skin: Color, skin_sh: Color) -> void:
+	var legs: ArmourData = _worn(Enums.EquipSlot.LEGS)
+	var boots: ArmourData = _worn(Enums.EquipSlot.BOOTS)
+	var back_thigh: Color = skin_sh
+	var front_thigh: Color = skin
+	if legs != null:
+		back_thigh = _armour_tone(legs).darkened(0.2)
+		front_thigh = _armour_tone(legs)
+
+	# Back leg: thigh + calf + foot
+	_limb(Vector2(-8, -46), Vector2(-11, -26), 14.0, back_thigh)
+	_limb(Vector2(-11, -26), Vector2(-14, -7), 11.0, back_thigh)
+	_foot(Vector2(-15, -4), boots, true)
+	# Front leg
+	_limb(Vector2(8, -46), Vector2(11, -26), 14.0, front_thigh)
+	_limb(Vector2(11, -26), Vector2(14, -7), 11.0, front_thigh)
+	_foot(Vector2(15, -4), boots, false)
+	# Calf highlight on the front leg (subtle — big/bright reads as a patch)
+	draw_circle(Vector2(12, -24), 3.0, front_thigh.lightened(0.07))
+
+	# Battle skirt / loincloth over the hips (classic arena garb, original cut)
+	var cloth: Color = accent_color
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(-17, -52), Vector2(17, -52), Vector2(13, -34), Vector2(-13, -34),
+	]), cloth)
+	for i in 3:
+		var x: float = -9.0 + i * 9.0
+		draw_line(Vector2(x, -50), Vector2(x - 1, -35), cloth.darkened(0.25), 3.0)
+	# Belt (studded when a belt piece is worn)
+	var belt: ArmourData = _worn(Enums.EquipSlot.BELT)
+	var belt_color: Color = _armour_tone(belt) if belt != null else accent_color.darkened(0.3)
+	_limb(Vector2(-17, -52), Vector2(17, -52), 8.0, belt_color)
+	draw_circle(Vector2(0, -52), 4.5, Color(0.9, 0.76, 0.4))
+	if belt != null:
+		for x in [-11.0, 11.0]:
+			draw_circle(Vector2(x, -52), 2.2, belt_color.lightened(0.35))
+
+
+func _foot(pos: Vector2, boots: ArmourData, back: bool) -> void:
+	var color: Color = BOOT_LEATHER if boots == null else _armour_tone(boots)
+	if back:
+		color = color.darkened(0.2)
+	_limb(pos, pos + Vector2(7, 0), 9.0, color)
+	if boots != null:
+		# Boot shaft
+		_limb(pos + Vector2(-1, -2), pos + Vector2(-2, -12), 10.0, color)
+
+
+func _draw_torso(skin: Color, skin_hi: Color, skin_sh: Color) -> void:
+	var chest: ArmourData = _worn(Enums.EquipSlot.CHEST)
+	var shoulders: ArmourData = _worn(Enums.EquipSlot.SHOULDERS)
+
+	# Heroic taper: broad chest, narrow waist (outline pass first)
+	var torso := PackedVector2Array([
+		Vector2(-16, -50), Vector2(16, -50), Vector2(21, -82), Vector2(-21, -82),
+	])
+	draw_colored_polygon(_grow(torso, 2.0), OUTLINE)
+	draw_colored_polygon(torso, skin)
+
+	if chest != null:
+		var tone: Color = _armour_tone(chest)
+		var cuirass := PackedVector2Array([
+			Vector2(-15, -52), Vector2(15, -52), Vector2(20, -81), Vector2(-20, -81),
+		])
+		draw_colored_polygon(cuirass, tone)
+		# Trim + centre ridge + rivets
+		draw_line(Vector2(-19, -80), Vector2(19, -80), tone.lightened(0.3), 3.0)
+		draw_line(Vector2(0, -79), Vector2(0, -54), tone.darkened(0.25), 2.5)
+		draw_line(Vector2(-14, -54), Vector2(14, -54), tone.darkened(0.3), 2.5)
+		for x in [-10.0, 10.0]:
+			draw_circle(Vector2(x, -76), 1.8, tone.lightened(0.4))
+		# Muscle-cuirass sculpt hint
+		draw_arc(Vector2(-7, -70), 6.0, PI * 0.15, PI * 0.9, 10, tone.lightened(0.18), 2.0)
+		draw_arc(Vector2(7, -70), 6.0, PI * 0.1, PI * 0.85, 10, tone.lightened(0.18), 2.0)
+	else:
+		# Bare torso musculature: pecs, ab lines, side shadow
+		draw_circle(Vector2(-8, -73), 7.5, skin_hi)
+		draw_circle(Vector2(8, -73), 7.5, skin_hi)
+		draw_line(Vector2(0, -78), Vector2(0, -54), skin_sh, 2.0)
+		for i in 3:
+			var y: float = -64.0 + i * 6.0
+			draw_line(Vector2(-6, y), Vector2(6, y), skin_sh, 1.6)
+		draw_line(Vector2(15, -78), Vector2(12, -54), skin_sh, 3.0)
+		# Chest strap
+		draw_line(Vector2(-17, -78), Vector2(14, -54), accent_color.darkened(0.1), 6.0)
+
+	# Deltoids / pauldrons
+	for side in [-1.0, 1.0]:
+		var at := Vector2(19.0 * side, -79)
+		if shoulders != null:
+			var tone: Color = _armour_tone(shoulders)
+			draw_circle(at, 11.0, OUTLINE)
+			draw_circle(at, 9.5, tone)
+			draw_arc(at, 6.5, PI, TAU, 10, tone.lightened(0.3), 2.5)
+		else:
+			draw_circle(at, 9.0, skin if side > 0 else skin_sh)
+			draw_circle(at + Vector2(-2 * side, -2), 4.0, skin_hi if side > 0 else skin_sh)
+
+
+func _draw_back_arm(skin_sh: Color) -> void:
+	var gloves: ArmourData = _worn(Enums.EquipSlot.GLOVES)
+	_limb(Vector2(-19, -77), Vector2(-27, -63), 9.5, skin_sh)
+	_limb(Vector2(-27, -63), Vector2(-29, -50), 8.0, skin_sh)
+	if gloves != null:
+		_limb(Vector2(-28, -58), Vector2(-29, -51), 9.0, _armour_tone(gloves).darkened(0.15))
+	draw_circle(Vector2(-29, -49), 5.5, skin_sh)
+
+
+func _draw_front_arm(skin: Color, skin_hi: Color) -> void:
+	var gloves: ArmourData = _worn(Enums.EquipSlot.GLOVES)
+	_limb(Vector2(19, -77), Vector2(27, -64), 11.0, OUTLINE)
+	_limb(Vector2(19, -77), Vector2(27, -64), 9.0, skin)
+	draw_circle(Vector2(23, -72), 4.5, skin_hi)  # biceps
+	_limb(Vector2(27, -64), Vector2(30, -52), 8.5, skin)
+	if gloves != null:
+		_limb(Vector2(28, -59), Vector2(30, -52), 9.5, _armour_tone(gloves))
+	draw_circle(Vector2(30, -51), 6.0, skin)
+	draw_circle(Vector2(31, -51), 3.0, skin.darkened(0.12))  # gripping fingers
+
+
+func _draw_head(skin: Color, skin_hi: Color, skin_sh: Color) -> void:
+	var helmet: ArmourData = _worn(Enums.EquipSlot.HELMET)
+	# Neck
+	_limb(Vector2(0, -80), Vector2(0, -88), 10.0, skin_sh)
+	# Skull + jaw
+	draw_circle(Vector2(0, -100), 17.5, OUTLINE)
+	draw_circle(Vector2(0, -100), 16.0, skin)
+	draw_circle(Vector2(4, -93), 9.0, skin)  # jaw mass
+	draw_circle(Vector2(-11, -99), 4.2, skin_sh)  # ear
+
+	if helmet != null:
+		var tone: Color = _armour_tone(helmet)
+		# Original dome helm with brow rim; heavy versions add a crest fin
+		draw_arc(Vector2(0, -102), 15.5, PI, TAU, 16, tone, 11.0)
+		draw_line(Vector2(-15, -105), Vector2(15, -105), tone.darkened(0.25), 4.0)
+		if helmet.armour_class == Enums.ArmourClass.HEAVY:
+			draw_colored_polygon(PackedVector2Array([
+				Vector2(-3, -116), Vector2(3, -116), Vector2(1, -126), Vector2(-1, -126),
+			]), accent_color)
+			# Cheek guard
+			draw_colored_polygon(PackedVector2Array([
+				Vector2(9, -104), Vector2(15, -103), Vector2(13, -92), Vector2(9, -94),
+			]), tone.darkened(0.12))
+	else:
+		# Hair: short crop in a darkened accent shade + top highlight
+		var hair: Color = accent_color.darkened(0.45)
+		draw_arc(Vector2(0, -102), 14.5, PI * 1.02, TAU * 0.98, 16, hair, 9.0)
+		draw_circle(Vector2(-9, -111), 5.0, hair)
+		draw_arc(Vector2(-2, -104), 12.0, PI * 1.15, PI * 1.6, 8, hair.lightened(0.2), 3.0)
+
+	if not _dead:
+		# Brow, eye with white, nose, mouth
+		draw_line(Vector2(4, -106), Vector2(13, -104.5), OUTLINE, 3.0)
+		draw_circle(Vector2(9, -101), 3.4, Color(0.96, 0.94, 0.9))
+		draw_circle(Vector2(10, -101), 1.9, Color(0.12, 0.1, 0.12))
+		draw_line(Vector2(15, -99), Vector2(17, -96), skin_sh, 2.4)  # nose
+		draw_line(Vector2(6, -91.5), Vector2(11, -90.5), Color(0.5, 0.28, 0.24), 2.2)
+	else:
+		var eye := Vector2(9, -101)
+		draw_line(eye + Vector2(-4, -4), eye + Vector2(4, 4), OUTLINE, 2.4)
+		draw_line(eye + Vector2(-4, 4), eye + Vector2(4, -4), OUTLINE, 2.4)
+	# Chin shading
+	draw_arc(Vector2(2, -92), 7.0, PI * 0.15, PI * 0.7, 8, skin_hi, 2.0)
+
+
+func _draw_shield() -> void:
+	draw_circle(Vector2(-30, -60), 19.0, OUTLINE)
+	draw_circle(Vector2(-30, -60), 17.0, Color(0.46, 0.5, 0.57))
+	draw_circle(Vector2(-30, -60), 11.0, Color(0.56, 0.6, 0.68))
+	draw_circle(Vector2(-30, -60), 4.5, Color(0.75, 0.78, 0.85))
+	for angle_index in 6:
+		var angle: float = TAU * angle_index / 6.0
+		draw_circle(Vector2(-30, -60) + Vector2(cos(angle), sin(angle)) * 14.0, 1.8,
+				Color(0.72, 0.75, 0.82))
+
+
+# --- Weapons (held in the front fist at ~(30,-52)) --------------------------
+
+func _draw_weapon_detailed() -> void:
+	var wc: Enums.WeaponClass = weapon.weapon_class if weapon != null else weapon_class
+	var metal: Color = _metal()
+	var metal_hi: Color = metal.lightened(0.25)
+	var wood := Color(0.42, 0.28, 0.15)
+	var wood_hi := Color(0.52, 0.36, 0.2)
+	var grip := Color(0.3, 0.18, 0.1)
+	var hand := Vector2(30, -52)
+
+	match wc:
+		Enums.WeaponClass.SWORD:
+			# Blade with edge highlight + fuller, guard, wrapped grip, pommel
+			var tip := hand + Vector2(14, -66)
+			draw_colored_polygon(PackedVector2Array([
+				hand + Vector2(-4, -8), hand + Vector2(6, -10),
+				tip + Vector2(3, 4), tip, tip + Vector2(-4, 5),
+			]), metal)
+			draw_line(hand + Vector2(1, -9), tip + Vector2(-1, 3), metal_hi, 2.0)
+			_limb(hand + Vector2(-8, -7), hand + Vector2(9, -11), 5.0, Color(0.62, 0.5, 0.25))
+			_limb(hand + Vector2(-1, -6), hand + Vector2(-4, 6), 5.5, grip)
+			for i in 3:
+				draw_line(hand + Vector2(-1.5 - i, -3 + i * 3), hand + Vector2(1 - i, -2 + i * 3),
+						grip.lightened(0.3), 1.2)
+			draw_circle(hand + Vector2(-5, 8), 3.4, Color(0.62, 0.5, 0.25))
+		Enums.WeaponClass.AXE:
+			_limb(hand + Vector2(-3, 8), hand + Vector2(8, -46), 5.5, wood)
+			draw_line(hand + Vector2(-1, 0), hand + Vector2(7, -40), wood_hi, 1.6)
+			for i in 2:
+				_limb(hand + Vector2(1 - i, -12 - i * 14), hand + Vector2(4 - i, -13 - i * 14),
+						6.5, grip)
+			# Bearded blade with bevel
+			var socket := hand + Vector2(8, -44)
+			draw_colored_polygon(PackedVector2Array([
+				socket, socket + Vector2(16, -8), socket + Vector2(20, 6),
+				socket + Vector2(14, 18), socket + Vector2(2, 12),
+			]), metal)
+			draw_line(socket + Vector2(17, -6), socket + Vector2(16, 15), metal_hi, 2.4)
+		Enums.WeaponClass.BLUNT:
+			_limb(hand + Vector2(-2, 8), hand + Vector2(6, -40), 6.0, wood)
+			var head := hand + Vector2(7, -46)
+			draw_circle(head, 13.0, OUTLINE)
+			draw_circle(head, 11.5, metal)
+			draw_arc(head, 11.5, PI * 1.1, PI * 1.7, 10, metal_hi, 3.0)
+			for angle_index in 5:
+				var angle: float = TAU * angle_index / 5.0 + 0.4
+				draw_circle(head + Vector2(cos(angle), sin(angle)) * 8.0, 2.2, metal.darkened(0.3))
+		Enums.WeaponClass.SPEAR:
+			_limb(hand + Vector2(-4, 14), hand + Vector2(12, -62), 4.5, wood)
+			draw_line(hand + Vector2(-2, 8), hand + Vector2(11, -58), wood_hi, 1.4)
+			_limb(hand + Vector2(2, -18), hand + Vector2(5, -19), 6.0, grip)
+			var neck := hand + Vector2(12, -62)
+			draw_colored_polygon(PackedVector2Array([
+				neck + Vector2(-4, 2), neck + Vector2(4, 0),
+				neck + Vector2(6, -16), neck + Vector2(0, -22), neck + Vector2(-5, -14),
+			]), metal)
+			draw_line(neck + Vector2(0, -2), neck + Vector2(1, -18), metal_hi, 1.6)
+		Enums.WeaponClass.RANGED:
+			# Recurve bow: two curved limbs, wrapped grip, taut string
+			var grip_at := hand
+			draw_arc(grip_at + Vector2(4, -26), 28.0, PI * 0.32, PI * 0.72, 14, wood, 5.0)
+			draw_arc(grip_at + Vector2(4, 26), 28.0, PI * 1.28, PI * 1.68, 14, wood, 5.0)
+			draw_arc(grip_at + Vector2(4, -26), 28.0, PI * 0.36, PI * 0.6, 8, wood_hi, 1.8)
+			_limb(grip_at + Vector2(2, -5), grip_at + Vector2(2, 5), 7.0, grip)
+			var top := grip_at + Vector2(4, -26) + Vector2(cos(PI * 0.32), sin(PI * 0.32)) * 28.0
+			var bottom := grip_at + Vector2(4, 26) + Vector2(cos(PI * 1.68), sin(PI * 1.68)) * 28.0
+			draw_line(top, bottom, Color(0.9, 0.88, 0.8), 1.4)
+		Enums.WeaponClass.MAGICAL:
+			_limb(hand + Vector2(-3, 12), hand + Vector2(6, -58), 5.0, wood.darkened(0.15))
+			draw_line(hand + Vector2(-1, 6), hand + Vector2(5, -52), wood_hi, 1.5)
+			var orb := hand + Vector2(7, -64)
+			draw_circle(orb, 9.5, Color(0.35, 0.6, 0.95, 0.35))
+			draw_circle(orb, 6.5, Color(0.5, 0.75, 1.0))
+			draw_circle(orb + Vector2(-2, -2), 2.4, Color(0.85, 0.95, 1.0))
+			# Claw prongs holding the orb
+			for side in [-1.0, 1.0]:
+				draw_line(hand + Vector2(6, -58), orb + Vector2(6 * side, 4), wood.darkened(0.2), 3.0)
+		_:
+			pass
+
+
+## Fist redrawn OVER the weapon grip so the hand visibly holds it.
+func _draw_grip_fist(skin: Color) -> void:
+	var gloves: ArmourData = _worn(Enums.EquipSlot.GLOVES)
+	var color: Color = _armour_tone(gloves) if gloves != null else skin
+	draw_circle(Vector2(30, -52), 6.5, OUTLINE)
+	draw_circle(Vector2(30, -52), 5.4, color)
+	draw_line(Vector2(27, -50.5), Vector2(33, -50.5), color.darkened(0.2), 1.6)
+	draw_circle(Vector2(27.5, -53), 2.0, color.lightened(0.12))  # thumb knuckle
+
+
+## Round-capped thick stroke — the rig's building block.
+func _limb(from: Vector2, to: Vector2, width: float, color: Color) -> void:
 	draw_line(from, to, color, width)
 	draw_circle(from, width / 2.0, color)
 	draw_circle(to, width / 2.0, color)
 
 
-func _draw_weapon() -> void:
-	var metal := Color(0.78, 0.8, 0.85)
-	var grip := Color(0.4, 0.26, 0.13)
-	match weapon_class:
-		Enums.WeaponClass.AXE:
-			draw_rect(Rect2(24, -110, 6, 62), grip)
-			draw_rect(Rect2(30, -112, 18, 22), metal)
-		Enums.WeaponClass.BLUNT:
-			draw_rect(Rect2(24, -104, 6, 56), grip)
-			draw_circle(Vector2(27, -110), 12.0, metal.darkened(0.2))
-		Enums.WeaponClass.SPEAR:
-			draw_rect(Rect2(24, -128, 5, 84), grip)
-			draw_rect(Rect2(22, -140, 9, 14), metal)
-		Enums.WeaponClass.RANGED:
-			draw_arc(Vector2(28, -80), 26.0, -PI / 2.2, PI / 2.2, 12, grip, 4.0)
-			draw_line(Vector2(28 + 11, -103), Vector2(28 + 11, -57), Color(0.9, 0.9, 0.9), 1.5)
-		Enums.WeaponClass.MAGICAL:
-			draw_rect(Rect2(24, -124, 5, 78), grip)
-			draw_circle(Vector2(26, -128), 8.0, Color(0.5, 0.8, 1.0))
-		_:
-			# Sword (also unarmed fallback)
-			draw_rect(Rect2(24, -118, 7, 58), metal)
-			draw_rect(Rect2(18, -62, 19, 6), grip)
+## Expands a convex polygon outward from its centroid (outline pass).
+func _grow(points: PackedVector2Array, amount: float) -> PackedVector2Array:
+	var center := Vector2.ZERO
+	for p in points:
+		center += p
+	center /= points.size()
+	var out := PackedVector2Array()
+	for p in points:
+		out.append(p + (p - center).normalized() * amount)
+	return out

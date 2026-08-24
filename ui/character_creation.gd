@@ -62,7 +62,8 @@ func _ready() -> void:
 
 	_preview = PlaceholderRig.new()
 	_preview_anchor.add_child(_preview)
-	_preview.scale = Vector2(0.9, 0.9)
+	# Rig v3 carries face/muscle/equipment detail — show it big in the booth.
+	_preview.scale = Vector2(2.4, 2.4)
 	_refresh()
 	_preview_anchor.resized.connect(_position_preview)
 	_position_preview.call_deferred()
@@ -108,7 +109,7 @@ func _refresh() -> void:
 
 func _position_preview() -> void:
 	var anchor_size: Vector2 = _preview_anchor.size
-	_preview.position = Vector2(anchor_size.x / 2.0, anchor_size.y - 8.0)
+	_preview.position = Vector2(anchor_size.x / 2.0, anchor_size.y * 0.86)
 
 
 func _selected_attributes() -> AttributeBlock:

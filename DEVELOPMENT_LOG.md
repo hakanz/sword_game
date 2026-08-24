@@ -152,3 +152,41 @@ Tournament structure + second arena region (complete Phase 6, charter §21).
 ### Tests / balance
 22 suites / 2343 assertions green; multi-seed + archer smoke green; §35 sim re-run
 (archer enemies included): presets hold 40-60%, 0 stalemates.
+
+---
+
+## Session 4 — 2026-08-24 — Reference-quality visual pass: rig v3 + arena v2 (Claude)
+
+Owner directive: match the classic gladiator-duel genre look in DETAIL and
+QUALITY (explicitly not a copy — original designs only). Weapons and armour
+must read as real drawings on the character; spectators must be drawn figures.
+
+### Added
+- **Rig v3** (`characters/components/placeholder_rig.gd`): muscular 3-tone
+  anatomy (skin/highlight/shade), face detail (brow, white-of-eye, nose,
+  mouth, ear, hair or helm), heroic torso taper with pec/ab sculpt or a
+  riveted muscle-cuirass when a chest piece is worn. EQUIPMENT IS DRAWN ON
+  THE BODY per slot (helmet/chest/shoulders/gloves/belt/legs/boots) using
+  armour-class material tones lerped toward tier tints; heavy helms get a
+  crest + cheek guard. Per-class weapon drawings (sword w/ edge highlight +
+  guard + wrapped grip + pommel, bearded axe, studded maul, leaf-blade
+  spear, recurve bow w/ string, orb staff) tinted by weapon tier; fist
+  redrawn over the grip so the hand visibly holds the weapon.
+- **Rig data plumbing** (`combat/combatant.gd`): rig receives the live
+  WeaponData + armour_pieces at setup and on weapon switch.
+- **Arena v2** (`scenes/arena/arena_visual.gd`): three depth-shaded crowd
+  tiers of individually drawn spectators (varied cloth/skin tones, hair
+  caps, ~28% cheering with raised arms) on stone steps; parapet with
+  pennants; brick-course lower wall; two barred holding-pen gates with
+  dressed-stone arches; cylinder-shaded columns with carved bands.
+- Creation preview shows the rig at 2.4x so the new detail reads.
+
+### Fixed
+- Lit fighting oval painted OVER the lower wall/gates (top edge reached
+  y≈397 vs wall at 410) — oval recentred/flattened to stay below y=503.
+
+### Tests / builds
+22 suites / 2343 assertions green; smoke seeds 7/99/424242 + archer 31337
+green (switch->shoot trace verified); Web + Windows re-exported, exe smoke
+green (seed 555). Screenshot-iterated: 3 capture rounds, fighter close-ups
+inspected at 3x.

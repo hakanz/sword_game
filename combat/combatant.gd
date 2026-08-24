@@ -92,7 +92,9 @@ func setup(character: CharacterData, player_controlled: bool, facing_left: bool)
 	rig = PlaceholderRig.new()
 	rig.body_color = data.body_color
 	rig.accent_color = data.accent_color
+	rig.weapon = get_weapon()
 	rig.weapon_class = get_weapon().weapon_class
+	rig.equipment = data.armour_pieces
 	rig.facing_left = facing_left
 	add_child(rig)
 
@@ -113,6 +115,7 @@ func switch_weapon() -> void:
 	assert(can_switch_weapon())
 	wielding_main = not wielding_main
 	if rig != null:
+		rig.weapon = get_weapon()
 		rig.weapon_class = get_weapon().weapon_class
 		rig.queue_redraw()
 

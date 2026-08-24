@@ -1,6 +1,6 @@
 # PROJECT STATE
 Last Updated: 2026-08-24
-Updated By: Claude (autonomous session 3)
+Updated By: Claude (autonomous session 4)
 
 ## Current Milestone
 MVP core loop COMPLETE and playable end to end: character creation -> arena duels vs
@@ -17,7 +17,9 @@ Engine: Godot 4.7 (owner bump; verified with 4.7.2-stable).
 Owner directives in effect: melee only at ADJACENT; bows ranged with 4 arrows +
 knife sidearm + switch action; per-fighter movement; no combat-log panel; rest heals;
 enemy energy visible; RADIAL action menu around the gladiator; split street merchants
-(price-sorted, item glyphs); Dustwell town hub; auto-equip upgrades with sell offer.
+(price-sorted, item glyphs); Dustwell town hub; auto-equip upgrades with sell offer;
+session 4: genre-reference visual bar — rig v3 draws equipped armour + tier-tinted
+weapons ON the body; arena crowd is individually drawn figures (original designs only).
 
 ## Current Game Version
 0.1.0 (semver; also in project.godot)
@@ -37,8 +39,11 @@ enemy energy visible; RADIAL action menu around the gladiator; split street merc
   fought as tournament finals; one-time unique rewards with rematch guards
 - Persistence: versioned JSON saves (v5) with a tested v0->v5 migration chain; autosaves
 - Localization: EN + TR complete (every player-visible string keyed; integrity-tested)
-- Character creation: name, 3 origin presets, colors, live rig preview
+- Character creation: name, 3 origin presets, colors, live rig preview (2.4x)
 - UI theme: global programmatic theme (UITheme), styled menus/HUD/bars
+- Visuals: rig v3 (3-tone anatomy, face detail, per-slot armour overlays,
+  per-class tier-tinted weapon drawings, grip fist, defend shield); arena v2
+  (drawn crowd tiers w/ cheering figures, brick wall, barred pen gates, columns)
 
 ## Partially Implemented Systems
 - Crowd system (§19): only "crowd impatience" pressure inside the AI; no audience meter
@@ -96,12 +101,12 @@ synthesized cues, one music loop per state, art-directed UI theme.
   public release (charter §0.3) — NOT DONE, cannot be done by the agent
 
 ## Files Recently Changed
+Session 4: characters/components/placeholder_rig.gd (rig v3 rewrite),
+scenes/arena/arena_visual.gd (crowd/wall/gates v2), combat/combatant.gd
+(rig weapon+equipment plumbing), ui/character_creation.gd (preview scale).
 Session 3: combat/combat_resolver (new), combat_controller (presentation-only),
-autoload/{game_manager,save_manager,scene_router,item_db}, ui/{arena_select_screen,
-tournament_screen,settings_screen,combat_hud,results_screen,character_creation},
-scenes/{arena_select,tournament,settings}, tools/battle_sim*, data (2nd arena/champion,
-+6 weapons +6 armour +3 statuses +4 skills), CombatTuning (hit coefficient),
-tests (see DEVELOPMENT_LOG.md).
+autoload/{game_manager,save_manager,scene_router,item_db}, shop/tournament/radial
+UI, tools/battle_sim*, data growth, CombatTuning (see DEVELOPMENT_LOG.md).
 
 ## Current Blocking Issues
 - Android/iOS/Linux/macOS exports blocked on environment (SDKs/hosts)
