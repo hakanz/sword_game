@@ -63,9 +63,28 @@ func test_stalling_has_diminishing_returns() -> void:
 			"hurt cautious fighter should act defensively at first, chose %d" % first_choice)
 
 	turtle.consecutive_defends = 6
-	turtle.consecutive_retreats = 6
+	turtle.total_retreats = 6
 	assert_eq(CombatAI.choose_action(turtle, foe, ctx), Enums.ActionType.ATTACK,
 			"after long stalling, the fighter must go back on the offensive")
+	turtle.free()
+	foe.free()
+
+
+func test_crowd_impatience_forces_convergence() -> void:
+	# Deep-round pressure must eventually outvote any defensive score.
+	RngService.set_seed(11)
+	var personality := AIPersonality.new()
+	personality.aggression = 0.8
+	personality.caution = 1.5
+	var turtle := CombatFixtures.make_combatant(
+			CombatFixtures.make_character(null, null, personality))
+	var foe := CombatFixtures.make_combatant()
+	var ctx := CombatContext.new()
+	ctx.distance = Enums.DistanceBand.ADJACENT
+	turtle.current_hp = roundi(turtle.max_hp * 0.2)
+	ctx.round_number = 80
+	assert_eq(CombatAI.choose_action(turtle, foe, ctx), Enums.ActionType.ATTACK,
+			"by round 80 even a hurt turtle must swing")
 	turtle.free()
 	foe.free()
 

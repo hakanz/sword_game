@@ -6,6 +6,10 @@ extends RefCounted
 
 var distance: Enums.DistanceBand = Enums.DistanceBand.MEDIUM
 
+## Current round — inputs the AI's crowd-impatience pressure (long fights
+## push both fighters toward offense; precursor of the §19 crowd system).
+var round_number: int = 1
+
 
 func approach() -> void:
 	distance = (maxi(distance - 1, Enums.DistanceBand.ADJACENT) as Enums.DistanceBand)

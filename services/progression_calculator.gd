@@ -36,6 +36,26 @@ static func initiative(attrs: AttributeBlock) -> int:
 	return attrs.agility * 2 + attrs.attack
 
 
+## XP needed to advance FROM `level` to `level + 1` (charter §14 curve).
+static func xp_required(config: ProgressionConfig, level: int) -> int:
+	return roundi(config.base_xp * pow(level, config.xp_exponent))
+
+
+## XP awarded for a duel vs a level-`enemy_level` opponent. Losing still
+## grants a fraction; fighting far below your level is clamped down.
+static func xp_reward(
+		config: ProgressionConfig, player_level: int, enemy_level: int,
+		player_won: bool) -> int:
+	var base: float = config.xp_win_base * pow(enemy_level, config.xp_win_exponent)
+	var gap: float = clampf(
+			1.0 + config.level_gap_step * (enemy_level - player_level),
+			config.level_gap_min, config.level_gap_max)
+	var xp: float = base * gap
+	if not player_won:
+		xp *= config.xp_loss_fraction
+	return maxi(roundi(xp), 1)
+
+
 ## Flat damage added to a weapon roll from attributes. Weights differ per
 ## weapon class so different builds favor different weapons (charter §15).
 static func attribute_damage_bonus(attrs: AttributeBlock, weapon_class: Enums.WeaponClass) -> int:

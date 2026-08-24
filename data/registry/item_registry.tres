@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemRegistry" format=3 load_steps=9]
+
+[ext_resource type="Script" path="res://data/models/item_registry.gd" id="1"]
+[ext_resource type="Script" path="res://data/models/weapon_data.gd" id="2"]
+[ext_resource type="Script" path="res://data/models/armour_data.gd" id="3"]
+[ext_resource type="Resource" path="res://data/weapons/training_shortsword.tres" id="4"]
+[ext_resource type="Resource" path="res://data/weapons/pit_hatchet.tres" id="5"]
+[ext_resource type="Resource" path="res://data/armour/padded_vest.tres" id="6"]
+[ext_resource type="Resource" path="res://data/armour/scrap_helm.tres" id="7"]
+[ext_resource type="Resource" path="res://data/armour/leather_straps.tres" id="8"]
+
+[resource]
+script = ExtResource("1")
+weapons = Array[ExtResource("2")]([ExtResource("4"), ExtResource("5")])
+armour = Array[ExtResource("3")]([ExtResource("6"), ExtResource("7"), ExtResource("8")])

@@ -5,6 +5,7 @@ extends Node
 const SCENE_MAIN_MENU: String = "res://scenes/menu/main_menu.tscn"
 const SCENE_ARENA: String = "res://scenes/arena/arena.tscn"
 const SCENE_RESULTS: String = "res://scenes/results/results.tscn"
+const SCENE_CHARACTER_SHEET: String = "res://scenes/character/character_sheet.tscn"
 
 
 func goto_main_menu() -> void:
@@ -20,6 +21,11 @@ func goto_arena() -> void:
 func goto_results() -> void:
 	GameManager.change_state(GameManager.GameState.POST_BATTLE)
 	_change_scene(SCENE_RESULTS)
+
+
+func goto_character_sheet() -> void:
+	GameManager.change_state(GameManager.GameState.CHARACTER_SHEET)
+	_change_scene(SCENE_CHARACTER_SHEET)
 
 
 func _change_scene(path: String) -> void:

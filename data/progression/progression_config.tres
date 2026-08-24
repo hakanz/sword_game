@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ProgressionConfig" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/progression_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+base_xp = 100
+xp_exponent = 1.55
+max_level = 60
+attribute_points_per_level = 3
+skill_point_every_n_levels = 2
+xp_win_base = 45
+xp_win_exponent = 1.1
+xp_loss_fraction = 0.25
+level_gap_step = 0.15
+level_gap_min = 0.4
+level_gap_max = 2.0

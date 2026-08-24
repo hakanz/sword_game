@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="AIPersonality" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/ai_personality.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"personality.defensive"
+aggression = 0.8
+caution = 1.5
+resource_care = 1.1

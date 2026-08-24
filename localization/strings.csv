@@ -44,3 +44,36 @@ item.armour.padded_vest.name,Padded Vest,Dolgulu Yelek
 item.armour.scrap_helm.name,Scrap Helm,Hurda Miğfer
 item.armour.leather_straps.name,Leather Straps,Deri Kayışlar
 arena.gravelmaw.name,Gravelmaw Arena,Gravelmaw Arenası
+menu.continue,Continue,Devam Et
+menu.new_game,New Gladiator,Yeni Gladyatör
+menu.character,Character,Karakter
+menu.confirm_new_title,Start over?,Baştan başla?
+menu.confirm_new_text,"This will erase your current gladiator. Continue?","Bu, mevcut gladyatörünü silecek. Devam edilsin mi?"
+common.confirm,Confirm,Onayla
+common.cancel,Cancel,İptal
+common.back,Back,Geri
+sheet.level,"Level {level}","Seviye {level}"
+sheet.xp,XP,XP
+sheet.attribute_points,"Attribute Points: {points}","Nitelik Puanı: {points}"
+sheet.skill_points,"Skill Points: {points}","Yetenek Puanı: {points}"
+sheet.stats_title,Combat Stats,Savaş Değerleri
+attr.strength,Strength,Güç
+attr.agility,Agility,Çeviklik
+attr.attack,Attack,Saldırı
+attr.defence,Defence,Savunma
+attr.vitality,Vitality,Bünye
+attr.stamina,Stamina,Dayanıklılık
+attr.arcana,Arcana,Arkana
+attr.charisma,Charisma,Karizma
+stat.max_hp,Max HP,Azami Can
+stat.max_energy,Max Energy,Azami Enerji
+stat.max_mana,Max Mana,Azami Mana
+stat.attack_rating,Attack Rating,Saldırı Puanı
+stat.defence_rating,Defence Rating,Savunma Puanı
+stat.evasion,Evasion,Kaçınma
+stat.initiative,Initiative,İnisiyatif
+stat.damage_bonus,Damage Bonus,Hasar Bonusu
+results.xp_gained,"+{xp} XP","+{xp} XP"
+results.level_up,"LEVEL UP! You are now level {level}","SEVİYE ATLADIN! Artık {level}. seviyesin"
+results.points_gained,"+{attr} attribute points, +{skill} skill points","+{attr} nitelik puanı, +{skill} yetenek puanı"
+results.next_duel,Next Duel,Sonraki Düello

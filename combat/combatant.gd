@@ -33,10 +33,12 @@ var stance: Enums.Stance = Enums.Stance.NEUTRAL
 ## Total damage this fighter dealt (HP + armour), for the results screen.
 var damage_dealt_total: int = 0
 
-## Consecutive DEFEND / RETREAT actions taken — the AI applies diminishing
-## returns to repeated turtling or fleeing so no duel can stall forever.
+## Consecutive DEFEND actions (leaky counter) — the AI applies diminishing
+## returns to turtling so two cautious fighters can never deadlock.
 var consecutive_defends: int = 0
-var consecutive_retreats: int = 0
+## TOTAL retreats this combat (never decays): fleeing is a budget, not a
+## strategy — each retreat makes the next one less appealing to the AI.
+var total_retreats: int = 0
 
 var rig: PlaceholderRig = null
 

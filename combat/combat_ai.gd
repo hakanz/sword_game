@@ -16,6 +16,19 @@ class_name CombatAI
 ## Fraction of an action's energy cost subtracted from its score.
 const ENERGY_COST_WEIGHT: float = 0.15
 const TIE_BREAK_JITTER: float = 0.75
+## Defend is only worth its mitigation if the foe actually swings next turn —
+## they may reposition, rest, or turtle instead. Discounting by this factor
+## keeps mutual-defend from being an equilibrium (see docs/ai.md).
+const DEFEND_FOE_SWING_PROBABILITY: float = 0.65
+## Blood scent: attacks scale up as the foe's HP fraction drops (finish the
+## wounded instead of trading pot-shots with a fleeing turtle).
+const FINISHER_SCALING: float = 0.8
+## Crowd impatience: from this round on, ATTACK gains flat utility per round.
+## Guarantees every duel converges long before the MAX_ROUNDS failsafe.
+const IMPATIENCE_START_ROUND: int = 20
+const IMPATIENCE_PER_ROUND: float = 0.15
+## Each retreat this combat makes the next retreat this much less appealing.
+const RETREAT_FATIGUE: float = 0.5
 
 
 static func choose_action(actor: Combatant, foe: Combatant, ctx: CombatContext) -> Enums.ActionType:
@@ -59,10 +72,13 @@ static func _score(
 			var est: DamageCalculator.MitigationResult = _estimate_hit(actor, foe,
 					foe.stance == Enums.Stance.DEFENDING)
 			var expected: float = chance * float(est.hp_damage + est.absorbed)
+			var foe_hp_fraction: float = float(foe.current_hp) / float(foe.max_hp)
+			var finisher: float = 1.0 + (1.0 - foe_hp_fraction) * FINISHER_SCALING
 			var kill_bonus: float = 0.0
 			if est.hp_damage >= foe.current_hp:
 				kill_bonus = 50.0 * chance
-			return expected * p.aggression + kill_bonus - attack_cost * ENERGY_COST_WEIGHT * p.resource_care
+			return expected * p.aggression * finisher + kill_bonus + _impatience(ctx) \
+					- attack_cost * ENERGY_COST_WEIGHT * p.resource_care
 
 		Enums.ActionType.APPROACH:
 			if not actor.get_weapon().can_attack_from(ctx.distance):
@@ -78,14 +94,17 @@ static func _score(
 			if actor.get_weapon().range_max >= Enums.DistanceBand.MEDIUM \
 					and ctx.distance <= Enums.DistanceBand.CLOSE:
 				value += 12.0
-			# Anti-stall decay: fleeing forever is not a strategy.
-			return value / (1.0 + actor.consecutive_retreats)
+			# Retreat fatigue: each flee this combat makes the next one less
+			# appealing — a hurt turtle cannot run laps forever.
+			return value / (1.0 + actor.total_retreats * RETREAT_FATIGUE)
 
 		Enums.ActionType.DEFEND:
-			# Worth exactly the incoming damage it is expected to prevent.
+			# Worth the incoming damage it is expected to prevent, discounted
+			# by the chance the foe actually attacks next turn.
 			var incoming_open: float = _expected_incoming(foe, actor, false, ctx)
 			var incoming_guarded: float = _expected_incoming(foe, actor, true, ctx)
-			var value: float = (incoming_open - incoming_guarded) * p.caution
+			var value: float = (incoming_open - incoming_guarded) \
+					* DEFEND_FOE_SWING_PROBABILITY * p.caution
 			value += 3.0 * (1.0 - hp_fraction)  # desperation nudge when hurt
 			# Anti-stall decay: two cautious fighters must never deadlock.
 			return value / (1.0 + actor.consecutive_defends)
@@ -98,6 +117,10 @@ static func _score(
 
 		_:
 			return 0.0
+
+
+static func _impatience(ctx: CombatContext) -> float:
+	return maxf(0.0, (ctx.round_number - IMPATIENCE_START_ROUND) * IMPATIENCE_PER_ROUND)
 
 
 ## Average-damage mitigation estimate for attacker hitting target.

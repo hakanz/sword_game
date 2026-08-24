@@ -8,3 +8,7 @@ var rounds: int = 0
 var player_damage_dealt: int = 0
 var victor_name: String = ""
 var loser_name: String = ""
+## Level of the opponent — input for the XP reward formula.
+var enemy_level: int = 1
+## Set by GameManager.consume_combat_rewards() to guard double application.
+var rewards_applied: bool = false

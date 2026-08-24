@@ -57,6 +57,7 @@ func _run_combat() -> void:
 	while true:
 		var actor: Combatant = turn_manager.advance()
 		if turn_manager.is_round_start():
+			ctx.round_number = turn_manager.round_number
 			EventBus.round_started.emit(turn_manager.round_number)
 			if turn_manager.round_number > CombatTuning.MAX_ROUNDS:
 				break
@@ -139,10 +140,12 @@ func _execute(actor: Combatant, type: Enums.ActionType) -> void:
 			result.energy_restored = actor.restore_energy(
 					roundi(actor.max_energy * CombatTuning.REST_ENERGY_RESTORE_FRACTION))
 
+	# Leaky defend counter (not a hard reset): alternating defend/attack
+	# patterns still accumulate stall pressure instead of dodging the decay.
 	actor.consecutive_defends = actor.consecutive_defends + 1 \
-			if type == Enums.ActionType.DEFEND else 0
-	actor.consecutive_retreats = actor.consecutive_retreats + 1 \
-			if type == Enums.ActionType.RETREAT else 0
+			if type == Enums.ActionType.DEFEND else maxi(actor.consecutive_defends - 1, 0)
+	if type == Enums.ActionType.RETREAT:
+		actor.total_retreats += 1
 
 	if GameManager.smoke_test:
 		# Console combat trace for CI/headless diagnosis (charter §34).
@@ -181,6 +184,7 @@ func _finish() -> void:
 	result.player_won = player_won
 	result.rounds = turn_manager.round_number
 	result.player_damage_dealt = player.damage_dealt_total
+	result.enemy_level = enemy.data.level
 	result.victor_name = victor.display_name()
 	result.loser_name = loser.display_name()
 	GameManager.last_combat_result = result
