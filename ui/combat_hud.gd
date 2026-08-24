@@ -49,6 +49,16 @@ func _ready() -> void:
 	(%RetreatButton as Button).text = tr("combat.action.retreat")
 	(%RestButton as Button).text = tr("combat.action.rest")
 	_skills_button.text = tr("combat.action.skills")
+	# Semantic bar colors (same meaning on both panels): HP green,
+	# Energy amber, Armour steel-blue.
+	var hp_fill := UITheme.bar_fill(Color(0.44, 0.75, 0.35))
+	var energy_fill := UITheme.bar_fill(Color(0.88, 0.66, 0.25))
+	var armour_fill := UITheme.bar_fill(Color(0.5, 0.6, 0.78))
+	_player_hp_bar.add_theme_stylebox_override("fill", hp_fill)
+	_enemy_hp_bar.add_theme_stylebox_override("fill", hp_fill)
+	_player_energy_bar.add_theme_stylebox_override("fill", energy_fill)
+	_player_armour_bar.add_theme_stylebox_override("fill", armour_fill)
+	_enemy_armour_bar.add_theme_stylebox_override("fill", armour_fill)
 	for type: Enums.ActionType in _buttons.keys():
 		(_buttons[type] as Button).pressed.connect(_on_action_button.bind(type))
 	_skills_button.pressed.connect(_on_skills_toggled)

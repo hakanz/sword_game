@@ -130,6 +130,24 @@ func start_champion_duel() -> void:
 	SceneRouter.goto_arena()
 
 
+## Dev-only visual check (`--screenshot-dir=`): captures menu, creation and
+## arena frames to PNG then quits. Lives on this autoload so it survives the
+## scene changes it drives.
+func run_screenshot_capture(dir: String) -> void:
+	SaveManager.disk_writes_enabled = false
+	SceneRouter.goto_main_menu()
+	await get_tree().create_timer(1.6).timeout
+	get_viewport().get_texture().get_image().save_png(dir.path_join("menu.png"))
+	profile = PlayerProfile.create_default()
+	SceneRouter.goto_character_creation()
+	await get_tree().create_timer(1.2).timeout
+	get_viewport().get_texture().get_image().save_png(dir.path_join("creation.png"))
+	start_next_duel()
+	await get_tree().create_timer(2.4).timeout
+	get_viewport().get_texture().get_image().save_png(dir.path_join("arena.png"))
+	get_tree().quit(0)
+
+
 ## Applies XP/level rewards for the finished combat exactly once and
 ## autosaves (charter §31: autosave after battle & level-up). Safe to call
 ## repeatedly; returns null when there is nothing to apply.

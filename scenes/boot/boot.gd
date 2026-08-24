@@ -8,9 +8,25 @@ extends Control
 
 
 func _ready() -> void:
+	# Global look for every Control in the game (charter §27: placeholder
+	# theme now; a real art-directed theme swaps in via UITheme later).
+	get_tree().root.theme = UITheme.build()
 	_loading.text = tr("boot.loading")
 	# One frame so the loading frame paints before any scene-change hitch.
 	await get_tree().process_frame
+
+	# Dev-only visual check: `--screenshot-dir=<dir>` captures the main menu
+	# and an arena frame to PNG, then quits (windowed run required).
+	var screenshot_dir: String = ""
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--screenshot-dir="):
+			screenshot_dir = arg.get_slice("=", 1)
+	if screenshot_dir != "":
+		# Fire-and-forget: the capture must live on GameManager because this
+		# boot scene is freed by the very first scene change it triggers.
+		GameManager.run_screenshot_capture(screenshot_dir)
+		return
+
 	if GameManager.smoke_test:
 		GameManager.profile = PlayerProfile.create_default()
 		# Give the AI-driven player a skill kit so the smoke run exercises

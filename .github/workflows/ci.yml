@@ -1,0 +1,27 @@
+name: tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Godot 4.4.1 (pinned — see AI_GUIDE.md)
+        run: |
+          curl -sL -o godot.zip https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_linux.x86_64.zip
+          unzip -q godot.zip
+          chmod +x Godot_v4.4.1-stable_linux.x86_64
+
+      - name: Import resources
+        run: ./Godot_v4.4.1-stable_linux.x86_64 --headless --path . --import || true
+
+      - name: Unit tests
+        run: ./Godot_v4.4.1-stable_linux.x86_64 --headless --path . -s res://tests/test_runner.gd
+
+      - name: Combat smoke (seeded AI-vs-AI duels)
+        run: |
+          for seed in 42 7 1234; do
+            ./Godot_v4.4.1-stable_linux.x86_64 --headless --path . -- --smoke-test --combat-seed=$seed
+          done

@@ -18,10 +18,30 @@ func _draw() -> void:
 	if arena == null:
 		return
 	# Oversized rects so aspect "expand" never shows void at any ratio.
-	draw_rect(Rect2(-2000, -2000, 5280, 2340), arena.sky_color)
+	# Simple 4-band sky gradient (Compatibility-safe, no shaders).
+	var sky_top: Color = arena.sky_color.lightened(0.22)
+	for band in 4:
+		var t: float = band / 3.0
+		draw_rect(Rect2(-2000, -2000 + band * 560, 5280, 600),
+				sky_top.lerp(arena.sky_color.darkened(0.08), t))
+	# Low sun disc with haze
+	draw_circle(Vector2(990, 150), 96.0, Color(1.0, 0.9, 0.65, 0.18))
+	draw_circle(Vector2(990, 150), 58.0, Color(1.0, 0.92, 0.7, 0.5))
 
 	# Colosseum wall band with crowd (ground line = combat GROUND_Y at 500)
 	draw_rect(Rect2(-2000, 240, 5280, 245), arena.wall_color)
+	# Pennant banners along the wall top
+	var banner_rng := RandomNumberGenerator.new()
+	banner_rng.seed = 4242
+	var banner_x: float = -40.0
+	while banner_x < 1360.0:
+		var tint := Color.from_hsv(banner_rng.randf(), 0.6, 0.85)
+		draw_rect(Rect2(banner_x, 240, 6, 34), arena.wall_color.darkened(0.4))
+		draw_colored_polygon(PackedVector2Array([
+			Vector2(banner_x + 6, 242), Vector2(banner_x + 40, 250),
+			Vector2(banner_x + 6, 262),
+		]), tint)
+		banner_x += 160.0
 	var crowd_rng := RandomNumberGenerator.new()
 	crowd_rng.seed = 133742
 	for row in 3:
