@@ -22,8 +22,8 @@ charisma = 3
 [resource]
 script = ExtResource("1")
 id = &"character.enemy_vosk"
-name_text = "Vosk the Gravel-Chewer"
-is_name_localization_key = false
+name_text = "character.enemy_vosk.name"
+is_name_localization_key = true
 level = 1
 attributes = SubResource("Resource_attrs")
 weapon = ExtResource("4")

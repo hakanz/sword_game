@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/weapon_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"weapon.bearded_axe"
+name_key = "item.weapon.bearded_axe.name"
+weapon_class = 2
+damage_type = 0
+damage_min = 12
+damage_max = 18
+accuracy_bonus = -1
+armour_penetration = 0.2
+range_min = 0
+range_max = 1
+energy_cost = 8
+tier = 2
+rarity = 1
+value = 85
+required_level = 4
+required_strength = 12
+required_agility = 0
+required_arcana = 0

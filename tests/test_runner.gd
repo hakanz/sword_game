@@ -8,6 +8,12 @@ const TESTS_DIR: String = "res://tests/unit"
 
 
 func _initialize() -> void:
+	# Deferred one frame: during _initialize the root is not yet active, so
+	# scene-instantiation tests (add_child -> _ready) would silently no-op.
+	process_frame.connect(_run_tests, CONNECT_ONE_SHOT)
+
+
+func _run_tests() -> void:
 	print("=== Arena Legends unit tests ===")
 	var dir := DirAccess.open(TESTS_DIR)
 	if dir == null:

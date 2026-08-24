@@ -38,6 +38,9 @@ results.rounds,"The duel lasted {rounds} rounds.","Düello {rounds} raunt sürd�
 results.damage_dealt,"Damage dealt: {damage}","Verilen hasar: {damage}"
 results.back_to_menu,Back to Menu,Menüye Dön
 character.default_name,New Gladiator,Yeni Gladyatör
+character.enemy_vosk.name,Vosk the Gravel-Chewer,Çakıl Çiğneyen Vosk
+menu.version,"v{version}","v{version}"
+combat.hud.stat_row,"{name} {current}/{max}","{name} {current}/{max}"
 item.weapon.training_shortsword.name,Training Shortsword,Talim Kısa Kılıcı
 item.weapon.pit_hatchet.name,Pit Hatchet,Çukur Baltası
 item.armour.padded_vest.name,Padded Vest,Dolgulu Yelek
@@ -77,3 +80,46 @@ results.xp_gained,"+{xp} XP","+{xp} XP"
 results.level_up,"LEVEL UP! You are now level {level}","SEVİYE ATLADIN! Artık {level}. seviyesin"
 results.points_gained,"+{attr} attribute points, +{skill} skill points","+{attr} nitelik puanı, +{skill} yetenek puanı"
 results.next_duel,Next Duel,Sonraki Düello
+results.gold_gained,"+{gold} gold","+{gold} altın"
+item.weapon.rustpick_club.name,Rustpick Club,Paslı Topuz
+item.weapon.reed_spear.name,Reed Spear,Kamış Mızrak
+item.weapon.scrap_bow.name,Scrap Bow,Hurda Yay
+item.weapon.bronze_gladius.name,Bronze Gladius,Bronz Gladius
+item.weapon.bearded_axe.name,Bearded Axe,Sakallı Balta
+item.weapon.dented_maul.name,Dented Maul,Göçük Varyos
+item.weapon.boar_spear.name,Boar Spear,Domuz Mızrağı
+item.weapon.hunting_bow.name,Hunting Bow,Av Yayı
+item.weapon.iron_longsword.name,Iron Longsword,Demir Uzunkılıç
+item.weapon.crescent_battleaxe.name,Crescent Battleaxe,Hilal Savaş Baltası
+item.armour.rag_hood.name,Rag Hood,Bez Kukuleta
+item.armour.canvas_leggings.name,Canvas Leggings,Branda Tozluk
+item.armour.pit_boots.name,Pit Boots,Çukur Botları
+item.armour.studded_gloves.name,Studded Gloves,Zımbalı Eldiven
+item.armour.wooden_greaves.name,Wooden Greaves,Ahşap Dizlik
+item.armour.boiled_leather_cuirass.name,Boiled Leather Cuirass,Kaynatılmış Deri Küras
+item.armour.bronze_cap.name,Bronze Cap,Bronz Tas
+item.armour.iron_chainmail.name,Iron Chainmail,Demir Zincir Zırh
+item.armour.iron_helm.name,Iron Helm,Demir Miğfer
+menu.shop,The Armoury,Cephanelik
+menu.inventory,Inventory,Envanter
+shop.title,The Armoury,Cephanelik
+shop.tab_buy,Buy,Satın Al
+shop.tab_sell,Sell,Sat
+shop.gold,"Gold: {gold}","Altın: {gold}"
+shop.owned,Owned,Sahipsin
+shop.buy,Buy,Satın Al
+shop.sell,"Sell ({price})","Sat ({price})"
+shop.not_enough_gold,Not enough gold,Yetersiz altın
+inventory.title,Inventory,Envanter
+inventory.weapons,Weapons,Silahlar
+inventory.armour,Armour,Zırhlar
+inventory.equip,Equip,Kuşan
+inventory.equipped,Equipped,Kuşanılı
+inventory.empty,"Your satchel is empty. The Armoury awaits.","Çıkının bomboş. Cephanelik seni bekler."
+equip.requires_level,"Requires level {value}","Seviye {value} gerekir"
+equip.requires_strength,"Requires Strength {value}","Güç {value} gerekir"
+equip.requires_agility,"Requires Agility {value}","Çeviklik {value} gerekir"
+equip.requires_arcana,"Requires Arcana {value}","Arkana {value} gerekir"
+item.stat.damage,"{min}-{max} dmg","{min}-{max} hasar"
+item.stat.armour,"{armour} armour","{armour} zırh"
+item.stat.tier,"T{tier}","K{tier}"

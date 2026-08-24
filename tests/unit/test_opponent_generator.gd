@@ -38,6 +38,18 @@ func test_generation_never_mutates_the_base_resource() -> void:
 	assert_eq(OpponentGenerator.BASE.name_text, name_before)
 
 
+func test_gear_tier_tracks_level() -> void:
+	RngService.set_seed(404)
+	for _i in 10:
+		var rookie := OpponentGenerator.generate(1)
+		assert_true(rookie.weapon.tier <= 1, "level-1 enemies must carry T1 weapons")
+		for piece in rookie.armour_pieces:
+			assert_true(piece.tier <= 1, "level-1 enemies must wear T1 armour")
+	for _i in 10:
+		var veteran := OpponentGenerator.generate(10)
+		assert_true(veteran.weapon.tier <= 3, "gear tier cap follows level")
+
+
 func test_same_seed_same_opponent() -> void:
 	RngService.set_seed(31337)
 	var first := OpponentGenerator.generate(8)

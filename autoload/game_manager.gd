@@ -27,6 +27,7 @@ enum GameState {
 signal state_changed(previous: GameState, next: GameState)
 
 const PROGRESSION_CONFIG: ProgressionConfig = preload("res://data/progression/progression_config.tres")
+const ECONOMY_CONFIG: EconomyConfig = preload("res://data/economy/economy_config.tres")
 
 var state: GameState = GameState.BOOT
 
@@ -38,6 +39,11 @@ var player_character: CharacterData = null
 
 ## The opponent for the next/current combat encounter.
 var next_opponent: CharacterData = null
+
+## Arena for the next/current encounter (data-driven — charter §6). The
+## arena-progression phase will set this per region; null lets the combat
+## scene fall back to its default.
+var current_arena: ArenaData = null
 
 ## Result of the most recent combat, consumed by the results screen.
 var last_combat_result: CombatResult = null
@@ -98,7 +104,7 @@ func consume_combat_rewards() -> ProgressionService.RewardResult:
 	if last_combat_result.rewards_applied:
 		return last_reward
 	last_reward = ProgressionService.apply_combat_rewards(
-			profile, PROGRESSION_CONFIG, last_combat_result)
+			profile, PROGRESSION_CONFIG, ECONOMY_CONFIG, last_combat_result)
 	last_combat_result.rewards_applied = true
 	SaveManager.save_profile(profile)
 	return last_reward

@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/weapon_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"weapon.iron_longsword"
+name_key = "item.weapon.iron_longsword.name"
+weapon_class = 1
+damage_type = 0
+damage_min = 13
+damage_max = 19
+accuracy_bonus = 3
+armour_penetration = 0.08
+range_min = 0
+range_max = 1
+energy_cost = 7
+tier = 3
+rarity = 1
+value = 160
+required_level = 8
+required_strength = 12
+required_agility = 0
+required_arcana = 0

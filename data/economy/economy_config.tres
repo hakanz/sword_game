@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EconomyConfig" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/economy_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+charisma_discount_per_point = 0.004
+max_charisma_discount = 0.25
+sell_fraction_base = 0.35
+charisma_sell_per_point = 0.002
+max_sell_fraction = 0.5
+gold_win_base = 12
+gold_win_exponent = 1.15
+gold_loss_fraction = 0.2

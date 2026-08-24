@@ -12,3 +12,10 @@ var loser_name: String = ""
 var enemy_level: int = 1
 ## Set by GameManager.consume_combat_rewards() to guard double application.
 var rewards_applied: bool = false
+
+
+## Round-cap stalemate rule (centralized per charter §6): the higher
+## remaining HP fraction takes the decision; ties go to the player.
+static func stalemate_player_won(player: Combatant, enemy: Combatant) -> bool:
+	return float(player.current_hp) / float(player.max_hp) \
+			>= float(enemy.current_hp) / float(enemy.max_hp)

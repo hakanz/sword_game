@@ -71,6 +71,25 @@ func test_v0_save_migrates() -> void:
 	)
 
 
+func test_v1_save_migrates_to_v2() -> void:
+	_with_test_path(func() -> void:
+		# v1 envelope: no inventory fields (added in v2 with the equipment phase).
+		var file := FileAccess.open(TEST_PATH, FileAccess.WRITE)
+		file.store_string(JSON.stringify({
+			"save_version": 1,
+			"profile": {"character_name": "Slotless", "level": 5, "gold": 40},
+		}))
+		file.close()
+		var loaded: PlayerProfile = SaveManager.load_profile()
+		assert_true(loaded != null, "v1 saves must migrate")
+		assert_eq(loaded.character_name, "Slotless")
+		assert_eq(loaded.level, 5)
+		assert_eq(loaded.gold, 40)
+		assert_eq(loaded.inventory_weapon_ids.size(), 0, "migrated satchel starts empty")
+		assert_eq(loaded.inventory_armour_ids.size(), 0)
+	)
+
+
 func test_disabled_writes_touch_nothing() -> void:
 	_with_test_path(func() -> void:
 		SaveManager.disk_writes_enabled = false

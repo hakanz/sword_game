@@ -16,6 +16,8 @@ func test_roundtrip_preserves_everything() -> void:
 	profile.victories = 12
 	profile.defeats = 3
 	profile.weapon_id = &"weapon.pit_hatchet"
+	profile.inventory_weapon_ids.append(&"weapon.bronze_gladius")
+	profile.inventory_armour_ids.append(&"armour.rag_hood")
 
 	var restored := PlayerProfile.from_dict(profile.to_dict())
 	assert_eq(restored.character_name, "Testo the Brave")
@@ -31,6 +33,8 @@ func test_roundtrip_preserves_everything() -> void:
 	assert_eq(restored.defeats, 3)
 	assert_eq(restored.weapon_id, &"weapon.pit_hatchet")
 	assert_eq(restored.armour_ids, profile.armour_ids)
+	assert_eq(restored.inventory_weapon_ids, profile.inventory_weapon_ids)
+	assert_eq(restored.inventory_armour_ids, profile.inventory_armour_ids)
 	assert_eq(restored.body_color.to_html(), profile.body_color.to_html())
 
 

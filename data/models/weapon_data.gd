@@ -14,7 +14,8 @@ extends Resource
 @export_range(0, 999) var damage_max: int = 3
 ## Flat bonus added to the attacker's accuracy score.
 @export_range(-50, 50) var accuracy_bonus: int = 0
-## Fraction of post-resistance damage that bypasses the armour pool (0-1).
+## Fraction of post-mitigation damage (after resistance AND stance reduction)
+## that bypasses the armour pool straight to HP (0-1).
 @export_range(0.0, 1.0) var armour_penetration: float = 0.0
 ## Distance bands this weapon can attack from (inclusive).
 @export var range_min: Enums.DistanceBand = Enums.DistanceBand.ADJACENT

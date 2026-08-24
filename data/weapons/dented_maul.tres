@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/weapon_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"weapon.dented_maul"
+name_key = "item.weapon.dented_maul.name"
+weapon_class = 3
+damage_type = 2
+damage_min = 14
+damage_max = 22
+accuracy_bonus = -3
+armour_penetration = 0.3
+range_min = 0
+range_max = 1
+energy_cost = 10
+tier = 2
+rarity = 1
+value = 95
+required_level = 5
+required_strength = 14
+required_agility = 0
+required_arcana = 0

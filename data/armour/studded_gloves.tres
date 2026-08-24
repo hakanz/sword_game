@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ArmourData" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/armour_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"armour.studded_gloves"
+name_key = "item.armour.studded_gloves.name"
+slot = 3
+armour_class = 0
+armour = 4
+evasion_mod = 0
+tier = 2
+rarity = 0
+value = 35
+required_level = 3
+required_strength = 0

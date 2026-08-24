@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/weapon_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"weapon.hunting_bow"
+name_key = "item.weapon.hunting_bow.name"
+weapon_class = 5
+damage_type = 1
+damage_min = 8
+damage_max = 13
+accuracy_bonus = 2
+armour_penetration = 0.08
+range_min = 1
+range_max = 3
+energy_cost = 7
+tier = 2
+rarity = 1
+value = 90
+required_level = 4
+required_strength = 0
+required_agility = 13
+required_arcana = 0

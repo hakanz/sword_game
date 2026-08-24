@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ArmourData" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/armour_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"armour.iron_helm"
+name_key = "item.armour.iron_helm.name"
+slot = 0
+armour_class = 2
+armour = 12
+evasion_mod = -2
+tier = 3
+rarity = 1
+value = 90
+required_level = 8
+required_strength = 0

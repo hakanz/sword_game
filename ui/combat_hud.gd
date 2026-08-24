@@ -169,7 +169,9 @@ func _refresh_stat_rows() -> void:
 
 
 func _set_row(label: Label, bar: ProgressBar, key: String, current: int, max_value: int) -> void:
-	label.text = "%s %d/%d" % [tr(key), current, max_value]
+	label.text = tr("combat.hud.stat_row").format({
+		"name": tr(key), "current": current, "max": max_value,
+	})
 	bar.max_value = maxi(max_value, 1)
 	bar.value = current
 
@@ -179,4 +181,6 @@ func _refresh_distance() -> void:
 
 
 func _append_log(line: String) -> void:
-	_log.append_text(line + "\n")
+	# add_text, never append_text: log lines contain fighter names, and
+	# append_text would parse any "[...]" in them as BBCode.
+	_log.add_text(line + "\n")

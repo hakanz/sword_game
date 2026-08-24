@@ -9,6 +9,7 @@ class_name ProgressionService
 class RewardResult:
 	extends RefCounted
 	var xp_gained: int = 0
+	var gold_gained: int = 0
 	var levels_gained: int = 0
 	var new_level: int = 1
 	var attribute_points_gained: int = 0
@@ -17,10 +18,13 @@ class RewardResult:
 
 static func apply_combat_rewards(
 		profile: PlayerProfile, config: ProgressionConfig,
-		result: CombatResult) -> RewardResult:
+		economy: EconomyConfig, result: CombatResult) -> RewardResult:
 	var reward := RewardResult.new()
 	reward.xp_gained = ProgressionCalculator.xp_reward(
 			config, profile.level, result.enemy_level, result.player_won)
+	reward.gold_gained = EconomyCalculator.combat_gold_reward(
+			economy, result.enemy_level, result.player_won)
+	profile.gold += reward.gold_gained
 
 	if result.player_won:
 		profile.victories += 1

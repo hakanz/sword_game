@@ -53,9 +53,39 @@ static func generate(player_level: int) -> CharacterData:
 				data.attributes.set(attr_name, int(data.attributes.get(attr_name)) + 1)
 				break
 
+	_assign_gear(data, level)
+
 	# Slight cosmetic variation so opponents don't look identical.
 	var hue_shift: float = RngService.randf_range(-0.04, 0.04)
 	data.body_color = Color.from_hsv(
 			wrapf(data.body_color.h + hue_shift, 0.0, 1.0),
 			data.body_color.s, data.body_color.v)
 	return data
+
+
+## Enemies draw from the same item catalog as the player, capped by tier so
+## gear power tracks level (T1 at 1-4, T2 at 5-8, T3 at 9+ ...).
+static func _assign_gear(data: CharacterData, level: int) -> void:
+	var max_tier: int = 1 + (level - 1) / 4
+	var weapon_pool: Array[WeaponData] = ItemDB.all_weapons().filter(
+			func(w: WeaponData) -> bool: return w.tier <= max_tier)
+	if not weapon_pool.is_empty():
+		data.weapon = RngService.pick(weapon_pool)
+
+	var pieces: Array[ArmourData] = []
+	_maybe_add_piece(pieces, Enums.EquipSlot.CHEST, 1.0, max_tier)
+	_maybe_add_piece(pieces, Enums.EquipSlot.HELMET, 0.7, max_tier)
+	_maybe_add_piece(pieces, Enums.EquipSlot.LEGS, 0.5, max_tier)
+	_maybe_add_piece(pieces, Enums.EquipSlot.BOOTS, 0.3, max_tier)
+	data.armour_pieces = pieces
+
+
+static func _maybe_add_piece(
+		pieces: Array[ArmourData], slot: Enums.EquipSlot,
+		probability: float, max_tier: int) -> void:
+	if not RngService.chance(probability):
+		return
+	var pool: Array[ArmourData] = ItemDB.all_armour().filter(
+			func(a: ArmourData) -> bool: return a.slot == slot and a.tier <= max_tier)
+	if not pool.is_empty():
+		pieces.append(RngService.pick(pool))

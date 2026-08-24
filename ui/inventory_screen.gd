@@ -1,0 +1,157 @@
+extends Control
+## Inventory (INVENTORY state): equipped gear + satchel, with equip swapping
+## via EquipmentService (which owns all requirement gating). Selling happens
+## in the shop, not here — one money path (charter §22 anti-exploit).
+
+@onready var _title: Label = %TitleLabel
+@onready var _gold: Label = %GoldLabel
+@onready var _weapons_title: Label = %WeaponsTitle
+@onready var _weapons_list: VBoxContainer = %WeaponsList
+@onready var _armour_title: Label = %ArmourTitle
+@onready var _armour_list: VBoxContainer = %ArmourList
+@onready var _back: Button = %BackButton
+
+
+func _ready() -> void:
+	if GameManager.profile == null:
+		SceneRouter.goto_main_menu()
+		return
+	_title.text = tr("inventory.title")
+	_weapons_title.text = tr("inventory.weapons")
+	_armour_title.text = tr("inventory.armour")
+	_back.text = tr("common.back")
+	_back.pressed.connect(SceneRouter.goto_main_menu)
+	_refresh()
+
+
+func _refresh() -> void:
+	var profile: PlayerProfile = GameManager.profile
+	_gold.text = tr("shop.gold").format({"gold": profile.gold})
+
+	for child in _weapons_list.get_children():
+		child.queue_free()
+	for child in _armour_list.get_children():
+		child.queue_free()
+
+	# Equipped weapon first, then satchel.
+	var equipped_weapon: WeaponData = ItemDB.weapon(profile.weapon_id)
+	_add_row(_weapons_list, equipped_weapon.name_key, _weapon_stats(equipped_weapon), "", true, Callable())
+	for id in profile.inventory_weapon_ids:
+		var weapon: WeaponData = ItemDB.weapon(id)
+		if weapon == null or weapon.id != id:
+			continue
+		var reason: String = EquipmentService.weapon_block_reason(profile, weapon)
+		_add_row(_weapons_list, weapon.name_key, _weapon_stats(weapon),
+				_requirement_text(reason, weapon, null), false,
+				func() -> void: _equip_weapon(profile, id))
+
+	for id in profile.armour_ids:
+		var piece: ArmourData = ItemDB.armour_piece(id)
+		if piece != null:
+			_add_row(_armour_list, piece.name_key, _armour_stats(piece), "", true, Callable())
+	for id in profile.inventory_armour_ids:
+		var piece: ArmourData = ItemDB.armour_piece(id)
+		if piece == null:
+			continue
+		var reason: String = EquipmentService.armour_block_reason(profile, piece)
+		_add_row(_armour_list, piece.name_key, _armour_stats(piece),
+				_requirement_text(reason, null, piece), false,
+				func() -> void: _equip_armour(profile, id))
+
+	if profile.inventory_weapon_ids.is_empty() and profile.inventory_armour_ids.is_empty():
+		var empty := Label.new()
+		empty.text = tr("inventory.empty")
+		empty.add_theme_font_size_override("font_size", 16)
+		empty.add_theme_color_override("font_color", Color(0.7, 0.65, 0.75))
+		_armour_list.add_child(empty)
+
+
+func _equip_weapon(profile: PlayerProfile, id: StringName) -> void:
+	if EquipmentService.equip_weapon(profile, id):
+		SaveManager.save_profile(profile)
+	_refresh()
+
+
+func _equip_armour(profile: PlayerProfile, id: StringName) -> void:
+	if EquipmentService.equip_armour(profile, id):
+		SaveManager.save_profile(profile)
+	_refresh()
+
+
+func _add_row(
+		list: VBoxContainer, name_key: String, stats: String, requirement: String,
+		equipped: bool, on_equip: Callable) -> void:
+	var panel := PanelContainer.new()
+	list.add_child(panel)
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 10)
+	margin.add_theme_constant_override("margin_right", 10)
+	margin.add_theme_constant_override("margin_top", 6)
+	margin.add_theme_constant_override("margin_bottom", 6)
+	panel.add_child(margin)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	margin.add_child(row)
+
+	var info := VBoxContainer.new()
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(info)
+	var name_label := Label.new()
+	name_label.text = tr(name_key)
+	name_label.add_theme_font_size_override("font_size", 19)
+	info.add_child(name_label)
+	var stats_label := Label.new()
+	stats_label.text = stats
+	stats_label.add_theme_font_size_override("font_size", 14)
+	stats_label.add_theme_color_override("font_color", Color(0.75, 0.72, 0.8))
+	info.add_child(stats_label)
+	if requirement != "":
+		var req_label := Label.new()
+		req_label.text = requirement
+		req_label.add_theme_font_size_override("font_size", 14)
+		req_label.add_theme_color_override("font_color", Color(0.95, 0.75, 0.4))
+		info.add_child(req_label)
+
+	if equipped:
+		var tag := Label.new()
+		tag.text = tr("inventory.equipped")
+		tag.add_theme_font_size_override("font_size", 16)
+		tag.add_theme_color_override("font_color", Color(0.6, 0.85, 0.55))
+		row.add_child(tag)
+	else:
+		var button := Button.new()
+		button.text = tr("inventory.equip")
+		button.custom_minimum_size = Vector2(120, 48)
+		button.disabled = requirement != ""
+		button.pressed.connect(on_equip)
+		row.add_child(button)
+
+
+func _weapon_stats(weapon: WeaponData) -> String:
+	return "%s  ·  %s" % [
+		tr("item.stat.damage").format({"min": weapon.damage_min, "max": weapon.damage_max}),
+		tr("item.stat.tier").format({"tier": weapon.tier}),
+	]
+
+
+func _armour_stats(piece: ArmourData) -> String:
+	return "%s  ·  %s" % [
+		tr("item.stat.armour").format({"armour": piece.armour}),
+		tr("item.stat.tier").format({"tier": piece.tier}),
+	]
+
+
+func _requirement_text(reason: String, weapon: WeaponData, piece: ArmourData) -> String:
+	if reason == "":
+		return ""
+	var value: int = 0
+	match reason:
+		"equip.requires_level":
+			value = weapon.required_level if weapon != null else piece.required_level
+		"equip.requires_strength":
+			value = weapon.required_strength if weapon != null else piece.required_strength
+		"equip.requires_agility":
+			value = weapon.required_agility
+		"equip.requires_arcana":
+			value = weapon.required_arcana
+	return tr(reason).format({"value": value})

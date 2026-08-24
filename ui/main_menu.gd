@@ -8,6 +8,8 @@ extends Control
 @onready var _continue: Button = %ContinueButton
 @onready var _new_game: Button = %NewGameButton
 @onready var _character: Button = %CharacterButton
+@onready var _inventory: Button = %InventoryButton
+@onready var _shop: Button = %ShopButton
 @onready var _language: Button = %LanguageButton
 @onready var _quit: Button = %QuitButton
 @onready var _version: Label = %VersionLabel
@@ -17,13 +19,17 @@ extends Control
 func _ready() -> void:
 	_continue.pressed.connect(_on_continue_pressed)
 	_new_game.pressed.connect(_on_new_game_pressed)
-	_character.pressed.connect(_on_character_pressed)
+	_character.pressed.connect(func() -> void: _open_profile_screen(SceneRouter.goto_character_sheet))
+	_inventory.pressed.connect(func() -> void: _open_profile_screen(SceneRouter.goto_inventory))
+	_shop.pressed.connect(func() -> void: _open_profile_screen(SceneRouter.goto_shop))
 	_language.pressed.connect(_on_language_pressed)
 	_quit.pressed.connect(_on_quit_pressed)
 	_confirm_new.confirmed.connect(_start_new_game)
 	# Web builds have no meaningful quit (charter §3: browser matrix).
 	_quit.visible = not OS.has_feature("web")
-	_version.text = "v%s" % ProjectSettings.get_setting("application/config/version", "0.0.0")
+	_version.text = tr("menu.version").format({
+		"version": ProjectSettings.get_setting("application/config/version", "0.0.0"),
+	})
 	_refresh()
 
 
@@ -31,11 +37,15 @@ func _refresh() -> void:
 	var has_save: bool = SaveManager.has_profile()
 	_continue.visible = has_save
 	_character.visible = has_save
+	_inventory.visible = has_save
+	_shop.visible = has_save
 	_title.text = tr("app.title")
 	_subtitle.text = tr("menu.subtitle")
 	_continue.text = tr("menu.continue")
 	_new_game.text = tr("menu.new_game")
 	_character.text = tr("menu.character")
+	_inventory.text = tr("menu.inventory")
+	_shop.text = tr("menu.shop")
 	_language.text = tr("menu.language")
 	_quit.text = tr("menu.quit")
 	_confirm_new.title = tr("menu.confirm_new_title")
@@ -61,11 +71,12 @@ func _start_new_game() -> void:
 	GameManager.start_new_game()
 
 
-func _on_character_pressed() -> void:
+## Loads the profile if needed, then routes; refreshes when the save is unreadable.
+func _open_profile_screen(route: Callable) -> void:
 	if GameManager.profile == null:
 		GameManager.profile = SaveManager.load_profile()
 	if GameManager.profile != null:
-		SceneRouter.goto_character_sheet()
+		route.call()
 	else:
 		_refresh()
 

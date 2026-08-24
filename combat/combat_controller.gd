@@ -5,7 +5,10 @@ extends Node2D
 ## enemy decisions -> CombatAI, presentation -> HUD/rigs. Status-effect
 ## resolution slots into _run_combat() when that phase lands.
 
-const GROUND_Y: float = 560.0
+## World coordinates are in the 1280x720 design space; WorldRoot re-centers
+## that space in the real (stretch-expanded) viewport so fighters stay
+## centered on every aspect ratio and clear of the anchored HUD bars.
+const GROUND_Y: float = 500.0
 const CENTER_X: float = 640.0
 ## Pixel gap between fighters per DistanceBand (ADJACENT..LONG).
 const BAND_GAP_PX: Array[float] = [130.0, 260.0, 390.0, 520.0]
@@ -19,7 +22,8 @@ var enemy: Combatant = null
 var turn_manager := TurnManager.new()
 var ctx := CombatContext.new()
 
-@onready var arena_visual: ArenaVisual = $ArenaVisual
+@onready var world_root: Node2D = $WorldRoot
+@onready var arena_visual: ArenaVisual = $WorldRoot/ArenaVisual
 @onready var hud: CombatHUD = $CombatHUD
 
 
@@ -34,14 +38,18 @@ func _ready() -> void:
 		enemy_data = ENEMY_FALLBACK.duplicate(true)
 		GameManager.next_opponent = enemy_data
 
-	arena_visual.arena = ARENA_FALLBACK
+	arena_visual.arena = GameManager.current_arena \
+			if GameManager.current_arena != null else ARENA_FALLBACK
+
+	get_viewport().size_changed.connect(_update_world_offset)
+	_update_world_offset()
 
 	player = Combatant.new()
 	player.name = "PlayerCombatant"
 	enemy = Combatant.new()
 	enemy.name = "EnemyCombatant"
-	add_child(player)
-	add_child(enemy)
+	world_root.add_child(player)
+	world_root.add_child(enemy)
 	player.setup(player_data, true, false)
 	enemy.setup(enemy_data, false, true)
 	_position_combatants(false)
@@ -57,10 +65,11 @@ func _run_combat() -> void:
 	while true:
 		var actor: Combatant = turn_manager.advance()
 		if turn_manager.is_round_start():
-			ctx.round_number = turn_manager.round_number
-			EventBus.round_started.emit(turn_manager.round_number)
+			# Cap check BEFORE announcing — no phantom round beyond the cap.
 			if turn_manager.round_number > CombatTuning.MAX_ROUNDS:
 				break
+			ctx.round_number = turn_manager.round_number
+			EventBus.round_started.emit(turn_manager.round_number)
 		actor.on_turn_started()
 		EventBus.turn_started.emit(actor)
 
@@ -174,15 +183,14 @@ func _finish() -> void:
 	if player.is_alive() != enemy.is_alive():
 		player_won = player.is_alive()
 	else:
-		# Round-cap stalemate: higher remaining HP fraction takes it.
-		player_won = float(player.current_hp) / player.max_hp >= float(enemy.current_hp) / enemy.max_hp
+		player_won = CombatResult.stalemate_player_won(player, enemy)
 
 	var victor: Combatant = player if player_won else enemy
 	var loser: Combatant = enemy if player_won else player
 
 	var result := CombatResult.new()
 	result.player_won = player_won
-	result.rounds = turn_manager.round_number
+	result.rounds = mini(turn_manager.round_number, CombatTuning.MAX_ROUNDS)
 	result.player_damage_dealt = player.damage_dealt_total
 	result.enemy_level = enemy.data.level
 	result.victor_name = victor.display_name()
@@ -222,12 +230,18 @@ func _spawn_float_text(over: Combatant, text: String, color: Color) -> void:
 	label.add_theme_color_override("font_outline_color", Color(0.1, 0.1, 0.1))
 	label.add_theme_constant_override("outline_size", 6)
 	label.position = over.position + Vector2(-24, -190)
-	add_child(label)
+	world_root.add_child(label)
 	var tween: Tween = create_tween()
 	tween.set_parallel(true)
 	tween.tween_property(label, "position:y", label.position.y - 46.0, 0.7)
 	tween.tween_property(label, "modulate:a", 0.0, 0.7).set_delay(0.25)
 	tween.chain().tween_callback(label.queue_free)
+
+
+## Centers the 1280x720 design space inside the actual expanded viewport.
+func _update_world_offset() -> void:
+	var size: Vector2 = get_viewport_rect().size
+	world_root.position = ((size - Vector2(1280.0, 720.0)) / 2.0).floor()
 
 
 func _delay(seconds: float) -> void:

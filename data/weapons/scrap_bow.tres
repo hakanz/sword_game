@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/weapon_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"weapon.scrap_bow"
+name_key = "item.weapon.scrap_bow.name"
+weapon_class = 5
+damage_type = 1
+damage_min = 5
+damage_max = 9
+accuracy_bonus = 1
+armour_penetration = 0.05
+range_min = 1
+range_max = 3
+energy_cost = 6
+tier = 1
+rarity = 0
+value = 35
+required_level = 1
+required_strength = 0
+required_agility = 10
+required_arcana = 0

@@ -81,19 +81,25 @@ static func _score(
 					- attack_cost * ENERGY_COST_WEIGHT * p.resource_care
 
 		Enums.ActionType.APPROACH:
-			if not actor.get_weapon().can_attack_from(ctx.distance):
-				# Out of range: closing in is the main way to become dangerous.
+			# Bonus ONLY when too far to fire. can_attack_from() is also false
+			# when too CLOSE (inside a ranged weapon's minimum band) — closing
+			# further would be exactly wrong there (retreat handles it).
+			if ctx.distance > actor.get_weapon().range_max:
 				return 15.0 * p.aggression
 			return 1.0
 
 		Enums.ActionType.RETREAT:
 			var value: float = 0.0
+			var weapon: WeaponData = actor.get_weapon()
 			if hp_fraction < 0.3:
 				value += 8.0 * p.caution
-			# Kiting instinct for ranged builds (matters from the equipment phase on).
-			if actor.get_weapon().range_max >= Enums.DistanceBand.MEDIUM \
+			if ctx.distance < weapon.range_min:
+				# Inside minimum range — opening distance is the only way to fire.
+				value += 14.0
+			elif weapon.range_max >= Enums.DistanceBand.MEDIUM \
 					and ctx.distance <= Enums.DistanceBand.CLOSE:
-				value += 12.0
+				# Kiting instinct: ranged builds prefer space over brawling.
+				value += 8.0
 			# Retreat fatigue: each flee this combat makes the next one less
 			# appealing — a hurt turtle cannot run laps forever.
 			return value / (1.0 + actor.total_retreats * RETREAT_FATIGUE)

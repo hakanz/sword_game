@@ -6,6 +6,7 @@ extends Control
 @onready var _rounds: Label = %RoundsLabel
 @onready var _damage: Label = %DamageLabel
 @onready var _xp: Label = %XPLabel
+@onready var _gold: Label = %GoldLabel
 @onready var _level_up: Label = %LevelUpLabel
 @onready var _points: Label = %PointsLabel
 @onready var _next_duel: Button = %NextDuelButton
@@ -25,6 +26,7 @@ func _ready() -> void:
 		_rounds.text = ""
 		_damage.text = ""
 		_xp.text = ""
+		_gold.visible = false
 		_level_up.visible = false
 		_points.visible = false
 		_next_duel.visible = false
@@ -38,11 +40,13 @@ func _ready() -> void:
 
 	var reward: ProgressionService.RewardResult = GameManager.consume_combat_rewards()
 	_xp.visible = reward != null
+	_gold.visible = reward != null
 	_level_up.visible = reward != null and reward.levels_gained > 0
 	_points.visible = _level_up.visible
 	_next_duel.visible = GameManager.profile != null
 	if reward != null:
 		_xp.text = tr("results.xp_gained").format({"xp": reward.xp_gained})
+		_gold.text = tr("results.gold_gained").format({"gold": reward.gold_gained})
 		if reward.levels_gained > 0:
 			_level_up.text = tr("results.level_up").format({"level": reward.new_level})
 			_points.text = tr("results.points_gained").format({

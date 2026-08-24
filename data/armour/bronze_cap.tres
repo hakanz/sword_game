@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ArmourData" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/armour_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"armour.bronze_cap"
+name_key = "item.armour.bronze_cap.name"
+slot = 0
+armour_class = 1
+armour = 9
+evasion_mod = -1
+tier = 2
+rarity = 1
+value = 45
+required_level = 4
+required_strength = 0
