@@ -11,6 +11,9 @@ extends Resource
 @export_range(0, 999) var armour: int = 5
 ## Evasion modifier — heavy armour typically negative, light positive/zero.
 @export_range(-50, 50) var evasion_mod: int = 0
+## Mobility gear bonus (session-5 owner design): counts toward the arena
+## move-distance tier alongside Agility. Boots/leg pieces mostly.
+@export_range(0, 5) var mobility_bonus: int = 0
 
 @export_group("Progression")
 @export_range(1, 8) var tier: int = 1

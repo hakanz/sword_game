@@ -20,12 +20,16 @@ const ACTION_ICONS: Dictionary = {
 const COST_COLOR := Color(0.98, 0.8, 0.35)
 const COOLDOWN_COLOR := Color(1.0, 0.45, 0.4)
 const AMMO_COLOR := Color(0.75, 0.9, 1.0)
-const RADIAL_RADIUS: float = 128.0
+const RADIAL_RADIUS: float = 142.0
 const RADIAL_BUTTON: float = 58.0
 
 var player: Combatant = null
 var enemy: Combatant = null
 var ctx: CombatContext = null
+
+## Thin XP progress bar under the player's name (built in code — session-5
+## owner design: level and XP always visible in the fight).
+var _xp_bar: ProgressBar = null
 
 @onready var _player_name: Label = %PlayerName
 @onready var _player_hp_label: Label = %PlayerHPLabel
@@ -103,6 +107,7 @@ func setup(new_player: Combatant, new_enemy: Combatant, combat_ctx: CombatContex
 
 	_player_name.text = player.display_name()
 	_enemy_name.text = enemy.display_name()
+	_build_xp_row()
 
 	player.hp_changed.connect(func(_c: int, _m: int) -> void: _refresh_stat_rows())
 	player.energy_changed.connect(func(_c: int, _m: int) -> void: _refresh_stat_rows())
@@ -114,6 +119,28 @@ func setup(new_player: Combatant, new_enemy: Combatant, combat_ctx: CombatContex
 	_refresh_stat_rows()
 	_refresh_status_rows()
 	_refresh_distance()
+
+
+## Level tag on the name + a slim gold XP bar right under it. Reads the
+## profile only (display) — progression math stays in the calculators.
+func _build_xp_row() -> void:
+	var profile: PlayerProfile = GameManager.profile
+	if profile == null:
+		return
+	_player_name.text = "%s  ·  %s" % [player.display_name(),
+			tr("combat.hud.level").format({"level": profile.level})]
+	_xp_bar = ProgressBar.new()
+	_xp_bar.custom_minimum_size = Vector2(0, 7)
+	_xp_bar.show_percentage = false
+	_xp_bar.max_value = ProgressionCalculator.xp_required(
+			GameManager.PROGRESSION_CONFIG, profile.level)
+	_xp_bar.value = profile.xp
+	_xp_bar.tooltip_text = "%s %d / %d" % [tr("combat.hud.xp"),
+			profile.xp, int(_xp_bar.max_value)]
+	_xp_bar.add_theme_stylebox_override("fill", UITheme.bar_fill(Color(0.93, 0.76, 0.35)))
+	var box: VBoxContainer = _player_name.get_parent()
+	box.add_child(_xp_bar)
+	box.move_child(_xp_bar, _player_name.get_index() + 1)
 
 
 # --- Radial action menu (owner design: actions orbit the gladiator) ---------
@@ -136,8 +163,9 @@ func _build_radial(actor: Combatant) -> void:
 		child.queue_free()
 	_radial.visible = true
 
-	# Screen anchor: the gladiator's chest (world root offset + fighter pos).
-	var center: Vector2 = actor.get_parent().position + actor.position + Vector2(0, -72)
+	# Screen anchor: the gladiator's chest (world root offset + fighter pos;
+	# rigs render at 1.35x since session 5).
+	var center: Vector2 = actor.get_parent().position + actor.position + Vector2(0, -95)
 	var toward_foe: float = 0.0 if ctx.foe_of(actor).position.x >= actor.position.x else PI
 
 	var entries: Array[Dictionary] = []
@@ -361,7 +389,11 @@ func _set_row(label: Label, bar: ProgressBar, key: String, current: int, max_val
 		"name": tr(key), "current": current, "max": max_value,
 	})
 	bar.max_value = maxi(max_value, 1)
-	bar.value = current
+	# Smooth drain/fill (modern-feel UI, session 5) — skip when unchanged.
+	if not is_equal_approx(bar.value, float(current)):
+		var tween: Tween = create_tween()
+		tween.tween_property(bar, "value", float(current), 0.3) \
+				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 
 func _refresh_distance() -> void:

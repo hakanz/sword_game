@@ -90,16 +90,43 @@ custom_minimum_size = Vector2(140, 48)
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 
-[node name="Scroll" type="ScrollContainer" parent="Margin/Layout"]
+[node name="Body" type="HBoxContainer" parent="Margin/Layout"]
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="Scroll" type="ScrollContainer" parent="Margin/Layout/Body"]
+layout_mode = 2
+size_flags_horizontal = 3
 horizontal_scroll_mode = 0
 
-[node name="ItemList" type="VBoxContainer" parent="Margin/Layout/Scroll"]
+[node name="ItemList" type="VBoxContainer" parent="Margin/Layout/Body/Scroll"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
+
+[node name="FittingPanel" type="PanelContainer" parent="Margin/Layout/Body"]
+layout_mode = 2
+
+[node name="FittingColumn" type="VBoxContainer" parent="Margin/Layout/Body/FittingPanel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="FittingAnchor" type="Control" parent="Margin/Layout/Body/FittingPanel/FittingColumn"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 220)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="FittingInfo" type="Label" parent="Margin/Layout/Body/FittingPanel/FittingColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.82, 0.79, 0.88, 1)
+horizontal_alignment = 1
+autowrap_mode = 2
+custom_minimum_size = Vector2(300, 58)
 
 [node name="BackButton" type="Button" parent="Margin/Layout"]
 unique_name_in_owner = true

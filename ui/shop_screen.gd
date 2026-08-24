@@ -13,6 +13,11 @@ var _mode: Mode = Mode.BUY
 ## Pending old-item sale offered after an auto-equip: {is_weapon, id, price}.
 var _pending_sale: Dictionary = {}
 
+## The fitting-booth doll (session-5 owner design): shows the player wearing
+## their CURRENT kit; hovering a row previews that item swapped in so the
+## change is visible before a single coin moves.
+var _doll: PlaceholderRig = null
+
 @onready var _title: Label = %TitleLabel
 @onready var _flavor: Label = %FlavorLabel
 @onready var _gold: Label = %GoldLabel
@@ -21,6 +26,8 @@ var _pending_sale: Dictionary = {}
 @onready var _tab_sell: Button = %SellTabButton
 @onready var _list: VBoxContainer = %ItemList
 @onready var _back: Button = %BackButton
+@onready var _fitting_anchor: Control = %FittingAnchor
+@onready var _fitting_info: Label = %FittingInfo
 @onready var _auto_equip_dialog: ConfirmationDialog = %AutoEquipDialog
 
 
@@ -44,7 +51,70 @@ func _ready() -> void:
 	_tab_buy.pressed.connect(func() -> void: _set_mode(Mode.BUY))
 	_tab_sell.pressed.connect(func() -> void: _set_mode(Mode.SELL))
 	_back.pressed.connect(SceneRouter.goto_town)
+
+	_doll = PlaceholderRig.new()
+	_doll.scale = Vector2(1.8, 1.8)
+	_fitting_anchor.add_child(_doll)
+	_fitting_anchor.resized.connect(_position_doll)
+	_position_doll.call_deferred()
+
 	_set_mode(Mode.BUY)
+
+
+func _position_doll() -> void:
+	_doll.position = Vector2(_fitting_anchor.size.x / 2.0, _fitting_anchor.size.y * 0.94)
+
+
+## Dresses the doll in the player's CURRENT kit, optionally previewing one
+## item swapped into its slot (armour) or hand (weapon).
+func _dress_doll(preview_item: Resource = null) -> void:
+	var profile: PlayerProfile = GameManager.profile
+	_doll.body_color = profile.body_color
+	_doll.accent_color = profile.accent_color
+
+	var shown_weapon: WeaponData = ItemDB.weapon(profile.weapon_id)
+	var pieces: Array[ArmourData] = []
+	for worn_id in profile.armour_ids:
+		var worn: ArmourData = ItemDB.armour_piece(worn_id)
+		if worn != null:
+			pieces.append(worn)
+
+	var info_lines: Array[String] = []
+	if preview_item is WeaponData:
+		var new_weapon := preview_item as WeaponData
+		if shown_weapon != null:
+			info_lines.append(tr("shop.preview_equipped").format(
+					{"item": tr(shown_weapon.name_key)}))
+			info_lines.append(tr("shop.delta_damage").format({
+				"old_min": shown_weapon.damage_min, "old_max": shown_weapon.damage_max,
+				"new_min": new_weapon.damage_min, "new_max": new_weapon.damage_max,
+			}))
+		shown_weapon = new_weapon
+		info_lines.append(tr("shop.preview_new").format(
+				{"item": tr(new_weapon.name_key)}))
+	elif preview_item is ArmourData:
+		var piece := preview_item as ArmourData
+		var old_armour: int = 0
+		for index in range(pieces.size() - 1, -1, -1):
+			if pieces[index].slot == piece.slot:
+				old_armour = pieces[index].armour
+				info_lines.append(tr("shop.preview_equipped").format(
+						{"item": tr(pieces[index].name_key)}))
+				pieces.remove_at(index)
+		pieces.append(piece)
+		info_lines.append(tr("shop.delta_armour").format(
+				{"old": old_armour, "new": piece.armour}))
+		info_lines.append(tr("shop.preview_new").format(
+				{"item": tr(piece.name_key)}))
+	elif shown_weapon != null:
+		info_lines.append(tr("shop.preview_equipped").format(
+				{"item": tr(shown_weapon.name_key)}))
+
+	_doll.weapon = shown_weapon
+	_doll.weapon_class = shown_weapon.weapon_class if shown_weapon != null \
+			else Enums.WeaponClass.UNARMED
+	_doll.equipment = pieces
+	_fitting_info.text = "\n".join(info_lines)
 
 
 func _set_mode(mode: Mode) -> void:
@@ -92,12 +162,21 @@ func _refresh() -> void:
 			empty.add_theme_font_size_override("font_size", 18)
 			_list.add_child(empty)
 
+	# Re-sync the fitting doll with whatever is actually worn now.
+	_dress_doll()
+
 
 func _cheaper_first(a: Resource, b: Resource) -> bool:
 	return int(a.get("value")) < int(b.get("value"))
 
 
 func _add_buy_row(profile: PlayerProfile, item: Resource, is_weapon: bool) -> void:
+	# Level-locked stock is SEALED (session-5 owner design): the crate shows
+	# on the shelf, its contents stay hidden until the level unlocks — then
+	# the full stats and benefits open up.
+	if profile.level < int(item.get("required_level")):
+		_add_sealed_row(item, is_weapon)
+		return
 	var price: int = EconomyCalculator.buy_price(
 			GameManager.ECONOMY_CONFIG, item.get("value"), profile.attributes.charisma)
 	var owned: bool = EquipmentService.owns_weapon(profile, item.get("id")) if is_weapon \
@@ -139,8 +218,48 @@ func _add_sell_row(profile: PlayerProfile, item: Resource, is_weapon: bool) -> v
 	row.add_child(button)
 
 
+## A sealed crate row: silhouette glyph, no name, no stats — just the level
+## that will crack it open.
+func _add_sealed_row(item: Resource, is_weapon: bool) -> void:
+	var panel := PanelContainer.new()
+	panel.modulate = Color(0.72, 0.7, 0.78)
+	_list.add_child(panel)
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 10)
+	margin.add_theme_constant_override("margin_right", 10)
+	margin.add_theme_constant_override("margin_top", 6)
+	margin.add_theme_constant_override("margin_bottom", 6)
+	panel.add_child(margin)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	margin.add_child(row)
+
+	var glyph: Texture2D = ItemIcons.weapon_icon(item) if is_weapon else ItemIcons.armour_icon(item)
+	var icon: Control = ItemIcons.make_icon(glyph, int(item.get("tier")))
+	icon.modulate = Color(0.12, 0.1, 0.14)  # blacked-out silhouette
+	row.add_child(icon)
+
+	var info := VBoxContainer.new()
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(info)
+	var name_label := Label.new()
+	name_label.text = tr("shop.locked_name")
+	name_label.add_theme_font_size_override("font_size", 19)
+	name_label.add_theme_color_override("font_color", Color(0.6, 0.56, 0.66))
+	info.add_child(name_label)
+	var hint := Label.new()
+	hint.text = tr("shop.locked_hint").format({"level": int(item.get("required_level"))})
+	hint.add_theme_font_size_override("font_size", 14)
+	hint.add_theme_color_override("font_color", Color(0.85, 0.7, 0.4))
+	info.add_child(hint)
+
+
 func _make_row(item: Resource, is_weapon: bool, requirement: String) -> HBoxContainer:
 	var panel := PanelContainer.new()
+	# Hovering any readable row previews the item on the fitting doll;
+	# leaving the row re-dresses the doll in the ACTUAL kit.
+	panel.mouse_entered.connect(_dress_doll.bind(item))
+	panel.mouse_exited.connect(_dress_doll.bind(null))
 	_list.add_child(panel)
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 10)
@@ -279,10 +398,13 @@ func _weapon_stats(weapon: WeaponData) -> String:
 
 
 func _armour_stats(piece: ArmourData) -> String:
-	return "%s  ·  %s" % [
+	var text: String = "%s  ·  %s" % [
 		tr("item.stat.armour").format({"armour": piece.armour}),
 		tr("item.stat.tier").format({"tier": piece.tier}),
 	]
+	if piece.mobility_bonus > 0:
+		text += "  ·  " + tr("item.stat.mobility").format({"value": piece.mobility_bonus})
+	return text
 
 
 ## Formats the blocking requirement (empty string when unblocked).

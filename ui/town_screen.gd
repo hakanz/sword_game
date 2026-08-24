@@ -39,6 +39,19 @@ func _ready() -> void:
 	_subtitle.text = tr("town.subtitle")
 	_name_label.text = "%s  ·  %s" % [profile.character_name,
 			tr("sheet.level").format({"level": profile.level})]
+	# Always-visible XP progress under the name (session-5 owner design).
+	var xp_needed: int = ProgressionCalculator.xp_required(
+			GameManager.PROGRESSION_CONFIG, profile.level)
+	var xp_bar := ProgressBar.new()
+	xp_bar.custom_minimum_size = Vector2(0, 8)
+	xp_bar.show_percentage = false
+	xp_bar.max_value = xp_needed
+	xp_bar.value = profile.xp
+	xp_bar.tooltip_text = "%s %d / %d" % [tr("sheet.xp"), profile.xp, xp_needed]
+	xp_bar.add_theme_stylebox_override("fill", UITheme.bar_fill(Color(0.93, 0.76, 0.35)))
+	var status_box: VBoxContainer = _name_label.get_parent()
+	status_box.add_child(xp_bar)
+	status_box.move_child(xp_bar, _name_label.get_index() + 1)
 	_gold_icon.texture = preload("res://assets/icons/coin.svg")
 	_gold_label.text = str(profile.gold)
 	_back.text = tr("town.leave")
@@ -53,4 +66,13 @@ func _ready() -> void:
 		button.add_theme_constant_override("icon_max_width", 34)
 		button.expand_icon = true
 		button.pressed.connect(location[2])
+		# The arena's call (session-5): when the tournament is due, the duel
+		# card becomes the tournament summons — golden and pulsing.
+		if location[0] == "town.fight" and GameManager.tournament_required():
+			button.text = tr("town.tournament_call")
+			button.add_theme_color_override("font_color", Color(1.0, 0.84, 0.3))
+			var pulse: Tween = create_tween()
+			pulse.set_loops()
+			pulse.tween_property(button, "modulate", Color(1.15, 1.08, 0.9), 0.55)
+			pulse.tween_property(button, "modulate", Color.WHITE, 0.55)
 		_grid.add_child(button)

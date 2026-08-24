@@ -67,6 +67,12 @@ static func execute(
 			if type == Enums.ActionType.DEFEND else maxi(actor.consecutive_defends - 1, 0)
 	if type == Enums.ActionType.RETREAT:
 		actor.total_retreats += 1
+
+	# Effectiveness tally (session-5 XP design): every action counts the
+	# denominator; only strikes that actually landed count the numerator.
+	actor.actions_taken += 1
+	if result.hit:
+		actor.hits_landed += 1
 	return result
 
 

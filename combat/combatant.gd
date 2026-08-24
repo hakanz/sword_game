@@ -55,6 +55,15 @@ var death_announced: bool = false
 ## Total damage this fighter dealt (HP + armour), for the results screen.
 var damage_dealt_total: int = 0
 
+## Cells covered by one approach/retreat (agility + gear tiers, computed once
+## at setup — see ProgressionCalculator.move_cells).
+var move_cells: int = 1
+
+## Combat-effectiveness tally (session-5 XP design): actions taken and
+## strikes that actually landed — stalling with filler moves earns less XP.
+var actions_taken: int = 0
+var hits_landed: int = 0
+
 ## Consecutive DEFEND actions (leaky counter) — the AI applies diminishing
 ## returns to turtling so two cautious fighters can never deadlock.
 var consecutive_defends: int = 0
@@ -82,6 +91,7 @@ func setup(character: CharacterData, player_controlled: bool, facing_left: bool)
 	defence_rating = ProgressionCalculator.defence_rating(attrs)
 	evasion_value = ProgressionCalculator.evasion(attrs, data.total_evasion_mod())
 	initiative_value = ProgressionCalculator.initiative(attrs)
+	move_cells = ProgressionCalculator.move_cells(attrs.agility, data.total_mobility_bonus())
 
 	main_weapon = data.weapon
 	sidearm = data.weapon.sidearm
@@ -96,7 +106,13 @@ func setup(character: CharacterData, player_controlled: bool, facing_left: bool)
 	rig.weapon_class = get_weapon().weapon_class
 	rig.equipment = data.armour_pieces
 	rig.facing_left = facing_left
+	# Arena zoom (session-5 owner design: fighters must dominate the sand).
+	rig.scale = Vector2(1.35, 1.35)
 	add_child(rig)
+	# Low HP turns the resting face worried (rig expression baseline).
+	hp_changed.connect(func(current: int, max_value: int) -> void:
+		if rig != null:
+			rig.set_worried_baseline(current < roundi(max_value * 0.35)))
 
 
 func display_name() -> String:

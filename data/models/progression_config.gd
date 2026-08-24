@@ -26,3 +26,6 @@ extends Resource
 @export_range(0.0, 1.0) var level_gap_step: float = 0.15
 @export_range(0.1, 1.0) var level_gap_min: float = 0.4
 @export_range(1.0, 5.0) var level_gap_max: float = 2.0
+## Champion (tournament final) win XP multiplier — the boss fight is the
+## level pacer (session-5 owner design).
+@export_range(1.0, 5.0) var champion_xp_multiplier: float = 1.5

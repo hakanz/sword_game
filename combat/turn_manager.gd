@@ -2,7 +2,14 @@ class_name TurnManager
 extends RefCounted
 ## Turn/round sequencing (charter §11). Pure logic, no scene access —
 ## the CombatController owns presentation and event emission.
-## Order: initiative descending; ties broken by a seeded random roll.
+## Order: the player-controlled fighter ALWAYS opens the fight (owner design,
+## session 5 — the first move belongs to the hero); everyone else follows by
+## initiative descending, ties broken by a seeded random roll. AI-vs-AI runs
+## (smoke test, §35 simulator) have no player flag, so pure initiative rules.
+
+## Priority boost that puts a player-controlled fighter ahead of any
+## initiative value (initiative*1000 + tiebreak tops out well below this).
+const PLAYER_FIRST_KEY: int = 100_000_000
 
 var round_number: int = 0
 
@@ -18,7 +25,8 @@ func setup(combatants: Array[Combatant]) -> void:
 		keyed.append({
 			"combatant": combatant,
 			# Initiative dominates; the random component only breaks exact ties.
-			"key": combatant.initiative_value * 1000 + RngService.randi_range(0, 999),
+			"key": (PLAYER_FIRST_KEY if combatant.is_player_controlled else 0)
+					+ combatant.initiative_value * 1000 + RngService.randi_range(0, 999),
 		})
 	keyed.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["key"] > b["key"])
 	_order.clear()

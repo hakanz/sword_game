@@ -61,7 +61,10 @@ func _run_matchup(label: String, battles: int, base_seed: int, factory: Callable
 func _simulate(data_a: CharacterData, data_b: CharacterData) -> Dictionary:
 	var a := Combatant.new()
 	var b := Combatant.new()
-	a.setup(data_a, true, false)
+	# BOTH sides are plain AI: the sim must measure initiative, not the
+	# player-first opening rule (session-5 review finding — a true flag here
+	# handed fighter A every opening turn and biased the win rates).
+	a.setup(data_a, false, false)
 	b.setup(data_b, false, true)
 	var ctx := CombatContext.new()
 	ctx.setup(a, b)

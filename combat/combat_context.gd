@@ -51,11 +51,17 @@ func can_retreat(actor: Combatant) -> bool:
 	return target >= 0 and target < CELLS
 
 
-## Moves ONLY the actor one cell toward their foe.
+## Moves ONLY the actor toward their foe, up to their mobility tier
+## (Combatant.move_cells) — always stopping at separation 1 (never sharing
+## or crossing the foe's cell).
 func approach(actor: Combatant) -> void:
-	actor.cell += direction_to_foe(actor)
+	var steps: int = mini(maxi(actor.move_cells, 1), separation() - 1)
+	actor.cell += direction_to_foe(actor) * steps
 
 
-## Moves ONLY the actor one cell away from their foe.
+## Moves ONLY the actor away from their foe, up to their mobility tier,
+## clamped by the arena wall (cells 0 / CELLS-1).
 func retreat(actor: Combatant) -> void:
-	actor.cell -= direction_to_foe(actor)
+	var direction: int = direction_to_foe(actor)
+	var target: int = clampi(actor.cell - direction * maxi(actor.move_cells, 1), 0, CELLS - 1)
+	actor.cell = target

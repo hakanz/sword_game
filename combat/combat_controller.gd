@@ -130,7 +130,7 @@ func _execute(actor: Combatant, decision: CombatDecision) -> void:
 	if is_strike:
 		if decision.type == Enums.ActionType.SKILL:
 			AudioManager.play(&"skill")
-		actor.rig.play_attack_lunge()
+		actor.rig.play_attack_lunge(ranged_strike)
 		await _delay(0.16)
 
 	var result: ActionResult = CombatResolver.execute(actor, foe, ctx, decision)
@@ -146,18 +146,23 @@ func _execute(actor: Combatant, decision: CombatDecision) -> void:
 				if result.applied_status != null:
 					_spawn_float_text(actor, tr(result.applied_status.name_key),
 							result.applied_status.tint)
-					CombatVfx.spawn_sparks(world_root, actor.position + Vector2(0, -80),
-							result.applied_status.tint, 10, true)
+					CombatVfx.spawn_status_burst(world_root,
+							actor.position + Vector2(0, -100), result.applied_status)
 				await _delay(0.4)
 			Enums.ActionType.APPROACH, Enums.ActionType.RETREAT:
 				AudioManager.play(&"step")
 				_animate_step(actor)
 				await _delay(0.3)
 			Enums.ActionType.REST:
+				actor.rig.play_rest()
+				CombatVfx.spawn_sparks(world_root, actor.position + Vector2(0, -90),
+						Color(0.5, 0.9, 0.45), 12, true)
 				if result.hp_restored > 0:
 					_spawn_float_text(actor, "+%d" % result.hp_restored, Color(0.5, 0.9, 0.45))
+				await _delay(0.35)
 			Enums.ActionType.SWITCH_WEAPON:
 				AudioManager.play(&"switch")
+				actor.rig.play_switch_flourish()
 				_spawn_float_text(actor, tr(actor.get_weapon().name_key),
 						Color(0.85, 0.85, 0.95))
 				await _delay(0.35)
@@ -194,8 +199,8 @@ func _animate_arrow(from: Combatant, to: Combatant, hit: bool) -> void:
 	AudioManager.play(&"arrow")
 	var arrow := ArrowVisual.new()
 	world_root.add_child(arrow)
-	arrow.position = from.position + Vector2(0, -85)
-	var target: Vector2 = to.position + Vector2(0, -70)
+	arrow.position = from.position + Vector2(0, -112)
+	var target: Vector2 = to.position + Vector2(0, -92)
 	if not hit:
 		var overshoot: float = 90.0 * signf(target.x - arrow.position.x)
 		target += Vector2(overshoot, -18)
@@ -213,8 +218,16 @@ func _present_strike(result: ActionResult, foe: Combatant) -> void:
 		foe.rig.play_hit_flash()
 		var armour_only: bool = result.mitigation.hp_damage == 0
 		AudioManager.play(&"armour_hit" if armour_only else &"hit")
-		CombatVfx.spawn_sparks(world_root, foe.position + Vector2(0, -75),
+		# Melee blows carve a visible arc; the element burst rides on-hit
+		# statuses (flame skill -> flame at the target).
+		if not result.actor.get_weapon().is_ranged():
+			CombatVfx.spawn_slash(world_root, foe.position + Vector2(0, -95),
+					foe.position.x < result.actor.position.x)
+		CombatVfx.spawn_sparks(world_root, foe.position + Vector2(0, -95),
 				Color(0.72, 0.8, 0.95) if armour_only else Color(1.0, 0.55, 0.25))
+		if result.applied_status != null:
+			CombatVfx.spawn_status_burst(world_root,
+					foe.position + Vector2(0, -95), result.applied_status)
 		_shake(5.0 if armour_only else 8.0)
 		_spawn_float_text(foe, str(result.mitigation.after_stance),
 				Color(1.0, 0.85, 0.3) if armour_only else Color(1.0, 0.35, 0.3))
@@ -223,7 +236,7 @@ func _present_strike(result: ActionResult, foe: Combatant) -> void:
 	else:
 		AudioManager.play(&"miss")
 		foe.rig.play_miss_dodge()
-		CombatVfx.spawn_sparks(world_root, foe.position + Vector2(-18, -40),
+		CombatVfx.spawn_sparks(world_root, foe.position + Vector2(-18, -50),
 				Color(0.75, 0.7, 0.6, 0.6), 6, true)
 		_spawn_float_text(foe, tr("combat.float.miss"), Color(0.8, 0.8, 0.85))
 	await _delay(0.35)
@@ -243,6 +256,8 @@ func _finish() -> void:
 	result.player_won = player_won
 	result.rounds = mini(turn_manager.round_number, CombatTuning.MAX_ROUNDS)
 	result.player_damage_dealt = player.damage_dealt_total
+	result.player_hits = player.hits_landed
+	result.player_actions = player.actions_taken
 	result.enemy_level = enemy.data.level
 	if enemy.data.is_champion:
 		result.champion_id = enemy.data.id
@@ -264,10 +279,19 @@ func _cell_to_x(cell: int) -> float:
 
 
 ## Animates ONLY the fighter who moved (movement is a personal action).
+## Speed follows Agility (session-5 owner design): nimble fighters cross the
+## sand visibly faster; a small hop sells the footwork.
 func _animate_step(actor: Combatant) -> void:
+	var agility: int = actor.data.attributes.agility
+	var duration: float = clampf(0.34 - 0.012 * (agility - 8), 0.16, 0.42)
 	var tween: Tween = create_tween()
-	tween.tween_property(actor, "position:x", _cell_to_x(actor.cell), 0.28) \
+	tween.tween_property(actor, "position:x", _cell_to_x(actor.cell), duration) \
 			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	var hop: Tween = create_tween()
+	hop.tween_property(actor, "position:y", GROUND_Y - 7.0, duration * 0.45) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	hop.tween_property(actor, "position:y", GROUND_Y, duration * 0.55) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 
 
 func _spawn_float_text(over: Combatant, text: String, color: Color) -> void:
@@ -277,7 +301,7 @@ func _spawn_float_text(over: Combatant, text: String, color: Color) -> void:
 	label.add_theme_color_override("font_color", color)
 	label.add_theme_color_override("font_outline_color", Color(0.1, 0.1, 0.1))
 	label.add_theme_constant_override("outline_size", 6)
-	label.position = over.position + Vector2(-24, -190)
+	label.position = over.position + Vector2(-24, -235)
 	world_root.add_child(label)
 	var tween: Tween = create_tween()
 	tween.set_parallel(true)

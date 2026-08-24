@@ -190,3 +190,71 @@ must read as real drawings on the character; spectators must be drawn figures.
 green (switch->shoot trace verified); Web + Windows re-exported, exe smoke
 green (seed 555). Screenshot-iterated: 3 capture rounds, fighter close-ups
 inspected at 3x.
+
+---
+
+## Session 5 — 2026-08-25 — Owner batch 3: agency, animation, the arena's call (Claude)
+
+Thirteen owner directives, designed and shipped as one coherent pass:
+player agency (free point-buy), combat feel (living rig, elemental VFX),
+fairness pressure (effectiveness XP), and a progression spine (forced
+tournaments as boss ladders).
+
+### Added
+- **Free point-buy creation:** all 8 attributes player-set (56-pt budget,
+  floors/ceilings, presets = quick-fill templates); live derived-stat
+  readout via the real calculators; unspent points carry into the game as
+  attribute points. Options column scrolls (no more overflow).
+- **Player-first turn order:** the hero ALWAYS opens the fight
+  (TurnManager priority key); AI-vs-AI keeps pure initiative (sim/CI).
+- **Mobility tiers:** approach/retreat covers 1 cell, or 2 when
+  agility + 2x gear mobility >= 14 (ProgressionCalculator.move_cells);
+  clamped at the foe's cell and the wall. ArmourData.mobility_bonus on
+  boots (duelist_boots, windrunner_boots, gale_greaves); step animation
+  speed follows agility.
+- **Effectiveness XP:** landed strikes / actions taken multiplies XP in
+  [0.65, 1.25] — stalling earns less, fierce fighting more (results line
+  says why); champion finals pay 1.5x (level pacing anchor).
+- **The arena's call:** once the tournament is open and the player reaches
+  the region band midpoint, normal duels LOCK until the bracket is fought
+  (GameManager.tournament_required, guarded in start_next_duel; town card
+  turns golden + pulses). Bracket opponents are ELITES (+1 gear tier,
+  fuller armour, always 2 skills); completing a bracket pays a house
+  bonus (economy.tournament_gold_bonus, shown on results).
+- **Rig v4 — the living gladiator:** weapon arm is a pivoting child node
+  (idle sway, wind-up->whip melee swing, draw-and-loose bow aim, switch
+  flourish, rest crouch); face expressions (fierce on attack, pain when
+  struck, worried baseline under 35% HP); fighters render 1.35x in the
+  arena (owner: fighters must dominate the sand).
+- **Elemental skill VFX:** status-keyed bursts (burn=rising flame,
+  venom=drips, bleed=spatter, stun=dazed motes) + melee slash arc.
+- **Fitting booth:** both shops show the player wearing their CURRENT
+  kit; hovering a row previews the item ON the body with old->new damage/
+  armour delta lines; buying re-dresses the doll. Level-locked stock shows
+  as SEALED crates (silhouette + unlock level) until the level opens it.
+- **Content:** +8 weapons (falx, warhammer, trident, wolfsplitter axe,
+  stormcaller rod, greatsword, sunforged spear, composite warbow) and
+  +8 armour (mobility boots x2, pauldrons, manica, hauberk, girdle,
+  crested helm, bulwark plate), EN+TR names, registry updated.
+- **UI:** level + slim gold XP bar in the combat HUD and town status
+  panel; stat bars tween smoothly; XP tooltips.
+
+### Fixed
+- Rig idle body-bob tween stomped externally-set positions (creation/shop
+  dolls rendered at panel top) — idle now animates ONLY the arm rotation.
+- Creation layout overflowed 720p (MarginContainer grew both ways,
+  clipping title + footer) — options column now scrolls, sizes compacted.
+
+### Fixed (session-5 adversarial review, 8-agent workflow, 2 confirmed)
+- MAJOR: battle_sim flagged fighter A player-controlled, so the new
+  player-first rule handed A every opening turn and biased sim win rates —
+  sim now sets both sides plain AI (pure initiative, as documented).
+- Shop fitting-doll hover preview lingered after the pointer left a row —
+  mouse_exited now re-dresses the doll in the actual kit.
+
+### Tests / balance
+23 suites / 2699 assertions green (new test_session5_rules.gd: turn
+order, mobility tiers/clamps, effectiveness bounds, the arena's call,
+house bonus, elite tiers); smoke seeds 7/99/424242 + archer 31337 green;
+§35 sim (unbiased, post-fix): default kit 89/78/76% vs generated L1/5/10;
+presets 43-53.5%, 0 stalemates, 19-22 rounds.

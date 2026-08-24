@@ -88,3 +88,20 @@ func _change_scene(path: String) -> void:
 	get_tree().paused = false
 	# Deferred so a scene change is safe from within signal callbacks.
 	get_tree().change_scene_to_file.call_deferred(path)
+	_fade_in_new_scene.call_deferred()
+
+
+## Gentle fade-in on every arrival (session-5 UI polish). Runs after the
+## deferred scene change; skipped headless/smoke where no one watches.
+func _fade_in_new_scene() -> void:
+	if GameManager.smoke_test:
+		return
+	await get_tree().process_frame
+	var scene: Node = get_tree().current_scene
+	if scene == null or not (scene is CanvasItem):
+		return
+	var canvas := scene as CanvasItem
+	canvas.modulate.a = 0.0
+	var tween: Tween = canvas.create_tween()
+	tween.tween_property(canvas, "modulate:a", 1.0, 0.22) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)

@@ -36,6 +36,15 @@ static func initiative(attrs: AttributeBlock) -> int:
 	return attrs.agility * 2 + attrs.attack
 
 
+## Cells covered by one approach/retreat action (session-5 owner design):
+## movement is EARNED, tier by tier — Agility plus gear mobility, never a
+## flat rate for everyone. Tiers deliberately coarse (no runaway speed):
+##   score < 14 -> 1 cell   |   score >= 14 -> 2 cells (cap)
+## where score = agility + 2 * summed gear mobility_bonus.
+static func move_cells(agility: int, gear_mobility: int = 0) -> int:
+	return 2 if agility + gear_mobility * 2 >= 14 else 1
+
+
 ## XP needed to advance FROM `level` to `level + 1` (charter §14 curve).
 static func xp_required(config: ProgressionConfig, level: int) -> int:
 	return roundi(config.base_xp * pow(level, config.xp_exponent))
@@ -43,17 +52,31 @@ static func xp_required(config: ProgressionConfig, level: int) -> int:
 
 ## XP awarded for a duel vs a level-`enemy_level` opponent. Losing still
 ## grants a fraction; fighting far below your level is clamped down.
+## `hits`/`actions` feed the effectiveness multiplier (session-5 owner
+## design): XP follows REAL fighting — landed strikes per action taken —
+## so stalling with filler moves earns less, never more. Pass actions <= 0
+## for a neutral multiplier (old callers, sims without a tally).
 static func xp_reward(
 		config: ProgressionConfig, player_level: int, enemy_level: int,
-		player_won: bool) -> int:
+		player_won: bool, hits: int = -1, actions: int = -1) -> int:
 	var base: float = config.xp_win_base * pow(enemy_level, config.xp_win_exponent)
 	var gap: float = clampf(
 			1.0 + config.level_gap_step * (enemy_level - player_level),
 			config.level_gap_min, config.level_gap_max)
-	var xp: float = base * gap
+	var xp: float = base * gap * combat_effectiveness(hits, actions)
 	if not player_won:
 		xp *= config.xp_loss_fraction
 	return maxi(roundi(xp), 1)
+
+
+## Effectiveness multiplier in [0.65, 1.25] — deliberately narrow (the owner
+## asked for fairness pressure, not a punishment system): a fight spent
+## landing blows tops out at +25%, a fight spent circling bottoms at -35%.
+static func combat_effectiveness(hits: int, actions: int) -> float:
+	if actions <= 0:
+		return 1.0
+	var hit_ratio: float = clampf(float(hits) / float(actions), 0.0, 1.0)
+	return clampf(0.65 + 0.9 * hit_ratio, 0.65, 1.25)
 
 
 ## Flat damage added to a weapon roll from attributes. Weights differ per

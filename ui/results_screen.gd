@@ -77,8 +77,27 @@ func _ready() -> void:
 	elif GameManager.tournament_failed:
 		_tournament.text = tr("results.tournament_failed")
 	_next_duel.visible = GameManager.profile != null and not mid_tournament
+	# The arena's call: when the tournament is due, the quick-duel button
+	# becomes the summons and routes to the region list.
+	if _next_duel.visible and GameManager.tournament_required():
+		_next_duel.text = tr("town.tournament_call")
+		_next_duel.add_theme_color_override("font_color", Color(1.0, 0.84, 0.3))
+	if GameManager.tournament_completed and reward != null \
+			and reward.tournament_bonus_gold > 0:
+		_tournament.text += "\n" + tr("results.tournament_bonus").format({
+			"gold": reward.tournament_bonus_gold,
+		})
 	if reward != null:
-		_xp.text = tr("results.xp_gained").format({"xp": reward.xp_gained})
+		var xp_text: String = tr("results.xp_gained").format({"xp": reward.xp_gained})
+		# Effectiveness verdict (session-5): the fight's XP already reflects
+		# it — the line just tells the player WHY.
+		var effectiveness: float = ProgressionCalculator.combat_effectiveness(
+				result.player_hits, result.player_actions)
+		if effectiveness >= 1.1:
+			xp_text += "  ·  " + tr("results.xp_fierce")
+		elif effectiveness <= 0.8:
+			xp_text += "  ·  " + tr("results.xp_stalled")
+		_xp.text = xp_text
 		_gold.text = tr("results.gold_gained").format({"gold": reward.gold_gained})
 		if reward.levels_gained > 0:
 			_level_up.text = tr("results.level_up").format({"level": reward.new_level})
@@ -108,4 +127,6 @@ func _on_back_pressed() -> void:
 
 
 func _on_next_duel_pressed() -> void:
+	# start_next_duel itself honors the arena's call (routes to the region
+	# list when the tournament is due).
 	GameManager.start_next_duel()

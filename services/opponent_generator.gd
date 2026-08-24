@@ -45,7 +45,10 @@ static func generate_for_arena(player_level: int, arena: ArenaData) -> Character
 	return generate_at_level(level)
 
 
-static func generate_at_level(level: int) -> CharacterData:
+## `elite` fighters (tournament brackets) fight at the SAME level but come
+## properly kitted: one gear tier higher, armour on every likely slot, and
+## a full skill loadout — skilled, well-equipped rivals, not stat piles.
+static func generate_at_level(level: int, elite: bool = false) -> CharacterData:
 	var data: CharacterData = BASE.duplicate(true)
 	data.id = &"character.generated"
 	data.is_name_localization_key = false
@@ -64,8 +67,8 @@ static func generate_at_level(level: int) -> CharacterData:
 				data.attributes.set(attr_name, int(data.attributes.get(attr_name)) + 1)
 				break
 
-	_assign_gear(data, level)
-	_assign_skills(data, level)
+	_assign_gear(data, level, elite)
+	_assign_skills(data, level, elite)
 
 	# Slight cosmetic variation so opponents don't look identical.
 	var hue_shift: float = RngService.randf_range(-0.04, 0.04)
@@ -77,8 +80,8 @@ static func generate_at_level(level: int) -> CharacterData:
 
 ## Enemies draw from the same item catalog as the player, capped by tier so
 ## gear power tracks level (T1 at 1-4, T2 at 5-8, T3 at 9+ ...).
-static func _assign_gear(data: CharacterData, level: int) -> void:
-	var max_tier: int = 1 + (level - 1) / 4
+static func _assign_gear(data: CharacterData, level: int, elite: bool = false) -> void:
+	var max_tier: int = 1 + (level - 1) / 4 + (1 if elite else 0)
 	# shop_available filter keeps champion-unique rewards out of random hands;
 	# the arcana filter keeps staves off the brute archetype (no ARC growth).
 	var weapon_pool: Array[WeaponData] = ItemDB.all_weapons().filter(
@@ -89,21 +92,21 @@ static func _assign_gear(data: CharacterData, level: int) -> void:
 
 	var pieces: Array[ArmourData] = []
 	_maybe_add_piece(pieces, Enums.EquipSlot.CHEST, 1.0, max_tier)
-	_maybe_add_piece(pieces, Enums.EquipSlot.HELMET, 0.7, max_tier)
-	_maybe_add_piece(pieces, Enums.EquipSlot.LEGS, 0.5, max_tier)
-	_maybe_add_piece(pieces, Enums.EquipSlot.BOOTS, 0.3, max_tier)
+	_maybe_add_piece(pieces, Enums.EquipSlot.HELMET, 0.95 if elite else 0.7, max_tier)
+	_maybe_add_piece(pieces, Enums.EquipSlot.LEGS, 0.8 if elite else 0.5, max_tier)
+	_maybe_add_piece(pieces, Enums.EquipSlot.BOOTS, 0.65 if elite else 0.3, max_tier)
 	data.armour_pieces = pieces
 
 
 ## From level 3 up, enemies bring 1-2 skills their weapon can actually use —
-## the same catalog the player learns from.
-static func _assign_skills(data: CharacterData, level: int) -> void:
+## the same catalog the player learns from. Elites always carry a full pair.
+static func _assign_skills(data: CharacterData, level: int, elite: bool = false) -> void:
 	if level < 3:
 		return
 	var pool: Array[SkillData] = ItemDB.all_skills().filter(
 			func(s: SkillData) -> bool:
 				return s.required_level <= level and s.usable_with(data.weapon.weapon_class))
-	var count: int = mini(RngService.randi_range(1, 2), pool.size())
+	var count: int = mini(2 if elite else RngService.randi_range(1, 2), pool.size())
 	var chosen: Array[SkillData] = []
 	for _i in count:
 		var pick: SkillData = RngService.pick(pool)

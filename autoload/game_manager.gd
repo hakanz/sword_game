@@ -83,13 +83,15 @@ func start_new_game() -> void:
 
 
 ## Creates a profile from the character-creation screen's choices.
+## `unspent_points` (session-5 point-buy) carry over as attribute points.
 func start_new_game_custom(
 		character_name: String, attrs: AttributeBlock,
-		body: Color, accent: Color) -> void:
+		body: Color, accent: Color, unspent_points: int = 0) -> void:
 	profile = PlayerProfile.create_default()
 	if character_name.strip_edges() != "":
 		profile.character_name = character_name.strip_edges()
 	profile.attributes = attrs.duplicate_block()
+	profile.attribute_points += maxi(unspent_points, 0)
 	profile.body_color = body
 	profile.accent_color = accent
 	SaveManager.save_profile(profile)
@@ -150,6 +152,21 @@ func is_tournament_unlocked(arena: ArenaData) -> bool:
 			and profile.victories >= TOURNAMENT_UNLOCK_VICTORIES
 
 
+## The arena's call (session-5 owner design): once the tournament is open
+## and the player has grown into the region (level at the band midpoint),
+## normal duels LOCK until the bracket is fought — progression flows through
+## the boss ladder, not through endless safe duels.
+func tournament_required() -> bool:
+	if profile == null:
+		return false
+	var arena: ArenaData = selected_arena()
+	if profile.completed_tournament_arena_ids.has(arena.id):
+		return false
+	if not is_tournament_unlocked(arena):
+		return false
+	return profile.level >= roundi(lerpf(arena.min_level, arena.max_level, 0.5))
+
+
 func in_tournament() -> bool:
 	return tournament_arena_id != &""
 
@@ -157,6 +174,11 @@ func in_tournament() -> bool:
 ## Builds combatants from the profile + a generated opponent, enters the arena.
 func start_next_duel() -> void:
 	assert(profile != null, "start_next_duel without a profile")
+	# The arena's call is binding: when the tournament is due, the gate to
+	# casual duels closes (UI mirrors this; the guard is the authority).
+	if tournament_required() and not smoke_test:
+		SceneRouter.goto_arena_select()
+		return
 	# A normal duel forfeits any bracket left hanging (leaving = forfeit).
 	abandon_tournament()
 	var arena: ArenaData = selected_arena()
@@ -193,8 +215,10 @@ func start_tournament_round() -> void:
 		next_opponent = arena.champion.duplicate(true)
 	else:
 		var t: float = TOURNAMENT_ROUND_CURVE[tournament_round]
+		# Bracket fighters are ELITES: same level band, better gear + skills
+		# (session-5 owner design — the tournament is the proving ground).
 		next_opponent = OpponentGenerator.generate_at_level(
-				roundi(lerpf(arena.min_level, arena.max_level, t)))
+				roundi(lerpf(arena.min_level, arena.max_level, t)), true)
 	tournament_fight_pending = true
 	last_combat_result = null
 	last_reward = null
@@ -271,6 +295,10 @@ func consume_combat_rewards() -> ProgressionService.RewardResult:
 				tournament_completed = true
 				if not profile.completed_tournament_arena_ids.has(tournament_arena_id):
 					profile.completed_tournament_arena_ids.append(tournament_arena_id)
+				# The house pays extra for a completed bracket (session-5).
+				last_reward.tournament_bonus_gold = ECONOMY_CONFIG.tournament_gold_bonus
+				last_reward.gold_gained += last_reward.tournament_bonus_gold
+				profile.gold += last_reward.tournament_bonus_gold
 				tournament_arena_id = &""
 				tournament_round = 0
 		else:

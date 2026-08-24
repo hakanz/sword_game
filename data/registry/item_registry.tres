@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="ItemRegistry" format=3 load_steps=61]
+[gd_resource type="Resource" script_class="ItemRegistry" format=3 load_steps=77]
 
 [ext_resource type="Script" path="res://data/models/item_registry.gd" id="1"]
 [ext_resource type="Script" path="res://data/models/weapon_data.gd" id="2"]
@@ -60,10 +60,26 @@
 [ext_resource type="Resource" path="res://data/weapons/skinning_knife.tres" id="60"]
 [ext_resource type="Resource" path="res://data/arenas/gravelmaw.tres" id="58"]
 [ext_resource type="Resource" path="res://data/arenas/emberholt.tres" id="59"]
+[ext_resource type="Resource" path="res://data/weapons/falx_of_the_pits.tres" id="61"]
+[ext_resource type="Resource" path="res://data/weapons/oaken_warhammer.tres" id="62"]
+[ext_resource type="Resource" path="res://data/weapons/gladiators_trident.tres" id="63"]
+[ext_resource type="Resource" path="res://data/weapons/wolfsplitter_axe.tres" id="64"]
+[ext_resource type="Resource" path="res://data/weapons/stormcaller_rod.tres" id="65"]
+[ext_resource type="Resource" path="res://data/weapons/black_iron_greatsword.tres" id="66"]
+[ext_resource type="Resource" path="res://data/weapons/sunforged_spear.tres" id="67"]
+[ext_resource type="Resource" path="res://data/weapons/composite_warbow.tres" id="68"]
+[ext_resource type="Resource" path="res://data/armour/windrunner_boots.tres" id="69"]
+[ext_resource type="Resource" path="res://data/armour/crested_bronze_helm.tres" id="70"]
+[ext_resource type="Resource" path="res://data/armour/bronze_pauldrons.tres" id="71"]
+[ext_resource type="Resource" path="res://data/armour/gladiator_manica.tres" id="72"]
+[ext_resource type="Resource" path="res://data/armour/scaled_hauberk.tres" id="73"]
+[ext_resource type="Resource" path="res://data/armour/gale_greaves.tres" id="74"]
+[ext_resource type="Resource" path="res://data/armour/champion_girdle.tres" id="75"]
+[ext_resource type="Resource" path="res://data/armour/bulwark_plate.tres" id="76"]
 
 [resource]
 script = ExtResource("1")
-weapons = Array[ExtResource("2")]([ExtResource("6"), ExtResource("7"), ExtResource("8"), ExtResource("9"), ExtResource("10"), ExtResource("11"), ExtResource("12"), ExtResource("13"), ExtResource("14"), ExtResource("15"), ExtResource("16"), ExtResource("17"), ExtResource("18"), ExtResource("19"), ExtResource("20"), ExtResource("21"), ExtResource("22"), ExtResource("23"), ExtResource("24"), ExtResource("25"), ExtResource("60")])
-armour = Array[ExtResource("3")]([ExtResource("26"), ExtResource("27"), ExtResource("28"), ExtResource("29"), ExtResource("30"), ExtResource("31"), ExtResource("32"), ExtResource("33"), ExtResource("34"), ExtResource("35"), ExtResource("36"), ExtResource("37"), ExtResource("38"), ExtResource("39"), ExtResource("40"), ExtResource("41"), ExtResource("42"), ExtResource("43")])
+weapons = Array[ExtResource("2")]([ExtResource("6"), ExtResource("7"), ExtResource("8"), ExtResource("9"), ExtResource("10"), ExtResource("11"), ExtResource("12"), ExtResource("13"), ExtResource("14"), ExtResource("15"), ExtResource("16"), ExtResource("17"), ExtResource("18"), ExtResource("19"), ExtResource("20"), ExtResource("21"), ExtResource("22"), ExtResource("23"), ExtResource("24"), ExtResource("25"), ExtResource("60"), ExtResource("61"), ExtResource("62"), ExtResource("63"), ExtResource("64"), ExtResource("65"), ExtResource("66"), ExtResource("67"), ExtResource("68")])
+armour = Array[ExtResource("3")]([ExtResource("26"), ExtResource("27"), ExtResource("28"), ExtResource("29"), ExtResource("30"), ExtResource("31"), ExtResource("32"), ExtResource("33"), ExtResource("34"), ExtResource("35"), ExtResource("36"), ExtResource("37"), ExtResource("38"), ExtResource("39"), ExtResource("40"), ExtResource("41"), ExtResource("42"), ExtResource("43"), ExtResource("69"), ExtResource("70"), ExtResource("71"), ExtResource("72"), ExtResource("73"), ExtResource("74"), ExtResource("75"), ExtResource("76")])
 skills = Array[ExtResource("4")]([ExtResource("44"), ExtResource("45"), ExtResource("46"), ExtResource("47"), ExtResource("48"), ExtResource("49"), ExtResource("50"), ExtResource("51"), ExtResource("52"), ExtResource("53"), ExtResource("54"), ExtResource("55"), ExtResource("56"), ExtResource("57")])
 arenas = Array[ExtResource("5")]([ExtResource("58"), ExtResource("59")])

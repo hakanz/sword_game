@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/weapon_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"weapon.stormcaller_rod"
+name_key = "item.weapon.stormcaller_rod.name"
+weapon_class = 6
+damage_type = 6
+damage_min = 13
+damage_max = 19
+accuracy_bonus = 3
+armour_penetration = 0.15
+range_min = 0
+range_max = 0
+energy_cost = 6
+tier = 4
+rarity = 2
+value = 265
+required_level = 11
+required_strength = 0
+required_agility = 0
+required_arcana = 12

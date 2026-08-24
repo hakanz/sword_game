@@ -1,6 +1,6 @@
 # PROJECT STATE
 Last Updated: 2026-08-24
-Updated By: Claude (autonomous session 4)
+Updated By: Claude (autonomous session 5)
 
 ## Current Milestone
 MVP core loop COMPLETE and playable end to end: character creation -> arena duels vs
@@ -19,7 +19,13 @@ knife sidearm + switch action; per-fighter movement; no combat-log panel; rest h
 enemy energy visible; RADIAL action menu around the gladiator; split street merchants
 (price-sorted, item glyphs); Dustwell town hub; auto-equip upgrades with sell offer;
 session 4: genre-reference visual bar — rig v3 draws equipped armour + tier-tinted
-weapons ON the body; arena crowd is individually drawn figures (original designs only).
+weapons ON the body; arena crowd is individually drawn figures (original designs only);
+session 5: free point-buy creation (unspent -> attribute points); player always opens
+the fight; mobility tiers (agility + gear, 2-cell moves at score 14+); effectiveness
+XP (landed/actions in [0.65,1.25], champion x1.5); the arena's call (forced tournament
+at band midpoint, elite brackets, house gold bonus); rig v4 living animations +
+expressions + 1.35x; elemental skill VFX; shop fitting booth + sealed level-locks;
+level/XP bars in HUD + town.
 
 ## Current Game Version
 0.1.0 (semver; also in project.godot)
@@ -83,9 +89,10 @@ browser (menu -> duel -> damage/armour math visible). ~44 MB wasm.
 NOT SET UP — no SDK/keystore in this environment. Do not claim until exported and run.
 
 ## Current Content
-### Arenas: 2 (Gravelmaw 1-8, Emberholt 8-16) · Enemies: procedural generator ·
-Champions: 2 (Maulhilda, Orzha) · Weapons: 21 (6 classes; 3 ranged bows + knife, T1-T5) ·
-Armour: 18 (7 slots, T1-T4) · Skills: 14 (incl. 2 mana spells) · Status Effects: 9
+### Arenas: 2 (Gravelmaw 1-8, Emberholt 8-16) · Enemies: procedural generator (+elite
+bracket variant) · Champions: 2 (Maulhilda, Orzha) · Weapons: 29 (6 classes; 4 bows +
+knife, T1-T5) · Armour: 26 (7 slots, T1-T5; 3 mobility pieces) · Skills: 14 (incl.
+2 mana spells) · Status Effects: 9
 
 ## Open Asset Requests
 See docs/ASSET_MANIFEST.md — all art/audio is placeholder (primitives, original SVG
@@ -101,12 +108,14 @@ synthesized cues, one music loop per state, art-directed UI theme.
   public release (charter §0.3) — NOT DONE, cannot be done by the agent
 
 ## Files Recently Changed
-Session 4: characters/components/placeholder_rig.gd (rig v3 rewrite),
-scenes/arena/arena_visual.gd (crowd/wall/gates v2), combat/combatant.gd
-(rig weapon+equipment plumbing), ui/character_creation.gd (preview scale).
-Session 3: combat/combat_resolver (new), combat_controller (presentation-only),
-autoload/{game_manager,save_manager,scene_router,item_db}, shop/tournament/radial
-UI, tools/battle_sim*, data growth, CombatTuning (see DEVELOPMENT_LOG.md).
+Session 5: combat/{turn_manager,combat_context,combat_resolver,combat_result,
+combatant,combat_controller,combat_vfx}, services/{progression_calculator,
+progression_service,opponent_generator}, autoload/game_manager,
+data/models/{armour_data,character_data,progression_config,economy_config},
+characters/components/placeholder_rig.gd (rig v4), ui/{character_creation,
+shop_screen,combat_hud,results_screen,town_screen}, scenes (creation, shop),
++16 item .tres + registry, tests/unit/test_session5_rules.gd.
+Session 4: rig v3, arena_visual crowd/wall v2 (see DEVELOPMENT_LOG.md).
 
 ## Current Blocking Issues
 - Android/iOS/Linux/macOS exports blocked on environment (SDKs/hosts)

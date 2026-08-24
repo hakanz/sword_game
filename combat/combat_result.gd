@@ -6,6 +6,9 @@ extends RefCounted
 var player_won: bool = false
 var rounds: int = 0
 var player_damage_dealt: int = 0
+## Effectiveness tally for the XP multiplier (landed strikes / actions).
+var player_hits: int = 0
+var player_actions: int = 0
 var victor_name: String = ""
 var loser_name: String = ""
 ## Level of the opponent — input for the XP reward formula.

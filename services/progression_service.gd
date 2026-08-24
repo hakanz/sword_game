@@ -25,6 +25,9 @@ class RewardResult:
 	## First-time champion kill this fight (unique reward granted).
 	var champion_defeated: bool = false
 	var reward_item_id: StringName = &""
+	## Extra purse for completing a region tournament (set by GameManager —
+	## only it knows the bracket state).
+	var tournament_bonus_gold: int = 0
 
 
 static func apply_combat_rewards(
@@ -32,7 +35,12 @@ static func apply_combat_rewards(
 		economy: EconomyConfig, result: CombatResult) -> RewardResult:
 	var reward := RewardResult.new()
 	reward.xp_gained = ProgressionCalculator.xp_reward(
-			config, profile.level, result.enemy_level, result.player_won)
+			config, profile.level, result.enemy_level, result.player_won,
+			result.player_hits, result.player_actions)
+	# Boss anchor (session-5 owner design): the champion final is the level
+	# pacer — beating one pays meaningfully more than a normal duel.
+	if result.player_won and result.champion_id != &"":
+		reward.xp_gained = roundi(reward.xp_gained * config.champion_xp_multiplier)
 	reward.gold_gained = EconomyCalculator.combat_gold_reward(
 			economy, result.enemy_level, result.player_won)
 	profile.gold += reward.gold_gained

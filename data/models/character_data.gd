@@ -52,3 +52,10 @@ func total_evasion_mod() -> int:
 	for piece in armour_pieces:
 		total += piece.evasion_mod
 	return total
+
+
+func total_mobility_bonus() -> int:
+	var total: int = 0
+	for piece in armour_pieces:
+		total += piece.mobility_bonus
+	return total

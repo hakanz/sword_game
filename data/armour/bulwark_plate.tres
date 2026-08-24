@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ArmourData" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/armour_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"armour.bulwark_plate"
+name_key = "item.armour.bulwark_plate.name"
+slot = 1
+armour_class = 2
+armour = 22
+evasion_mod = -2
+mobility_bonus = 0
+tier = 5
+rarity = 2
+value = 420
+required_level = 14
+required_strength = 15

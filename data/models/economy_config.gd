@@ -24,3 +24,6 @@ extends Resource
 @export_range(0, 10000) var champion_gold_bonus: int = 150
 ## One-time fame award for toppling a champion.
 @export_range(0, 1000) var champion_fame_bonus: int = 25
+## Extra purse "from the house" for COMPLETING a region tournament, on top
+## of the final's normal rewards (session-5 owner design).
+@export_range(0, 10000) var tournament_gold_bonus: int = 250

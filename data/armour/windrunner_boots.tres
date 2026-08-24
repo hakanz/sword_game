@@ -4,15 +4,15 @@
 
 [resource]
 script = ExtResource("1")
-id = &"armour.duelist_boots"
-name_key = "item.armour.duelist_boots.name"
+id = &"armour.windrunner_boots"
+name_key = "item.armour.windrunner_boots.name"
 slot = 6
 armour_class = 0
-armour = 6
-evasion_mod = 2
+armour = 4
+evasion_mod = 1
 mobility_bonus = 1
-tier = 3
+tier = 2
 rarity = 1
-value = 120
-required_level = 8
+value = 85
+required_level = 4
 required_strength = 0
