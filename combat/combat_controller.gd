@@ -251,6 +251,8 @@ func _finish() -> void:
 	result.rounds = mini(turn_manager.round_number, CombatTuning.MAX_ROUNDS)
 	result.player_damage_dealt = player.damage_dealt_total
 	result.enemy_level = enemy.data.level
+	if enemy.data.is_champion:
+		result.champion_id = enemy.data.id
 	result.victor_name = victor.display_name()
 	result.loser_name = loser.display_name()
 	GameManager.last_combat_result = result

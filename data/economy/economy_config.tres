@@ -12,3 +12,5 @@ max_sell_fraction = 0.5
 gold_win_base = 12
 gold_win_exponent = 1.15
 gold_loss_fraction = 0.2
+champion_gold_bonus = 150
+champion_fame_bonus = 25

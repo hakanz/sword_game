@@ -9,6 +9,8 @@ extends Control
 @onready var _gold: Label = %GoldLabel
 @onready var _level_up: Label = %LevelUpLabel
 @onready var _points: Label = %PointsLabel
+@onready var _champion: Label = %ChampionLabel
+@onready var _champion_reward: Label = %ChampionRewardLabel
 @onready var _next_duel: Button = %NextDuelButton
 @onready var _back: Button = %BackButton
 
@@ -29,6 +31,8 @@ func _ready() -> void:
 		_gold.visible = false
 		_level_up.visible = false
 		_points.visible = false
+		_champion.visible = false
+		_champion_reward.visible = false
 		_next_duel.visible = false
 		return
 
@@ -43,6 +47,15 @@ func _ready() -> void:
 	_gold.visible = reward != null
 	_level_up.visible = reward != null and reward.levels_gained > 0
 	_points.visible = _level_up.visible
+	_champion.visible = reward != null and reward.champion_defeated
+	_champion_reward.visible = _champion.visible and reward.reward_item_id != &""
+	if _champion.visible:
+		_champion.text = tr("results.champion_defeated")
+		if _champion_reward.visible:
+			var item: WeaponData = ItemDB.weapon(reward.reward_item_id)
+			_champion_reward.text = tr("results.champion_reward").format({
+				"item": tr(item.name_key),
+			})
 	_next_duel.visible = GameManager.profile != null
 	if reward != null:
 		_xp.text = tr("results.xp_gained").format({"xp": reward.xp_gained})

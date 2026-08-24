@@ -68,8 +68,9 @@ static func generate(player_level: int) -> CharacterData:
 ## gear power tracks level (T1 at 1-4, T2 at 5-8, T3 at 9+ ...).
 static func _assign_gear(data: CharacterData, level: int) -> void:
 	var max_tier: int = 1 + (level - 1) / 4
+	# shop_available filter keeps champion-unique rewards out of random hands.
 	var weapon_pool: Array[WeaponData] = ItemDB.all_weapons().filter(
-			func(w: WeaponData) -> bool: return w.tier <= max_tier)
+			func(w: WeaponData) -> bool: return w.tier <= max_tier and w.shop_available)
 	if not weapon_pool.is_empty():
 		data.weapon = RngService.pick(weapon_pool)
 
@@ -104,6 +105,7 @@ static func _maybe_add_piece(
 	if not RngService.chance(probability):
 		return
 	var pool: Array[ArmourData] = ItemDB.all_armour().filter(
-			func(a: ArmourData) -> bool: return a.slot == slot and a.tier <= max_tier)
+			func(a: ArmourData) -> bool:
+				return a.slot == slot and a.tier <= max_tier and a.shop_available)
 	if not pool.is_empty():
 		pieces.append(RngService.pick(pool))

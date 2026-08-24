@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/weapon_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"weapon.doorslab"
+name_key = "item.weapon.doorslab.name"
+weapon_class = 3
+damage_type = 2
+damage_min = 18
+damage_max = 26
+accuracy_bonus = -2
+armour_penetration = 0.35
+range_min = 0
+range_max = 1
+energy_cost = 11
+tier = 4
+rarity = 3
+shop_available = false
+value = 400
+required_level = 10
+required_strength = 18
+required_agility = 0
+required_arcana = 0

@@ -141,6 +141,8 @@ func _on_combat_started(p: Combatant, e: Combatant) -> void:
 		"player": p.display_name(),
 		"enemy": e.display_name(),
 	}))
+	if e.data.intro_key != "":
+		_append_log(tr(e.data.intro_key))
 
 
 func _on_round_started(round_number: int) -> void:
@@ -254,7 +256,10 @@ func _on_action_resolved(result: ActionResult) -> void:
 
 
 func _on_combatant_died(combatant: Combatant) -> void:
-	_append_log(tr("combat.log.death").format({"name": combatant.display_name()}))
+	if combatant.data.defeat_key != "":
+		_append_log(tr(combatant.data.defeat_key))
+	else:
+		_append_log(tr("combat.log.death").format({"name": combatant.display_name()}))
 
 
 # --- Internal refresh -------------------------------------------------------

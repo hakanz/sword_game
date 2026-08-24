@@ -44,11 +44,15 @@ func _refresh() -> void:
 		child.queue_free()
 	if _mode == Mode.BUY:
 		for weapon in ItemDB.all_weapons():
+			if not weapon.shop_available:
+				continue
 			_add_buy_row(profile, weapon.name_key, _weapon_stats(weapon),
 					_requirement_text(EquipmentService.weapon_block_reason(profile, weapon), weapon, null),
 					weapon.value, EquipmentService.owns_weapon(profile, weapon.id),
 					func() -> void: _buy(profile, true, weapon))
 		for piece in ItemDB.all_armour():
+			if not piece.shop_available:
+				continue
 			_add_buy_row(profile, piece.name_key, _armour_stats(piece),
 					_requirement_text(EquipmentService.armour_block_reason(profile, piece), null, piece),
 					piece.value, EquipmentService.owns_armour(profile, piece.id),

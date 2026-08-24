@@ -6,6 +6,13 @@ class_name ProgressionService
 ## afterwards.
 
 
+## Unique first-kill drops per champion (data pairing lives here until a
+## champion roster resource exists in the content-expansion phase).
+const CHAMPION_REWARDS: Dictionary = {
+	&"character.champion_maulhilda": &"weapon.doorslab",
+}
+
+
 class RewardResult:
 	extends RefCounted
 	var xp_gained: int = 0
@@ -14,6 +21,9 @@ class RewardResult:
 	var new_level: int = 1
 	var attribute_points_gained: int = 0
 	var skill_points_gained: int = 0
+	## First-time champion kill this fight (unique reward granted).
+	var champion_defeated: bool = false
+	var reward_item_id: StringName = &""
 
 
 static func apply_combat_rewards(
@@ -31,6 +41,19 @@ static func apply_combat_rewards(
 		profile.fame += result.enemy_level
 	else:
 		profile.defeats += 1
+
+	# First-time champion kill: unique weapon + purse + fame (charter §20:
+	# each champion carries a unique reward). Rematches pay normally only.
+	if result.player_won and result.champion_id != &"" \
+			and not profile.defeated_champion_ids.has(result.champion_id):
+		profile.defeated_champion_ids.append(result.champion_id)
+		reward.champion_defeated = true
+		reward.reward_item_id = CHAMPION_REWARDS.get(result.champion_id, &"")
+		if reward.reward_item_id != &"":
+			profile.inventory_weapon_ids.append(reward.reward_item_id)
+		reward.gold_gained += economy.champion_gold_bonus
+		profile.gold += economy.champion_gold_bonus
+		profile.fame += economy.champion_fame_bonus
 
 	profile.xp += reward.xp_gained
 	while profile.level < config.max_level \

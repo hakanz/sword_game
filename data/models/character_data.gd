@@ -20,6 +20,14 @@ extends Resource
 ## AI is never random).
 @export var personality: AIPersonality
 
+@export_group("Champion")
+## Champions are handcrafted, never procedural (charter §20). Defeating one
+## is recorded on the profile under this resource's `id`.
+@export var is_champion: bool = false
+## Optional localized announcer lines (combat log) — champions only.
+@export var intro_key: String = ""
+@export var defeat_key: String = ""
+
 @export_group("Placeholder Visuals")
 ## Placeholder-rig tint colors until real art exists (charter §27).
 @export var body_color: Color = Color(0.82, 0.62, 0.45)

@@ -168,3 +168,21 @@ skills.hint.no_points,No skill points,Yetenek puanı yok
 skills.hint.known,Already learned,Zaten öğrenildi
 skills.cost_energy,"{energy} Energy","{energy} Enerji"
 skills.cooldown,"Cooldown: {rounds} rounds","Bekleme: {rounds} raunt"
+menu.champion,Champion Challenge,Şampiyon Meydan Okuması
+character.champion_maulhilda.name,Maulhilda the Unmoved,Sarsılmaz Maulhilda
+champion.maulhilda.intro,"Maulhilda cracks her knuckles: 'I have been furniture in this arena longer than you have been alive.'","Maulhilda parmaklarını çıtlatıyor: 'Ben bu arenada, senin ömründen uzun süredir mobilyayım.'"
+champion.maulhilda.defeat,"Maulhilda topples like a wardrobe full of anvils. The crowd is SPEECHLESS.","Maulhilda, örs dolu bir gardırop gibi devriliyor. Seyircinin dili tutuldu."
+item.weapon.doorslab.name,The Doorslab,Kapı Kütlesi
+results.champion_defeated,"CHAMPION DEFEATED! Gravelmaw bows to you!","ŞAMPİYON YENİLDİ! Gravelmaw önünde eğiliyor!"
+results.champion_reward,"Unique reward: {item}","Benzersiz ödül: {item}"
+creation.title,Forge Your Gladiator,Gladyatörünü Yarat
+creation.name_label,Name,İsim
+creation.start,Step Into the Sand,Kumlara Adım At
+creation.body_label,Skin,Ten Rengi
+creation.accent_label,Colors,Renkler
+creation.preset.balanced,Balanced,Dengeli
+creation.preset.balanced.desc,"A bit of everything, master of naps.","Her şeyden biraz, şekerleme ustası."
+creation.preset.brawler,Brawler,Kavgacı
+creation.preset.brawler.desc,"Hits hard, thinks later. Sometimes never.","Önce vurur, sonra düşünür. Bazen hiç düşünmez."
+creation.preset.swift,Swift,Çevik
+creation.preset.swift.desc,"Never quite where the axe lands.","Balta indiğinde asla tam orada değildir."

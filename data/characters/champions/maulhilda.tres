@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="CharacterData" format=3 load_steps=11]
+
+[ext_resource type="Script" path="res://data/models/character_data.gd" id="1"]
+[ext_resource type="Script" path="res://data/models/attribute_block.gd" id="2"]
+[ext_resource type="Script" path="res://data/models/armour_data.gd" id="3"]
+[ext_resource type="Script" path="res://data/models/skill_data.gd" id="4"]
+[ext_resource type="Resource" path="res://data/weapons/doorslab.tres" id="5"]
+[ext_resource type="Resource" path="res://data/armour/iron_chainmail.tres" id="6"]
+[ext_resource type="Resource" path="res://data/armour/iron_helm.tres" id="7"]
+[ext_resource type="Resource" path="res://data/characters/personalities/boss.tres" id="8"]
+[ext_resource type="Resource" path="res://data/skills/skull_ringer.tres" id="9"]
+[ext_resource type="Resource" path="res://data/skills/war_bellow.tres" id="10"]
+
+[sub_resource type="Resource" id="Resource_attrs"]
+script = ExtResource("2")
+strength = 18
+agility = 6
+attack = 10
+defence = 12
+vitality = 14
+stamina = 10
+arcana = 2
+charisma = 8
+
+[resource]
+script = ExtResource("1")
+id = &"character.champion_maulhilda"
+name_text = "character.champion_maulhilda.name"
+is_name_localization_key = true
+level = 6
+attributes = SubResource("Resource_attrs")
+weapon = ExtResource("5")
+armour_pieces = Array[ExtResource("3")]([ExtResource("6"), ExtResource("7")])
+skills = Array[ExtResource("4")]([ExtResource("9"), ExtResource("10")])
+personality = ExtResource("8")
+is_champion = true
+intro_key = "champion.maulhilda.intro"
+defeat_key = "champion.maulhilda.defeat"
+body_color = Color(0.62, 0.5, 0.44, 1)
+accent_color = Color(0.35, 0.12, 0.14, 1)

@@ -10,6 +10,8 @@ var victor_name: String = ""
 var loser_name: String = ""
 ## Level of the opponent — input for the XP reward formula.
 var enemy_level: int = 1
+## Set to the champion's CharacterData id when the opponent was a champion.
+var champion_id: StringName = &""
 ## Set by GameManager.consume_combat_rewards() to guard double application.
 var rewards_applied: bool = false
 

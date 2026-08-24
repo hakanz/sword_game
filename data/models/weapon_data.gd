@@ -26,6 +26,8 @@ extends Resource
 @export_group("Progression")
 @export_range(1, 8) var tier: int = 1
 @export var rarity: Enums.Rarity = Enums.Rarity.COMMON
+## Unique rewards (champion drops) set this false — never sold in shops.
+@export var shop_available: bool = true
 ## Base gold value (EconomyCalculator derives buy/sell prices from this).
 @export_range(0, 100000) var value: int = 10
 @export_range(1, 60) var required_level: int = 1

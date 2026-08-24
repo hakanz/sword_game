@@ -8,6 +8,8 @@ const SCENES: PackedStringArray = [
 	"res://scenes/character/character_sheet.tscn",
 	"res://scenes/shops/shop.tscn",
 	"res://scenes/inventory/inventory.tscn",
+	"res://scenes/skills/skills.tscn",
+	"res://scenes/creation/character_creation.tscn",
 	"res://scenes/results/results.tscn",
 ]
 

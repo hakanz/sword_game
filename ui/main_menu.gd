@@ -6,6 +6,7 @@ extends Control
 @onready var _title: Label = %TitleLabel
 @onready var _subtitle: Label = %SubtitleLabel
 @onready var _continue: Button = %ContinueButton
+@onready var _champion: Button = %ChampionButton
 @onready var _new_game: Button = %NewGameButton
 @onready var _character: Button = %CharacterButton
 @onready var _skills: Button = %SkillsButton
@@ -19,6 +20,7 @@ extends Control
 
 func _ready() -> void:
 	_continue.pressed.connect(_on_continue_pressed)
+	_champion.pressed.connect(func() -> void: _open_profile_screen(GameManager.start_champion_duel))
 	_new_game.pressed.connect(_on_new_game_pressed)
 	_character.pressed.connect(func() -> void: _open_profile_screen(SceneRouter.goto_character_sheet))
 	_skills.pressed.connect(func() -> void: _open_profile_screen(SceneRouter.goto_skills))
@@ -37,7 +39,11 @@ func _ready() -> void:
 
 func _refresh() -> void:
 	var has_save: bool = SaveManager.has_profile()
+	# Load eagerly so unlock states (champion challenge) reflect the save.
+	if has_save and GameManager.profile == null:
+		GameManager.profile = SaveManager.load_profile()
 	_continue.visible = has_save
+	_champion.visible = GameManager.is_champion_unlocked()
 	_character.visible = has_save
 	_skills.visible = has_save
 	_inventory.visible = has_save
@@ -45,6 +51,7 @@ func _refresh() -> void:
 	_title.text = tr("app.title")
 	_subtitle.text = tr("menu.subtitle")
 	_continue.text = tr("menu.continue")
+	_champion.text = tr("menu.champion")
 	_new_game.text = tr("menu.new_game")
 	_character.text = tr("menu.character")
 	_skills.text = tr("menu.skills")
@@ -72,7 +79,7 @@ func _on_new_game_pressed() -> void:
 
 
 func _start_new_game() -> void:
-	GameManager.start_new_game()
+	SceneRouter.goto_character_creation()
 
 
 ## Loads the profile if needed, then routes; refreshes when the save is unreadable.

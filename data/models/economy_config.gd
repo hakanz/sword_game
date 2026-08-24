@@ -20,3 +20,7 @@ extends Resource
 @export_range(0.5, 2.0) var gold_win_exponent: float = 1.15
 ## Fraction of the win purse granted on defeat (consolation coin).
 @export_range(0.0, 1.0) var gold_loss_fraction: float = 0.2
+## One-time purse for toppling a champion (on top of normal rewards).
+@export_range(0, 10000) var champion_gold_bonus: int = 150
+## One-time fame award for toppling a champion.
+@export_range(0, 1000) var champion_fame_bonus: int = 25

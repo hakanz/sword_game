@@ -76,6 +76,20 @@ func start_new_game() -> void:
 	start_next_duel()
 
 
+## Creates a profile from the character-creation screen's choices.
+func start_new_game_custom(
+		character_name: String, attrs: AttributeBlock,
+		body: Color, accent: Color) -> void:
+	profile = PlayerProfile.create_default()
+	if character_name.strip_edges() != "":
+		profile.character_name = character_name.strip_edges()
+	profile.attributes = attrs.duplicate_block()
+	profile.body_color = body
+	profile.accent_color = accent
+	SaveManager.save_profile(profile)
+	start_next_duel()
+
+
 ## Loads the saved profile and starts a duel. Returns false if load failed.
 func continue_game() -> bool:
 	profile = SaveManager.load_profile()
@@ -85,11 +99,32 @@ func continue_game() -> bool:
 	return true
 
 
+const CHAMPION_MAULHILDA: CharacterData = preload("res://data/characters/champions/maulhilda.tres")
+## Victories needed before the arena champion accepts a challenge.
+const CHAMPION_UNLOCK_VICTORIES: int = 3
+
+
 ## Builds combatants from the profile + a generated opponent, enters the arena.
 func start_next_duel() -> void:
 	assert(profile != null, "start_next_duel without a profile")
 	player_character = profile.to_character_data()
 	next_opponent = OpponentGenerator.generate(profile.level)
+	last_combat_result = null
+	last_reward = null
+	SceneRouter.goto_arena()
+
+
+func is_champion_unlocked() -> bool:
+	return profile != null \
+			and profile.victories >= CHAMPION_UNLOCK_VICTORIES \
+			and not profile.defeated_champion_ids.has(CHAMPION_MAULHILDA.id)
+
+
+## Challenge the handcrafted arena champion (charter §20/§21).
+func start_champion_duel() -> void:
+	assert(profile != null, "start_champion_duel without a profile")
+	player_character = profile.to_character_data()
+	next_opponent = CHAMPION_MAULHILDA.duplicate(true)
 	last_combat_result = null
 	last_reward = null
 	SceneRouter.goto_arena()

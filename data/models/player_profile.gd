@@ -26,6 +26,8 @@ const STARTER: CharacterData = preload("res://data/characters/player_default.tre
 @export var inventory_armour_ids: Array[StringName] = []
 ## Learned active skills (charter §17).
 @export var known_skill_ids: Array[StringName] = []
+## Champions this gladiator has toppled (by CharacterData id).
+@export var defeated_champion_ids: Array[StringName] = []
 @export var body_color: Color = Color(0.85, 0.64, 0.47)
 @export var accent_color: Color = Color(0.22, 0.36, 0.6)
 
@@ -98,6 +100,8 @@ func to_dict() -> Dictionary:
 				func(id: StringName) -> String: return String(id)),
 		"known_skill_ids": known_skill_ids.map(
 				func(id: StringName) -> String: return String(id)),
+		"defeated_champion_ids": defeated_champion_ids.map(
+				func(id: StringName) -> String: return String(id)),
 		"body_color": body_color.to_html(),
 		"accent_color": accent_color.to_html(),
 	}
@@ -136,6 +140,8 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 		profile.inventory_armour_ids.append(StringName(str(id)))
 	for id in data.get("known_skill_ids", []):
 		profile.known_skill_ids.append(StringName(str(id)))
+	for id in data.get("defeated_champion_ids", []):
+		profile.defeated_champion_ids.append(StringName(str(id)))
 	profile.body_color = Color.from_string(str(data.get("body_color", "")), profile.body_color)
 	profile.accent_color = Color.from_string(str(data.get("accent_color", "")), profile.accent_color)
 	return profile
