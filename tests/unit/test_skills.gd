@@ -14,8 +14,8 @@ func test_registry_serves_all_skills() -> void:
 
 func test_skill_validation_rules() -> void:
 	var fighter := CombatFixtures.make_combatant()
-	var ctx := CombatContext.new()
-	ctx.distance = Enums.DistanceBand.ADJACENT
+	var foe := CombatFixtures.make_combatant()
+	var ctx := CombatFixtures.make_context(fighter, foe, 1)
 
 	assert_eq(CombatAction.skill_invalid_reason(CRUSHING, fighter, ctx), "",
 			"sword fighter adjacent with full energy can use Crushing Blow")
@@ -28,16 +28,22 @@ func test_skill_validation_rules() -> void:
 	assert_eq(CombatAction.skill_invalid_reason(PINNING_SHOT, fighter, ctx),
 			"combat.hint.wrong_weapon", "bow skill must refuse a sword")
 	fighter.free()
+	foe.free()
 
 
-func test_range_extend_reaches_farther() -> void:
-	var fighter := CombatFixtures.make_combatant()  # sword: ADJACENT..CLOSE
-	var ctx := CombatContext.new()
-	ctx.distance = Enums.DistanceBand.MEDIUM
-	assert_eq(CombatAction.skill_invalid_reason(CRUSHING, fighter, ctx), "combat.hint.too_far")
-	assert_eq(CombatAction.skill_invalid_reason(GUTTER_LUNGE, fighter, ctx), "",
-			"range_extend must reach one band farther than the weapon")
+func test_skills_follow_the_adjacent_rule() -> void:
+	# Session-2 directive: no attacks from distance — strike skills included.
+	var fighter := CombatFixtures.make_combatant()
+	var foe := CombatFixtures.make_combatant()
+	var far := CombatFixtures.make_context(fighter, foe, 2)
+	assert_eq(CombatAction.skill_invalid_reason(CRUSHING, fighter, far), "combat.hint.too_far")
+	assert_eq(CombatAction.skill_invalid_reason(GUTTER_LUNGE, fighter, far), "combat.hint.too_far")
+	var adjacent := CombatFixtures.make_context(fighter, foe, 1)
+	assert_eq(CombatAction.skill_invalid_reason(GUTTER_LUNGE, fighter, adjacent), "")
+	assert_true(GUTTER_LUNGE.accuracy_mod > 0,
+			"reworked Gutter Lunge trades reach for precision")
 	fighter.free()
+	foe.free()
 
 
 func test_cooldown_ticks_down() -> void:
@@ -79,8 +85,7 @@ func test_ai_prefers_a_clearly_better_skill() -> void:
 	var fighter := CombatFixtures.make_combatant(CombatFixtures.make_character())
 	fighter.data.skills = [CRUSHING]
 	var foe := CombatFixtures.make_combatant()
-	var ctx := CombatContext.new()
-	ctx.distance = Enums.DistanceBand.ADJACENT
+	var ctx := CombatFixtures.make_context(fighter, foe, 1)
 	var decision := CombatAI.choose_action(fighter, foe, ctx)
 	assert_eq(decision.type, Enums.ActionType.SKILL,
 			"a 1.6x multiplier should beat a plain attack")
@@ -95,8 +100,7 @@ func test_ai_heals_when_hurt() -> void:
 	fighter.data.skills = [SECOND_WIND]
 	fighter.current_hp = roundi(fighter.max_hp * 0.2)
 	var foe := CombatFixtures.make_combatant()
-	var ctx := CombatContext.new()
-	ctx.distance = Enums.DistanceBand.ADJACENT
+	var ctx := CombatFixtures.make_context(fighter, foe, 1)
 	var decision := CombatAI.choose_action(fighter, foe, ctx)
 	assert_eq(decision.type, Enums.ActionType.SKILL, "badly hurt fighter should trigger Second Wind")
 	assert_eq(decision.skill.id, SECOND_WIND.id)

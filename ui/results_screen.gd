@@ -39,6 +39,8 @@ func _ready() -> void:
 	_title.text = tr("results.victory") if result.player_won else tr("results.defeat")
 	_title.add_theme_color_override("font_color",
 			Color(1.0, 0.84, 0.3) if result.player_won else Color(0.85, 0.35, 0.3))
+	if not GameManager.smoke_test:
+		AudioManager.play(&"victory" if result.player_won else &"defeat")
 	_rounds.text = tr("results.rounds").format({"rounds": result.rounds})
 	_damage.text = tr("results.damage_dealt").format({"damage": result.player_damage_dealt})
 

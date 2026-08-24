@@ -21,10 +21,6 @@ signal status_expired(target: Combatant, effect: StatusEffectData)
 ## signal with another class's inner class deadlocks the 4.4 analyzer.)
 signal status_ticked(target: Combatant, results: Array)
 
-# --- Combat presentation ---
-## Emitted with an already-localized rich text line for the combat log panel.
-signal combat_log_line(text: String)
-
 # --- Debug / tooling ---
 ## AI decision scores for the debug overlay (charter §34). Keys: action label, values: utility score.
 signal ai_scores_computed(combatant_name: String, scores: Dictionary)

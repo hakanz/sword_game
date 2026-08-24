@@ -1,13 +1,18 @@
 # PROJECT STATE
 Last Updated: 2026-08-24
-Updated By: Claude (autonomous session 1)
+Updated By: Claude (autonomous session 2)
 
 ## Current Milestone
 MVP core loop COMPLETE and playable end to end: character creation -> arena duels vs
 generated opponents -> XP/levels/attributes/skills -> gold -> shop/inventory/equipment ->
 champion challenge. Phases 1-5 done; Phase 6 MVP core done (1 arena, 1 champion; full
-tournament brackets NOT yet built). Phase 7 partially done (UI theme + placeholder visual
-polish); audio still silent placeholders.
+tournament brackets NOT yet built). Phase 7 well advanced: UI theme + icons, hit VFX
+(sparks/shake), synthesized placeholder SFX on every combat beat and button.
+Engine: Godot 4.7 (owner bump; verified with 4.7.2-stable).
+Session-2 owner directives in effect: attacks only at ADJACENT, per-fighter movement
+(only the actor moves), no combat-log panel, rest also heals HP, enemy energy visible,
+skills inline on the action bar with icons, shop auto-equips upgrades and offers the
+old piece for sale.
 
 ## Current Game Version
 0.1.0 (semver; also in project.godot)
@@ -30,8 +35,9 @@ polish); audio still silent placeholders.
 ## Partially Implemented Systems
 - Arena progression (§21): single arena region; tournaments/brackets NOT started
 - Crowd system (§19): only "crowd impatience" pressure inside the AI; no audience meter
-- Presentation (§40 P7): placeholder art polished, but no animation library, no VFX
-  particles, and NO AUDIO CONTENT (buses + AudioManager wired, nothing plays)
+- Presentation (§40 P7): placeholder art polished; impact sparks + screen shake +
+  synthesized SFX exist. Still missing: real animation library, music tracks
+  (only victory/defeat stings play), final foley
 - Accessibility (§28): no settings screen yet (no shake slider/gore toggle/remap UI)
 
 ## Known Bugs
@@ -39,14 +45,13 @@ polish); audio still silent placeholders.
   pane resizes (fresh loads at stable size render correctly); verify on a normal browser.
 
 ## Technical Debt
-- Combat log RichTextLabel is not touch-drag scrollable (Phase 8 platform polish)
 - Champion unique-reward pairing lives in ProgressionService.CHAMPION_REWARDS const —
   move into a champion roster resource when the roster grows
 - Charter §34 debug menu not built (AI scores are emitted on EventBus but no overlay)
 - OpponentGenerator uses one growth-weight archetype; archetype variety in Phase 9
 
 ## Current Test Status
-GREEN this session: 19 suites / 1819 assertions
+GREEN this session: 20 suites / 1886+ assertions (Godot 4.7.2)
 (`godot --headless --path . -s res://tests/test_runner.gd`), multi-seed AI-vs-AI smoke
 (`--smoke-test --combat-seed=N`) resolves in 9-29 rounds, both sides can win.
 
@@ -67,8 +72,9 @@ personalities + boss) · Champions: 1 (Maulhilda) · Weapons: 13 (5 classes, T1-
 Armour: 12 (5 slots, T1-T3) · Skills: 10 · Status Effects: 6
 
 ## Open Asset Requests
-See docs/ASSET_MANIFEST.md — ALL art/audio is placeholder (primitives + silence).
-Highest value next: combat SFX set, one music loop per state, real UI theme.
+See docs/ASSET_MANIFEST.md — all art/audio is placeholder (primitives, original SVG
+icons, runtime-synthesized SFX). Highest value next: real foley to replace the
+synthesized cues, one music loop per state, art-directed UI theme.
 
 ## Important Recent Decisions
 - Armour = depleting pool with overflow (docs/combat.md); DoTs bypass armour
@@ -79,7 +85,10 @@ Highest value next: combat SFX set, one music loop per state, real UI theme.
   public release (charter §0.3) — NOT DONE, cannot be done by the agent
 
 ## Files Recently Changed
-Everything — this was the bootstrap session (see DEVELOPMENT_LOG.md).
+Session 2: combat/{combat_context,combat_action,combat_ai,combat_controller,combat_vfx},
+audio/sfx_library, autoload/{audio_manager,game_manager}, ui/{combat_hud,shop_screen},
+scenes/arena/combat_hud.tscn, assets/icons/*, data/weapons/* (ranges), data/skills/*
+(icons), tests (see DEVELOPMENT_LOG.md).
 
 ## Current Blocking Issues
 - Android/iOS/Linux/macOS exports blocked on environment (SDKs/hosts)

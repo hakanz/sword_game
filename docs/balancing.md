@@ -20,6 +20,12 @@ smoke runs, not statistically robust simulation. Do not over-trust them.
   `data/economy/economy_config.tres`.
 - Content: item/skill/status `.tres` files.
 
+## Ranged identity: PAUSED (owner directive, 2026-08-24)
+All weapons attack at ADJACENT only ("no attacks from distance"). Bows/spears keep
+their class stats but fight point-blank; the band-range code and AI kiting logic
+remain data-driven and dormant. If ranged combat returns, restore per-weapon ranges
+in data/weapons/*.tres and re-add a reach test.
+
 ## Known wants (revisit in Phase 10 with simulation data)
 - Charisma currently prices-only; crowd system will make it combat-relevant.
 - Armour pools may deplete too fast at T1 (fights become HP races after ~R5).

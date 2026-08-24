@@ -23,15 +23,6 @@ combat.distance.long,Long,Uzak
 combat.float.miss,Miss!,Iska!
 combat.hint.too_far,"Too far to attack — approach first!","Saldırmak için çok uzak — önce yaklaş!"
 combat.hint.no_energy,"Not enough energy — rest to recover!","Yeterli enerji yok — dinlenerek toparlan!"
-combat.log.combat_start,"The fight begins: {player} vs {enemy}!","Dövüş başlıyor: {player} karşısında {enemy}!"
-combat.log.round,"--- Round {round} ---","--- Raunt {round} ---"
-combat.log.attack_hit,"{attacker} hits {defender} for {damage} damage ({absorbed} absorbed by armour).","{attacker}, {defender} adlı rakibe {damage} hasar verdi (zırh {absorbed} hasar emdi)."
-combat.log.attack_miss,"{attacker} attacks {defender} — and misses! ({chance}% chance)","{attacker}, {defender} adlı rakibe saldırdı — ve ıskaladı! (%{chance} şans)"
-combat.log.defend,"{name} raises their guard.","{name} savunmaya geçti."
-combat.log.approach,"{name} steps closer. Distance: {distance}.","{name} yaklaştı. Mesafe: {distance}."
-combat.log.retreat,"{name} backs away. Distance: {distance}.","{name} geri çekildi. Mesafe: {distance}."
-combat.log.rest,"{name} catches their breath (+{energy} Energy).","{name} nefeslendi (+{energy} Enerji)."
-combat.log.death,"{name} collapses! The crowd roars!","{name} yere yığıldı! Seyirciler çıldırdı!"
 results.victory,VICTORY!,ZAFER!
 results.defeat,DEFEAT,YENİLGİ
 results.rounds,"The duel lasted {rounds} rounds.","Düello {rounds} raunt sürdü."
@@ -134,7 +125,7 @@ skill.crushing_blow.desc,"A heavy overhead swing. Subtlety not included.","Teped
 skill.sunder_guard.name,Sunder Guard,Zırh Parçalama
 skill.sunder_guard.desc,"Aims for straps and rivets — armour hates this trick.","Kayışlara ve perçinlere nişan alır — zırhlar bu numaradan nefret eder."
 skill.gutter_lunge.name,Gutter Lunge,Hendek Hamlesi
-skill.gutter_lunge.desc,"A vulgar but surprisingly long-reaching stab.","Kaba ama şaşırtıcı derecede uzun menzilli bir saplama."
+skill.gutter_lunge.desc,"A vulgar but remarkably precise stab.","Kaba ama şaşırtıcı derecede isabetli bir saplama."
 skill.venom_smear.name,Venom Smear,Zehir Sürme
 skill.venom_smear.desc,"Poisons the blade. The audience pretends not to see.","Namluyu zehirler. Seyirci görmemiş gibi yapar."
 skill.hamstring_cut.name,Hamstring Cut,Diz Ardı Kesiği
@@ -152,14 +143,6 @@ skill.focused_loose.desc,"One breath, one shot, very few excuses.","Tek nefes, t
 combat.action.skills,Skills,Yetenekler
 combat.hint.cooldown,"On cooldown ({rounds})","Beklemede ({rounds})"
 combat.hint.wrong_weapon,"Wrong weapon type for this skill","Bu yetenek için yanlış silah türü"
-combat.log.skill_hit,"{attacker} uses {skill} on {defender}: {damage} damage ({absorbed} absorbed).","{attacker}, {defender} üzerinde {skill} kullandı: {damage} hasar ({absorbed} emildi)."
-combat.log.skill_miss,"{attacker} tries {skill} on {defender} — and misses! ({chance}% chance)","{attacker}, {defender} üzerinde {skill} denedi — ve ıskaladı! (%{chance} şans)"
-combat.log.buff,"{name} uses {skill}.","{name}, {skill} kullandı."
-combat.log.status_applied,"{name} is afflicted with {status}!","{name}, {status} etkisine girdi!"
-combat.log.status_damage,"{name} suffers {damage} damage from {status}.","{name}, {status} yüzünden {damage} hasar aldı."
-combat.log.status_heal,"{name} recovers {healing} HP from {status}.","{name}, {status} sayesinde {healing} can yeniledi."
-combat.log.status_expired,"{status} fades from {name}.","{name} üzerindeki {status} geçti."
-combat.log.stunned,"{name} is stunned and loses the turn!","{name} sersemledi ve turunu kaybetti!"
 menu.skills,Skills,Yetenekler
 skills.title,Skills,Yetenekler
 skills.learn,Learn,Öğren
@@ -186,3 +169,6 @@ creation.preset.brawler,Brawler,Kavgacı
 creation.preset.brawler.desc,"Hits hard, thinks later. Sometimes never.","Önce vurur, sonra düşünür. Bazen hiç düşünmez."
 creation.preset.swift,Swift,Çevik
 creation.preset.swift.desc,"Never quite where the axe lands.","Balta indiğinde asla tam orada değildir."
+shop.auto_equipped_title,Upgrade equipped!,Yükseltme kuşanıldı!
+shop.auto_equipped_text,"{new} was equipped automatically. Sell your old {old} for {price} gold?","{new} otomatik olarak kuşanıldı. Eski {old}, {price} altına satılsın mı?"
+shop.keep,Keep,Sakla

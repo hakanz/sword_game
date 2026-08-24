@@ -1,27 +1,61 @@
 class_name CombatContext
 extends RefCounted
-## Shared per-combat situational state for a 1v1 duel: the distance band
-## between the two fighters. Multi-combatant support (if ever needed) would
-## generalize this to positions — documented decision in docs/combat.md.
+## Per-combat positional state. Each fighter stands on their OWN cell of an
+## 8-cell arena line — moving is a personal action: the fighter who steps is
+## the only one who moves (design directive, session 2). Distance bands are
+## derived from cell separation:
+##   separation 1 = ADJACENT, 2 = CLOSE, 3 = MEDIUM, 4+ = LONG
+## Fighters can never share a cell (approach stops at separation 1).
 
-var distance: Enums.DistanceBand = Enums.DistanceBand.MEDIUM
+const CELLS: int = 8
 
 ## Current round — inputs the AI's crowd-impatience pressure (long fights
 ## push both fighters toward offense; precursor of the §19 crowd system).
 var round_number: int = 1
 
-
-func approach() -> void:
-	distance = (maxi(distance - 1, Enums.DistanceBand.ADJACENT) as Enums.DistanceBand)
-
-
-func retreat() -> void:
-	distance = (mini(distance + 1, Enums.DistanceBand.LONG) as Enums.DistanceBand)
+var _left: Combatant = null
+var _right: Combatant = null
 
 
-func can_approach() -> bool:
-	return distance > Enums.DistanceBand.ADJACENT
+func setup(left: Combatant, right: Combatant, left_cell: int = 2, right_cell: int = 5) -> void:
+	_left = left
+	_right = right
+	_left.cell = left_cell
+	_right.cell = right_cell
 
 
-func can_retreat() -> bool:
-	return distance < Enums.DistanceBand.LONG
+func separation() -> int:
+	return absi(_left.cell - _right.cell)
+
+
+func band() -> Enums.DistanceBand:
+	return (clampi(separation() - 1, Enums.DistanceBand.ADJACENT,
+			Enums.DistanceBand.LONG) as Enums.DistanceBand)
+
+
+func foe_of(actor: Combatant) -> Combatant:
+	return _right if actor == _left else _left
+
+
+## Toward the foe: +1 or -1 along the line.
+func direction_to_foe(actor: Combatant) -> int:
+	return signi(foe_of(actor).cell - actor.cell)
+
+
+func can_approach(_actor: Combatant) -> bool:
+	return separation() > 1
+
+
+func can_retreat(actor: Combatant) -> bool:
+	var target: int = actor.cell - direction_to_foe(actor)
+	return target >= 0 and target < CELLS
+
+
+## Moves ONLY the actor one cell toward their foe.
+func approach(actor: Combatant) -> void:
+	actor.cell += direction_to_foe(actor)
+
+
+## Moves ONLY the actor one cell away from their foe.
+func retreat(actor: Combatant) -> void:
+	actor.cell -= direction_to_foe(actor)

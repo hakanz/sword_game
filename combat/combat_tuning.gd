@@ -19,6 +19,8 @@ const DEFEND_DAMAGE_REDUCTION: float = 0.3
 # --- Action energy (charter §15: builds should use resources differently) ---
 const MOVE_ENERGY_COST: int = 2
 const REST_ENERGY_RESTORE_FRACTION: float = 0.4
+## Rest also patches wounds a little (session-2 design directive).
+const REST_HP_RESTORE_FRACTION: float = 0.08
 
 # --- Safety ---
 ## Hard cap so a stalemate can never hang the game (winner = higher HP %).

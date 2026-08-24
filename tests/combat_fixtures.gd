@@ -22,7 +22,7 @@ static func make_weapon(
 		damage_min: int = 6, damage_max: int = 10, accuracy_bonus: int = 2,
 		armour_penetration: float = 0.0,
 		range_min: Enums.DistanceBand = Enums.DistanceBand.ADJACENT,
-		range_max: Enums.DistanceBand = Enums.DistanceBand.CLOSE,
+		range_max: Enums.DistanceBand = Enums.DistanceBand.ADJACENT,
 		energy_cost: int = 5,
 		weapon_class: Enums.WeaponClass = Enums.WeaponClass.SWORD) -> WeaponData:
 	var weapon := WeaponData.new()
@@ -59,3 +59,12 @@ static func make_combatant(
 			character if character != null else make_character(),
 			player_controlled, false)
 	return combatant
+
+
+## Positional context for a duel: fighters placed `separation` cells apart
+## (1 = ADJACENT band ... 4+ = LONG band).
+static func make_context(
+		left: Combatant, right: Combatant, separation: int = 3) -> CombatContext:
+	var ctx := CombatContext.new()
+	ctx.setup(left, right, 2, 2 + separation)
+	return ctx

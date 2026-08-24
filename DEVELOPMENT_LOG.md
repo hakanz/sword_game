@@ -65,3 +65,50 @@ See PROJECT_STATE.md (Known Bugs / Technical Debt / Blocking Issues).
 
 ### Next Recommended Task
 Tournament structure + second arena region (complete Phase 6, charter §21).
+
+---
+
+## Session 2 — 2026-08-24 — Owner directives: combat feel + UI overhaul (Claude, autonomous)
+
+Pulled the owner's "Update project settings for Godot 4.7" commit untouched; installed
+Godot 4.7.2-stable locally + export templates; full suite green under 4.7 before changes.
+
+### Added
+- **Positional movement:** per-fighter cells on an 8-cell arena line (CombatContext
+  rework). Approach/retreat moves ONLY the acting fighter; arena walls block retreat;
+  bands derive from separation. Movement is animated per-actor.
+- **Adjacent-only combat:** every weapon and strike skill hits at separation 1 only
+  (data change; band-capable code kept). Gutter Lunge reworked reach->precision (+3 acc).
+- **Hit feedback:** impact sparks + dust puffs (CPUParticles2D), fixed-pattern screen
+  shake around the centered world offset, armour-vs-flesh tinting.
+- **Audio:** runtime-synthesized placeholder SFX library (hit/armour/miss/skill/buff/
+  death/step/coin/click/victory/defeat) — AudioManager.play(name), global button click
+  via node_added hook, victory/defeat stings on results.
+- **HUD overhaul:** combat log panel REMOVED (owner directive); enemy Energy bar added;
+  stat rows carry heart/bolt/shield icons; action buttons icon+text; the player's
+  skills sit INLINE on the action bar as icon buttons (cost amber / cooldown red);
+  fading announcement banner replaces log lines for champion intro/defeat; stun shows
+  as floating text.
+- **Icons:** 19 original SVGs (assets/icons) for actions, stats, skills, coin; SkillData
+  gained an `icon` field wired in all 10 skill resources.
+- **Rest heals:** +8% max HP on top of the energy restore; valid whenever either pool
+  is missing (CombatTuning.REST_HP_RESTORE_FRACTION).
+- **Shop auto-equip:** buying a strict upgrade (EquipmentService.is_weapon/armour_upgrade)
+  equips it automatically and a dialog offers the old piece at its sell price.
+
+### Changed
+- Dead combat.log.* localization keys removed (17); EventBus combat_log_line removed.
+- Screenshot capture grants a skill kit so visuals show the inline skill buttons.
+- Docs: combat.md/ai-adjacent notes, balancing.md "ranged identity PAUSED",
+  ASSET_MANIFEST audio rows now list the synthesized cues, AI_GUIDE engine pin 4.7.
+
+### Tests
+20 suites / 1886 assertions green under 4.7.2; 6-seed smoke 11-23 rounds; new suites:
+positional movement/band mapping/walls, adjacent-only (weapons+skills, data-level),
+rest-heals validity, upgrade heuristics. Screenshots verified menu/creation/arena.
+
+### Known Problems
+Ranged weapon identity dormant (owner directive) — see docs/balancing.md.
+
+### Next Recommended Task
+Tournament structure + second arena region (complete Phase 6, charter §21).

@@ -9,9 +9,9 @@ extends Node2D
 ## that space in the real (stretch-expanded) viewport so fighters stay
 ## centered on every aspect ratio and clear of the anchored HUD bars.
 const GROUND_Y: float = 500.0
-const CENTER_X: float = 640.0
-## Pixel gap between fighters per DistanceBand (ADJACENT..LONG).
-const BAND_GAP_PX: Array[float] = [130.0, 260.0, 390.0, 520.0]
+## Arena line: cell index -> x position (see CombatContext.CELLS).
+const CELL_ORIGIN_X: float = 150.0
+const CELL_SPACING_X: float = 140.0
 
 const PLAYER_FALLBACK: CharacterData = preload("res://data/characters/player_default.tres")
 const ENEMY_FALLBACK: CharacterData = preload("res://data/characters/enemy_vosk.tres")
@@ -43,6 +43,8 @@ func _ready() -> void:
 
 	get_viewport().size_changed.connect(_update_world_offset)
 	_update_world_offset()
+	EventBus.combatant_died.connect(
+			func(_c: Combatant) -> void: AudioManager.play(&"death"))
 
 	player = Combatant.new()
 	player.name = "PlayerCombatant"
@@ -52,7 +54,9 @@ func _ready() -> void:
 	world_root.add_child(enemy)
 	player.setup(player_data, true, false)
 	enemy.setup(enemy_data, false, true)
-	_position_combatants(false)
+	ctx.setup(player, enemy)
+	player.position = Vector2(_cell_to_x(player.cell), GROUND_Y)
+	enemy.position = Vector2(_cell_to_x(enemy.cell), GROUND_Y)
 
 	turn_manager.setup([player, enemy])
 	hud.setup(player, enemy, ctx)
@@ -77,6 +81,7 @@ func _run_combat() -> void:
 		if StatusEffectSystem.is_stunned(actor):
 			# Stunned: the action is lost, but end-of-turn resolution still runs.
 			EventBus.turn_skipped.emit(actor)
+			_spawn_float_text(actor, tr("status.stun.name") + "!", Color(0.95, 0.85, 0.3))
 			await _delay(0.6)
 		else:
 			var decision: CombatDecision
@@ -122,7 +127,7 @@ func _execute(actor: Combatant, decision: CombatDecision) -> void:
 	var result := ActionResult.new()
 	result.actor = actor
 	result.action = type
-	result.distance_after = ctx.distance
+	result.distance_after = ctx.band()
 
 	if type == Enums.ActionType.SKILL:
 		result.skill = decision.skill
@@ -130,13 +135,17 @@ func _execute(actor: Combatant, decision: CombatDecision) -> void:
 		actor.spend_mana(decision.skill.mana_cost)
 		actor.set_cooldown(decision.skill.id, decision.skill.cooldown_rounds)
 		if decision.skill.target == SkillData.Target.SELF:
+			AudioManager.play(&"buff")
 			if decision.skill.applies_status != null:
 				StatusEffectSystem.apply(actor, decision.skill.applies_status)
 				result.applied_status = decision.skill.applies_status
 				_spawn_float_text(actor, tr(decision.skill.applies_status.name_key),
 						decision.skill.applies_status.tint)
+				CombatVfx.spawn_sparks(world_root, actor.position + Vector2(0, -80),
+						decision.skill.applies_status.tint, 10, true)
 			await _delay(0.4)
 		else:
+			AudioManager.play(&"skill")
 			result.target = foe
 			await _resolve_strike(actor, foe, result, decision.skill.power_multiplier,
 					decision.skill.accuracy_mod, decision.skill.armour_pen_bonus,
@@ -153,20 +162,27 @@ func _execute(actor: Combatant, decision: CombatDecision) -> void:
 			actor.set_stance(Enums.Stance.DEFENDING)
 
 		Enums.ActionType.APPROACH:
-			ctx.approach()
-			result.distance_after = ctx.distance
-			_position_combatants(true)
+			# Movement is personal: ONLY the acting fighter steps.
+			ctx.approach(actor)
+			result.distance_after = ctx.band()
+			AudioManager.play(&"step")
+			_animate_step(actor)
 			await _delay(0.3)
 
 		Enums.ActionType.RETREAT:
-			ctx.retreat()
-			result.distance_after = ctx.distance
-			_position_combatants(true)
+			ctx.retreat(actor)
+			result.distance_after = ctx.band()
+			AudioManager.play(&"step")
+			_animate_step(actor)
 			await _delay(0.3)
 
 		Enums.ActionType.REST:
 			result.energy_restored = actor.restore_energy(
 					roundi(actor.max_energy * CombatTuning.REST_ENERGY_RESTORE_FRACTION))
+			result.hp_restored = actor.heal(
+					roundi(actor.max_hp * CombatTuning.REST_HP_RESTORE_FRACTION))
+			if result.hp_restored > 0:
+				_spawn_float_text(actor, "+%d" % result.hp_restored, Color(0.5, 0.9, 0.45))
 
 	# Leaky defend counter (not a hard reset): alternating defend/attack
 	# patterns still accumulate stall pressure instead of dodging the decay.
@@ -191,7 +207,7 @@ func _execute(actor: Combatant, decision: CombatDecision) -> void:
 			turn_manager.round_number, actor.display_name(),
 			Enums.ActionType.keys()[type], detail,
 			actor.current_hp, actor.max_hp, actor.current_energy, actor.max_energy,
-			actor.armour_current, ctx.distance])
+			actor.armour_current, ctx.band()])
 
 	EventBus.action_resolved.emit(result)
 	if result.killed:
@@ -223,15 +239,25 @@ func _resolve_strike(
 		result.mitigation = mitigation
 		result.killed = not foe.is_alive()
 		foe.rig.play_hit_flash()
+		# Impact feedback (charter §25): sound + sparks + shake, tinted by
+		# whether armour soaked the blow or flesh took it.
+		var armour_only: bool = mitigation.hp_damage == 0
+		AudioManager.play(&"armour_hit" if armour_only else &"hit")
+		CombatVfx.spawn_sparks(world_root, foe.position + Vector2(0, -75),
+				Color(0.72, 0.8, 0.95) if armour_only else Color(1.0, 0.55, 0.25))
+		_shake(5.0 if armour_only else 8.0)
 		_spawn_float_text(foe, str(mitigation.after_stance),
-				Color(1.0, 0.85, 0.3) if mitigation.hp_damage == 0 else Color(1.0, 0.35, 0.3))
+				Color(1.0, 0.85, 0.3) if armour_only else Color(1.0, 0.35, 0.3))
 		if on_hit_status != null and foe.is_alive():
 			StatusEffectSystem.apply(foe, on_hit_status)
 			result.applied_status = on_hit_status
 		if result.killed:
 			foe.rig.play_death()
 	else:
+		AudioManager.play(&"miss")
 		foe.rig.play_miss_dodge()
+		CombatVfx.spawn_sparks(world_root, foe.position + Vector2(-18, -40),
+				Color(0.75, 0.7, 0.6, 0.6), 6, true)
 		_spawn_float_text(foe, tr("combat.float.miss"), Color(0.8, 0.8, 0.85))
 	await _delay(0.35)
 
@@ -266,20 +292,15 @@ func _foe_of(actor: Combatant) -> Combatant:
 	return enemy if actor == player else player
 
 
-func _position_combatants(animated: bool) -> void:
-	var gap: float = BAND_GAP_PX[ctx.distance]
-	var player_pos := Vector2(CENTER_X - gap / 2.0, GROUND_Y)
-	var enemy_pos := Vector2(CENTER_X + gap / 2.0, GROUND_Y)
-	if animated:
-		var tween: Tween = create_tween()
-		tween.set_parallel(true)
-		tween.tween_property(player, "position", player_pos, 0.28) \
-				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		tween.tween_property(enemy, "position", enemy_pos, 0.28) \
-				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	else:
-		player.position = player_pos
-		enemy.position = enemy_pos
+func _cell_to_x(cell: int) -> float:
+	return CELL_ORIGIN_X + cell * CELL_SPACING_X
+
+
+## Animates ONLY the fighter who moved (movement is a personal action).
+func _animate_step(actor: Combatant) -> void:
+	var tween: Tween = create_tween()
+	tween.tween_property(actor, "position:x", _cell_to_x(actor.cell), 0.28) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 
 func _spawn_float_text(over: Combatant, text: String, color: Color) -> void:
@@ -300,8 +321,26 @@ func _spawn_float_text(over: Combatant, text: String, color: Color) -> void:
 
 ## Centers the 1280x720 design space inside the actual expanded viewport.
 func _update_world_offset() -> void:
+	world_root.position = _world_offset()
+
+
+func _world_offset() -> Vector2:
 	var size: Vector2 = get_viewport_rect().size
-	world_root.position = ((size - Vector2(1280.0, 720.0)) / 2.0).floor()
+	return ((size - Vector2(1280.0, 720.0)) / 2.0).floor()
+
+
+## Brief impact shake around the centered world offset. Fixed (non-random)
+## pattern: visuals never consume gameplay RNG. Kept small pending the
+## accessibility screen-shake slider (charter §28).
+func _shake(strength: float) -> void:
+	if GameManager.smoke_test:
+		return
+	var base: Vector2 = _world_offset()
+	var tween: Tween = create_tween()
+	tween.tween_property(world_root, "position", base + Vector2(strength, -strength * 0.5), 0.04)
+	tween.tween_property(world_root, "position", base + Vector2(-strength * 0.7, strength * 0.4), 0.05)
+	tween.tween_property(world_root, "position", base + Vector2(strength * 0.35, strength * 0.2), 0.05)
+	tween.tween_property(world_root, "position", base, 0.06)
 
 
 func _delay(seconds: float) -> void:

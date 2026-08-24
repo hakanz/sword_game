@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="SkillData" format=3 load_steps=3]
+[gd_resource type="Resource" script_class="SkillData" format=3 load_steps=4]
 
 [ext_resource type="Script" path="res://data/models/skill_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/icons/skill_war_bellow.svg" id="9"]
 [ext_resource type="Resource" path="res://data/status_effects/rage.tres" id="2"]
 
 [resource]
@@ -8,6 +9,7 @@ script = ExtResource("1")
 id = &"skill.war_bellow"
 name_key = "skill.war_bellow.name"
 description_key = "skill.war_bellow.desc"
+icon = ExtResource("9")
 target = 1
 energy_cost = 10
 mana_cost = 0

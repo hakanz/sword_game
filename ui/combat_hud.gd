@@ -1,15 +1,30 @@
 class_name CombatHUD
 extends CanvasLayer
-## Combat HUD (charter §28): player HP/Energy/Armour, opponent HP/Armour,
-## action bar, hint line, combat log. Fully mouse/touch driven — no hover or
-## keyboard requirement. All visible text comes from translation keys.
+## Combat HUD (charter §28): both fighters' HP/Energy/Armour with icons,
+## an icon action bar with the player's skills inlined (no submenu — session-2
+## directive), a hint line, and a fading announcement banner for champion
+## lines. Fully mouse/touch driven; all visible text via translation keys.
 ## Reads combat state; NEVER computes combat math (charter §6).
 
 signal action_selected(action: Enums.ActionType, skill: SkillData)
 
+const ACTION_ICONS: Dictionary = {
+	Enums.ActionType.ATTACK: preload("res://assets/icons/action_attack.svg"),
+	Enums.ActionType.DEFEND: preload("res://assets/icons/action_defend.svg"),
+	Enums.ActionType.APPROACH: preload("res://assets/icons/action_approach.svg"),
+	Enums.ActionType.RETREAT: preload("res://assets/icons/action_retreat.svg"),
+	Enums.ActionType.REST: preload("res://assets/icons/action_rest.svg"),
+}
+
+const COST_COLOR := Color(0.88, 0.66, 0.25)
+const COOLDOWN_COLOR := Color(0.9, 0.4, 0.35)
+
 var player: Combatant = null
 var enemy: Combatant = null
 var ctx: CombatContext = null
+
+## SkillData -> Button, built once per combat in setup().
+var _skill_buttons: Dictionary = {}
 
 @onready var _player_name: Label = %PlayerName
 @onready var _player_hp_label: Label = %PlayerHPLabel
@@ -21,18 +36,19 @@ var ctx: CombatContext = null
 @onready var _enemy_name: Label = %EnemyName
 @onready var _enemy_hp_label: Label = %EnemyHPLabel
 @onready var _enemy_hp_bar: ProgressBar = %EnemyHPBar
+@onready var _enemy_energy_label: Label = %EnemyEnergyLabel
+@onready var _enemy_energy_bar: ProgressBar = %EnemyEnergyBar
 @onready var _enemy_armour_label: Label = %EnemyArmourLabel
 @onready var _enemy_armour_bar: ProgressBar = %EnemyArmourBar
 @onready var _round_label: Label = %RoundLabel
 @onready var _turn_label: Label = %TurnLabel
 @onready var _distance_label: Label = %DistanceLabel
 @onready var _hint_label: Label = %HintLabel
-@onready var _log: RichTextLabel = %CombatLog
+@onready var _announce_label: Label = %AnnounceLabel
 @onready var _player_status_row: HBoxContainer = %PlayerStatusRow
 @onready var _enemy_status_row: HBoxContainer = %EnemyStatusRow
-@onready var _skills_button: Button = %SkillsButton
-@onready var _skill_panel: PanelContainer = %SkillPanel
-@onready var _skill_list: VBoxContainer = %SkillList
+@onready var _action_bar: HBoxContainer = %ActionBar
+@onready var _skill_separator: VSeparator = %SkillSeparator
 @onready var _buttons: Dictionary = {
 	Enums.ActionType.ATTACK: %AttackButton,
 	Enums.ActionType.DEFEND: %DefendButton,
@@ -48,7 +64,12 @@ func _ready() -> void:
 	(%ApproachButton as Button).text = tr("combat.action.approach")
 	(%RetreatButton as Button).text = tr("combat.action.retreat")
 	(%RestButton as Button).text = tr("combat.action.rest")
-	_skills_button.text = tr("combat.action.skills")
+	for type: Enums.ActionType in _buttons.keys():
+		var button: Button = _buttons[type]
+		button.icon = ACTION_ICONS[type]
+		button.add_theme_constant_override("icon_max_width", 30)
+		button.pressed.connect(_on_action_button.bind(type))
+
 	# Semantic bar colors (same meaning on both panels): HP green,
 	# Energy amber, Armour steel-blue.
 	var hp_fill := UITheme.bar_fill(Color(0.44, 0.75, 0.35))
@@ -57,23 +78,21 @@ func _ready() -> void:
 	_player_hp_bar.add_theme_stylebox_override("fill", hp_fill)
 	_enemy_hp_bar.add_theme_stylebox_override("fill", hp_fill)
 	_player_energy_bar.add_theme_stylebox_override("fill", energy_fill)
+	_enemy_energy_bar.add_theme_stylebox_override("fill", energy_fill)
 	_player_armour_bar.add_theme_stylebox_override("fill", armour_fill)
 	_enemy_armour_bar.add_theme_stylebox_override("fill", armour_fill)
-	for type: Enums.ActionType in _buttons.keys():
-		(_buttons[type] as Button).pressed.connect(_on_action_button.bind(type))
-	_skills_button.pressed.connect(_on_skills_toggled)
+
 	end_player_turn()
 	_hint_label.text = ""
 
 	EventBus.combat_started.connect(_on_combat_started)
 	EventBus.round_started.connect(_on_round_started)
 	EventBus.turn_started.connect(_on_turn_started)
-	EventBus.turn_skipped.connect(_on_turn_skipped)
 	EventBus.action_resolved.connect(_on_action_resolved)
 	EventBus.combatant_died.connect(_on_combatant_died)
-	EventBus.status_applied.connect(_on_status_applied)
+	EventBus.status_applied.connect(_on_status_changed)
 	EventBus.status_ticked.connect(_on_status_ticked)
-	EventBus.status_expired.connect(_on_status_expired)
+	EventBus.status_expired.connect(_on_status_gone)
 
 
 func setup(new_player: Combatant, new_enemy: Combatant, combat_ctx: CombatContext) -> void:
@@ -88,18 +107,50 @@ func setup(new_player: Combatant, new_enemy: Combatant, combat_ctx: CombatContex
 	player.energy_changed.connect(func(_c: int, _m: int) -> void: _refresh_stat_rows())
 	player.armour_changed.connect(func(_c: int, _m: int) -> void: _refresh_stat_rows())
 	enemy.hp_changed.connect(func(_c: int, _m: int) -> void: _refresh_stat_rows())
+	enemy.energy_changed.connect(func(_c: int, _m: int) -> void: _refresh_stat_rows())
 	enemy.armour_changed.connect(func(_c: int, _m: int) -> void: _refresh_stat_rows())
 
+	_build_skill_buttons()
 	_refresh_stat_rows()
 	_refresh_status_rows()
 	_refresh_distance()
 
 
+## The player's skills live directly on the action bar as icon buttons
+## (session-2 directive: no popup submenu). Built once per combat.
+func _build_skill_buttons() -> void:
+	for skill in _skill_buttons.keys():
+		(_skill_buttons[skill] as Button).queue_free()
+	_skill_buttons.clear()
+	_skill_separator.visible = not player.get_skills().is_empty()
+	for skill in player.get_skills():
+		var button := Button.new()
+		button.icon = skill.icon
+		button.text = str(skill.energy_cost)
+		button.custom_minimum_size = Vector2(72, 84)
+		button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		button.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
+		button.expand_icon = true
+		button.add_theme_constant_override("icon_max_width", 36)
+		button.add_theme_font_size_override("font_size", 14)
+		button.add_theme_color_override("font_color", COST_COLOR)
+		button.tooltip_text = "%s — %s" % [tr(skill.name_key), tr(skill.description_key)]
+		button.pressed.connect(_on_skill_button.bind(skill))
+		_action_bar.add_child(button)
+		_skill_buttons[skill] = button
+
+
 func begin_player_turn(actor: Combatant) -> void:
 	for type: Enums.ActionType in _buttons.keys():
 		(_buttons[type] as Button).disabled = not CombatAction.is_valid(type, actor, ctx)
-	_skills_button.disabled = actor.get_skills().is_empty()
-	_populate_skill_panel(actor)
+	for skill: SkillData in _skill_buttons.keys():
+		var button: Button = _skill_buttons[skill]
+		var cooldown: int = actor.cooldown_remaining(skill.id)
+		button.disabled = not CombatAction.is_skill_valid(skill, actor, ctx)
+		# Amber number = energy cost; red number = rounds of cooldown left.
+		button.text = str(cooldown) if cooldown > 0 else str(skill.energy_cost)
+		button.add_theme_color_override("font_color",
+				COOLDOWN_COLOR if cooldown > 0 else COST_COLOR)
 	var attack_reason: String = CombatAction.invalid_reason_key(Enums.ActionType.ATTACK, actor, ctx)
 	_hint_label.text = tr(attack_reason) if attack_reason != "" else ""
 
@@ -107,8 +158,8 @@ func begin_player_turn(actor: Combatant) -> void:
 func end_player_turn() -> void:
 	for type: Enums.ActionType in _buttons.keys():
 		(_buttons[type] as Button).disabled = true
-	_skills_button.disabled = true
-	_skill_panel.visible = false
+	for skill: SkillData in _skill_buttons.keys():
+		(_skill_buttons[skill] as Button).disabled = true
 	_hint_label.text = ""
 
 
@@ -117,47 +168,29 @@ func _on_action_button(type: Enums.ActionType) -> void:
 	action_selected.emit(type, null)
 
 
-func _on_skills_toggled() -> void:
-	_skill_panel.visible = not _skill_panel.visible
-
-
-## Rebuilds the expand-on-demand skill submenu (charter §28) for this turn.
-func _populate_skill_panel(actor: Combatant) -> void:
-	for child in _skill_list.get_children():
-		child.queue_free()
-	for skill in actor.get_skills():
-		var button := Button.new()
-		var reason: String = CombatAction.skill_invalid_reason(skill, actor, ctx)
-		var cooldown: int = actor.cooldown_remaining(skill.id)
-		var label: String = "%s  (%d)" % [tr(skill.name_key), skill.energy_cost]
-		if cooldown > 0:
-			label = tr("combat.hint.cooldown").format({"rounds": cooldown}) + " — " + label
-		button.text = label
-		button.custom_minimum_size = Vector2(0, 48)
-		button.disabled = reason != ""
-		button.pressed.connect(_on_skill_button.bind(skill))
-		_skill_list.add_child(button)
-
-
 func _on_skill_button(skill: SkillData) -> void:
 	end_player_turn()
 	action_selected.emit(Enums.ActionType.SKILL, skill)
 
 
+## Fading center-screen banner (champion intros/defeats and other big beats).
+func show_announcement(text: String) -> void:
+	_announce_label.text = text
+	_announce_label.modulate.a = 1.0
+	var tween: Tween = create_tween()
+	tween.tween_interval(2.4)
+	tween.tween_property(_announce_label, "modulate:a", 0.0, 0.8)
+
+
 # --- EventBus listeners -----------------------------------------------------
 
-func _on_combat_started(p: Combatant, e: Combatant) -> void:
-	_append_log(tr("combat.log.combat_start").format({
-		"player": p.display_name(),
-		"enemy": e.display_name(),
-	}))
+func _on_combat_started(_p: Combatant, e: Combatant) -> void:
 	if e.data.intro_key != "":
-		_append_log(tr(e.data.intro_key))
+		show_announcement(tr(e.data.intro_key))
 
 
 func _on_round_started(round_number: int) -> void:
 	_round_label.text = tr("combat.hud.round").format({"round": round_number})
-	_append_log(tr("combat.log.round").format({"round": round_number}))
 
 
 func _on_turn_started(combatant: Combatant) -> void:
@@ -167,109 +200,28 @@ func _on_turn_started(combatant: Combatant) -> void:
 		_turn_label.text = tr("combat.hud.enemy_turn").format({"name": combatant.display_name()})
 
 
-func _on_turn_skipped(combatant: Combatant) -> void:
-	_append_log(tr("combat.log.stunned").format({"name": combatant.display_name()}))
-
-
-func _on_status_applied(target: Combatant, instance: StatusEffectInstance) -> void:
-	_append_log(tr("combat.log.status_applied").format({
-		"name": target.display_name(),
-		"status": tr(instance.data.name_key),
-	}))
-	_refresh_status_rows()
-
-
-func _on_status_ticked(target: Combatant, results: Array[StatusEffectSystem.TickResult]) -> void:
-	for tick in results:
-		if tick.damage > 0:
-			_append_log(tr("combat.log.status_damage").format({
-				"name": target.display_name(),
-				"damage": tick.damage,
-				"status": tr(tick.effect.name_key),
-			}))
-		if tick.healing > 0:
-			_append_log(tr("combat.log.status_heal").format({
-				"name": target.display_name(),
-				"healing": tick.healing,
-				"status": tr(tick.effect.name_key),
-			}))
-	_refresh_stat_rows()
-	_refresh_status_rows()
-
-
-func _on_status_expired(target: Combatant, effect: StatusEffectData) -> void:
-	_append_log(tr("combat.log.status_expired").format({
-		"name": target.display_name(),
-		"status": tr(effect.name_key),
-	}))
-	_refresh_status_rows()
-
-
 func _on_action_resolved(result: ActionResult) -> void:
-	var actor_name: String = result.actor.display_name()
-	match result.action:
-		Enums.ActionType.ATTACK:
-			if result.hit:
-				_append_log(tr("combat.log.attack_hit").format({
-					"attacker": actor_name,
-					"defender": result.target.display_name(),
-					"damage": result.mitigation.after_stance,
-					"absorbed": result.mitigation.absorbed,
-				}))
-			else:
-				_append_log(tr("combat.log.attack_miss").format({
-					"attacker": actor_name,
-					"defender": result.target.display_name(),
-					"chance": roundi(result.hit_chance * 100.0),
-				}))
-		Enums.ActionType.SKILL:
-			if result.target == null:
-				_append_log(tr("combat.log.buff").format({
-					"name": actor_name,
-					"skill": tr(result.skill.name_key),
-				}))
-			elif result.hit:
-				_append_log(tr("combat.log.skill_hit").format({
-					"attacker": actor_name,
-					"defender": result.target.display_name(),
-					"skill": tr(result.skill.name_key),
-					"damage": result.mitigation.after_stance,
-					"absorbed": result.mitigation.absorbed,
-				}))
-			else:
-				_append_log(tr("combat.log.skill_miss").format({
-					"attacker": actor_name,
-					"defender": result.target.display_name(),
-					"skill": tr(result.skill.name_key),
-					"chance": roundi(result.hit_chance * 100.0),
-				}))
-		Enums.ActionType.DEFEND:
-			_append_log(tr("combat.log.defend").format({"name": actor_name}))
-		Enums.ActionType.APPROACH:
-			_refresh_distance()
-			_append_log(tr("combat.log.approach").format({
-				"name": actor_name,
-				"distance": tr(Enums.distance_band_key(result.distance_after)),
-			}))
-		Enums.ActionType.RETREAT:
-			_refresh_distance()
-			_append_log(tr("combat.log.retreat").format({
-				"name": actor_name,
-				"distance": tr(Enums.distance_band_key(result.distance_after)),
-			}))
-		Enums.ActionType.REST:
-			_append_log(tr("combat.log.rest").format({
-				"name": actor_name,
-				"energy": result.energy_restored,
-			}))
+	if result.action == Enums.ActionType.APPROACH or result.action == Enums.ActionType.RETREAT:
+		_refresh_distance()
 	_refresh_stat_rows()
 
 
 func _on_combatant_died(combatant: Combatant) -> void:
 	if combatant.data.defeat_key != "":
-		_append_log(tr(combatant.data.defeat_key))
-	else:
-		_append_log(tr("combat.log.death").format({"name": combatant.display_name()}))
+		show_announcement(tr(combatant.data.defeat_key))
+
+
+func _on_status_changed(_target: Combatant, _instance: StatusEffectInstance) -> void:
+	_refresh_status_rows()
+
+
+func _on_status_ticked(_target: Combatant, _results: Array) -> void:
+	_refresh_stat_rows()
+	_refresh_status_rows()
+
+
+func _on_status_gone(_target: Combatant, _effect: StatusEffectData) -> void:
+	_refresh_status_rows()
 
 
 # --- Internal refresh -------------------------------------------------------
@@ -281,6 +233,8 @@ func _refresh_stat_rows() -> void:
 	_set_row(_player_armour_label, _player_armour_bar, "combat.hud.armour",
 			player.armour_current, player.armour_max)
 	_set_row(_enemy_hp_label, _enemy_hp_bar, "combat.hud.hp", enemy.current_hp, enemy.max_hp)
+	_set_row(_enemy_energy_label, _enemy_energy_bar, "combat.hud.energy",
+			enemy.current_energy, enemy.max_energy)
 	_set_row(_enemy_armour_label, _enemy_armour_bar, "combat.hud.armour",
 			enemy.armour_current, enemy.armour_max)
 
@@ -294,7 +248,7 @@ func _set_row(label: Label, bar: ProgressBar, key: String, current: int, max_val
 
 
 func _refresh_distance() -> void:
-	_distance_label.text = tr(Enums.distance_band_key(ctx.distance))
+	_distance_label.text = tr(Enums.distance_band_key(ctx.band()))
 
 
 ## Placeholder status icons: tinted squares + stack count (distinct colors;
@@ -318,9 +272,3 @@ func _fill_status_row(row: HBoxContainer, combatant: Combatant) -> void:
 			stacks.text = "x%d" % instance.stacks
 			stacks.add_theme_font_size_override("font_size", 13)
 			row.add_child(stacks)
-
-
-func _append_log(line: String) -> void:
-	# add_text, never append_text: log lines contain fighter names, and
-	# append_text would parse any "[...]" in them as BBCode.
-	_log.add_text(line + "\n")

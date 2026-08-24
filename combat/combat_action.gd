@@ -25,7 +25,7 @@ static func skill_invalid_reason(skill: SkillData, actor: Combatant, ctx: Combat
 	if skill.target == SkillData.Target.FOE:
 		var weapon: WeaponData = actor.get_weapon()
 		var max_band: int = mini(weapon.range_max + skill.range_extend, Enums.DistanceBand.LONG)
-		if ctx.distance < weapon.range_min or ctx.distance > max_band:
+		if ctx.band() < weapon.range_min or ctx.band() > max_band:
 			return "combat.hint.too_far"
 	return ""
 
@@ -45,17 +45,18 @@ static func invalid_reason_key(type: Enums.ActionType, actor: Combatant, ctx: Co
 		return "combat.hint.no_energy"
 	match type:
 		Enums.ActionType.ATTACK:
-			if not actor.get_weapon().can_attack_from(ctx.distance):
+			if not actor.get_weapon().can_attack_from(ctx.band()):
 				return "combat.hint.too_far"
 		Enums.ActionType.APPROACH:
-			if not ctx.can_approach():
-				return "combat.hint.too_far"  # already adjacent; button simply disables
+			if not ctx.can_approach(actor):
+				return "combat.hint.too_far"  # already toe to toe; button simply disables
 		Enums.ActionType.RETREAT:
-			if not ctx.can_retreat():
-				return "combat.hint.too_far"
+			if not ctx.can_retreat(actor):
+				return "combat.hint.too_far"  # own back is to the arena wall
 		Enums.ActionType.REST:
-			if actor.current_energy >= actor.max_energy:
-				return "combat.hint.no_energy"  # nothing to restore; button disables
+			# Rest recovers Energy AND some HP — pointless only when both are full.
+			if actor.current_energy >= actor.max_energy and actor.current_hp >= actor.max_hp:
+				return "combat.hint.no_energy"
 		_:
 			pass
 	return ""

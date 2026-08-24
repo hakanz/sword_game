@@ -25,6 +25,26 @@ static func armour_block_reason(profile: PlayerProfile, piece: ArmourData) -> St
 	return ""
 
 
+## True when `weapon` outclasses the currently equipped weapon (higher
+## expected damage; accuracy breaks ties). Drives the shop's auto-equip.
+static func is_weapon_upgrade(profile: PlayerProfile, weapon: WeaponData) -> bool:
+	var current: WeaponData = ItemDB.weapon(profile.weapon_id)
+	if current == null:
+		return true
+	if weapon.average_damage() != current.average_damage():
+		return weapon.average_damage() > current.average_damage()
+	return weapon.accuracy_bonus > current.accuracy_bonus
+
+
+## True when `piece` beats what is worn in its slot (empty slot = upgrade).
+static func is_armour_upgrade(profile: PlayerProfile, piece: ArmourData) -> bool:
+	for worn_id in profile.armour_ids:
+		var worn: ArmourData = ItemDB.armour_piece(worn_id)
+		if worn != null and worn.slot == piece.slot:
+			return piece.armour > worn.armour
+	return true
+
+
 static func owns_weapon(profile: PlayerProfile, id: StringName) -> bool:
 	return profile.weapon_id == id or profile.inventory_weapon_ids.has(id)
 

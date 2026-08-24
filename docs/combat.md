@@ -1,7 +1,20 @@
 # Combat System — Technical Detail
 
-Status: **Phase 2 (combat prototype) implemented.** Crits, skills, spells, status effects,
-shields, consumables and crowd effects land in later phases; their pipeline slots are marked.
+Status: combat + skills + status effects implemented. Crits, spells, shields,
+consumables and the crowd meter land in later phases; their pipeline slots are marked.
+
+**Session-2 design directives (2026-08-24, owner decision):**
+- **Attacks land only toe to toe (ADJACENT).** Every weapon and strike skill hits at
+  separation 1 and nowhere else — enforced in DATA (all weapon ranges 0-0), the range
+  code stays band-capable if ranged combat ever returns (docs/balancing.md notes the
+  paused ranged identity).
+- **Movement is personal.** Each fighter stands on their own cell of an 8-cell arena
+  line; approach/retreat moves ONLY the acting fighter one cell (never both). Bands
+  derive from cell separation: 1=ADJACENT, 2=CLOSE, 3=MEDIUM, 4+=LONG. The arena wall
+  (cells 0/7) blocks further retreat.
+- **Rest heals too:** 40% max Energy + 8% max HP; valid whenever either is missing.
+- **No combat log panel** — feedback is visual/audio (floating numbers, sparks, shake,
+  synthesized SFX, announcement banner for champion lines).
 
 ## Flow
 `CombatController` (scene `scenes/arena/arena.tscn`) orchestrates:
@@ -12,18 +25,16 @@ COMBAT_START -> [ROUND_START -> per fighter: TURN_START -> action select
 ```
 - `TurnManager` — initiative order (desc), seeded random tiebreak, corpse skipping,
   round counting. Round cap `CombatTuning.MAX_ROUNDS = 100` (stalemate = higher HP% wins).
-- 1v1 duels use a single shared `CombatContext.distance` band (ADJACENT/CLOSE/MEDIUM/LONG)
-  instead of per-fighter positions — simplest correct model for a duel; would generalize to
-  positions if multi-combatant fights are ever added. (Decision: simpler state, no loss of
-  behavior for 1v1; consequence: multi-fighter needs a refactor of CombatContext only.)
+- Positioning: per-fighter cells on an 8-cell line (`CombatContext`, session-2 rework —
+  replaced the old shared-distance model so movement could be personal).
 
 ## Actions (current set)
 | Action | Energy | Effect |
 |---|---|---|
-| Attack | weapon `energy_cost` | roll to hit, damage pipeline below |
+| Attack | weapon `energy_cost` | only at ADJACENT; roll to hit, damage pipeline below |
 | Defend | 0 | stance until own next turn: +8 avoidance, −30% damage taken |
-| Approach / Retreat | 2 | shift distance band by 1 |
-| Rest | 0 | restore 40% of max Energy (invalid at full Energy) |
+| Approach / Retreat | 2 | move OWN cell by 1 (wall-clamped; cannot enter foe's cell) |
+| Rest | 0 | +40% max Energy and +8% max HP (invalid only when both are full) |
 
 Validation + costs: single source `CombatAction` (HUD buttons, AI filtering, and controller
 execution all call it).

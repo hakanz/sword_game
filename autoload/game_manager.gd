@@ -142,6 +142,10 @@ func run_screenshot_capture(dir: String) -> void:
 	SceneRouter.goto_character_creation()
 	await get_tree().create_timer(1.2).timeout
 	get_viewport().get_texture().get_image().save_png(dir.path_join("creation.png"))
+	# Skills included so the capture shows the inline skill icon buttons.
+	profile.known_skill_ids.append_array([
+		&"skill.crushing_blow", &"skill.venom_smear", &"skill.war_bellow",
+	])
 	start_next_duel()
 	await get_tree().create_timer(2.4).timeout
 	get_viewport().get_texture().get_image().save_png(dir.path_join("arena.png"))

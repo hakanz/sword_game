@@ -30,6 +30,10 @@ var initiative_value: int = 0
 
 var stance: Enums.Stance = Enums.Stance.NEUTRAL
 
+## Position on the arena line (see CombatContext) — moving is personal:
+## only the acting fighter's cell changes.
+var cell: int = 0
+
 ## Active status effects (managed by StatusEffectSystem).
 var status_effects: Array[StatusEffectInstance] = []
 

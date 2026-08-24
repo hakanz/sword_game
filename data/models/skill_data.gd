@@ -12,6 +12,8 @@ enum Target {
 @export var id: StringName
 @export var name_key: String = ""
 @export var description_key: String = ""
+## HUD/skill-screen icon (original placeholder SVGs in assets/icons).
+@export var icon: Texture2D
 @export var target: Target = Target.FOE
 
 @export_group("Costs")

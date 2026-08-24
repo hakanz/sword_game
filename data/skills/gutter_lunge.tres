@@ -1,19 +1,21 @@
-[gd_resource type="Resource" script_class="SkillData" format=3 load_steps=2]
+[gd_resource type="Resource" script_class="SkillData" format=3 load_steps=3]
 
 [ext_resource type="Script" path="res://data/models/skill_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/icons/skill_gutter_lunge.svg" id="9"]
 
 [resource]
 script = ExtResource("1")
 id = &"skill.gutter_lunge"
 name_key = "skill.gutter_lunge.name"
 description_key = "skill.gutter_lunge.desc"
+icon = ExtResource("9")
 target = 0
 energy_cost = 10
 mana_cost = 0
 cooldown_rounds = 0
 power_multiplier = 1.1
-accuracy_mod = 0
+accuracy_mod = 3
 armour_pen_bonus = 0.0
-range_extend = 1
+range_extend = 0
 required_level = 2
 allowed_weapon_classes = Array[int]([1, 4])

@@ -15,6 +15,18 @@ func _ready() -> void:
 	for bus in BUSES:
 		var saved: float = SaveManager.get_setting("volume_%s" % bus.to_lower(), 1.0)
 		set_bus_volume(bus, saved)
+	# Global UI click: every button in the game clicks, no per-scene wiring.
+	get_tree().node_added.connect(_on_node_added)
+
+
+func _on_node_added(node: Node) -> void:
+	if node is BaseButton:
+		(node as BaseButton).pressed.connect(func() -> void: play(&"click", "UI"))
+
+
+## Plays a named synthesized cue (see SfxLibrary) on the given bus.
+func play(sfx_name: StringName, bus: String = "SFX", volume_db: float = 0.0) -> void:
+	play_sfx(SfxLibrary.get_stream(sfx_name), bus, volume_db)
 
 
 ## `linear` is 0.0-1.0; persisted and applied to the audio server bus.

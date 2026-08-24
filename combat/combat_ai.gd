@@ -83,7 +83,7 @@ static func _score_base(
 			# Bonus ONLY when too far to fire. can_attack_from() is also false
 			# when too CLOSE (inside a ranged weapon's minimum band) — closing
 			# further would be exactly wrong there (retreat handles it).
-			if ctx.distance > actor.get_weapon().range_max:
+			if ctx.band() > actor.get_weapon().range_max:
 				return 15.0 * p.aggression
 			return 1.0
 
@@ -92,11 +92,11 @@ static func _score_base(
 			var weapon: WeaponData = actor.get_weapon()
 			if hp_fraction < 0.3:
 				value += 8.0 * p.caution
-			if ctx.distance < weapon.range_min:
+			if ctx.band() < weapon.range_min:
 				# Inside minimum range — opening distance is the only way to fire.
 				value += 14.0
 			elif weapon.range_max >= Enums.DistanceBand.MEDIUM \
-					and ctx.distance <= Enums.DistanceBand.CLOSE:
+					and ctx.band() <= Enums.DistanceBand.CLOSE:
 				# Kiting instinct: ranged builds prefer space over brawling.
 				value += 8.0
 			# Retreat fatigue: each flee this combat makes the next one less
@@ -144,7 +144,7 @@ static func _score_skill(
 			value += 14.0 * (1.0 - hp_fraction)
 		if effect.damage_dealt_mult > 1.0:
 			# A damage buff is only good if we can actually reach the foe soon.
-			var reach: float = 1.0 if actor.get_weapon().can_attack_from(ctx.distance) else 0.4
+			var reach: float = 1.0 if actor.get_weapon().can_attack_from(ctx.band()) else 0.4
 			value += 7.0 * p.aggression * reach
 		return value - cost_penalty
 
@@ -193,7 +193,7 @@ static func _estimate_hit(
 static func _expected_incoming(
 		attacker: Combatant, target: Combatant,
 		target_defending: bool, ctx: CombatContext) -> float:
-	if not attacker.get_weapon().can_attack_from(ctx.distance):
+	if not attacker.get_weapon().can_attack_from(ctx.band()):
 		return 0.0
 	var stance: int = Enums.Stance.DEFENDING if target_defending else Enums.Stance.NEUTRAL
 	var chance: float = HitCalculator.hit_chance(attacker, target, 0, stance)

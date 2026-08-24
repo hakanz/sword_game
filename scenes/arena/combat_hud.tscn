@@ -1,6 +1,16 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://ui/combat_hud.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/icons/stat_hp.svg" id="2"]
+[ext_resource type="Texture2D" path="res://assets/icons/stat_energy.svg" id="3"]
+[ext_resource type="Texture2D" path="res://assets/icons/stat_armour.svg" id="4"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_announce"]
+font_size = 26
+font_color = Color(0.95, 0.85, 0.55, 1)
+shadow_size = 6
+shadow_color = Color(0, 0, 0, 0.6)
+shadow_offset = Vector2(2, 3)
 
 [node name="CombatHUD" type="CanvasLayer"]
 script = ExtResource("1")
@@ -48,11 +58,19 @@ theme_override_font_sizes/font_size = 20
 
 [node name="PlayerHPRow" type="HBoxContainer" parent="Root/TopBar/TopRow/PlayerPanel/PlayerMargin/PlayerBox"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
+
+[node name="PlayerHPIcon" type="TextureRect" parent="Root/TopBar/TopRow/PlayerPanel/PlayerMargin/PlayerBox/PlayerHPRow"]
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("2")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="PlayerHPLabel" type="Label" parent="Root/TopBar/TopRow/PlayerPanel/PlayerMargin/PlayerBox/PlayerHPRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(120, 0)
+custom_minimum_size = Vector2(104, 0)
 layout_mode = 2
 theme_override_font_sizes/font_size = 15
 
@@ -65,11 +83,19 @@ show_percentage = false
 
 [node name="PlayerEnergyRow" type="HBoxContainer" parent="Root/TopBar/TopRow/PlayerPanel/PlayerMargin/PlayerBox"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
+
+[node name="PlayerEnergyIcon" type="TextureRect" parent="Root/TopBar/TopRow/PlayerPanel/PlayerMargin/PlayerBox/PlayerEnergyRow"]
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("3")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="PlayerEnergyLabel" type="Label" parent="Root/TopBar/TopRow/PlayerPanel/PlayerMargin/PlayerBox/PlayerEnergyRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(120, 0)
+custom_minimum_size = Vector2(104, 0)
 layout_mode = 2
 theme_override_font_sizes/font_size = 15
 
@@ -82,11 +108,19 @@ show_percentage = false
 
 [node name="PlayerArmourRow" type="HBoxContainer" parent="Root/TopBar/TopRow/PlayerPanel/PlayerMargin/PlayerBox"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
+
+[node name="PlayerArmourIcon" type="TextureRect" parent="Root/TopBar/TopRow/PlayerPanel/PlayerMargin/PlayerBox/PlayerArmourRow"]
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("4")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="PlayerArmourLabel" type="Label" parent="Root/TopBar/TopRow/PlayerPanel/PlayerMargin/PlayerBox/PlayerArmourRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(120, 0)
+custom_minimum_size = Vector2(104, 0)
 layout_mode = 2
 theme_override_font_sizes/font_size = 15
 
@@ -149,11 +183,19 @@ horizontal_alignment = 2
 
 [node name="EnemyHPRow" type="HBoxContainer" parent="Root/TopBar/TopRow/EnemyPanel/EnemyMargin/EnemyBox"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
+
+[node name="EnemyHPIcon" type="TextureRect" parent="Root/TopBar/TopRow/EnemyPanel/EnemyMargin/EnemyBox/EnemyHPRow"]
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("2")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="EnemyHPLabel" type="Label" parent="Root/TopBar/TopRow/EnemyPanel/EnemyMargin/EnemyBox/EnemyHPRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(120, 0)
+custom_minimum_size = Vector2(104, 0)
 layout_mode = 2
 theme_override_font_sizes/font_size = 15
 
@@ -164,13 +206,46 @@ layout_mode = 2
 size_flags_vertical = 4
 show_percentage = false
 
+[node name="EnemyEnergyRow" type="HBoxContainer" parent="Root/TopBar/TopRow/EnemyPanel/EnemyMargin/EnemyBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="EnemyEnergyIcon" type="TextureRect" parent="Root/TopBar/TopRow/EnemyPanel/EnemyMargin/EnemyBox/EnemyEnergyRow"]
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("3")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="EnemyEnergyLabel" type="Label" parent="Root/TopBar/TopRow/EnemyPanel/EnemyMargin/EnemyBox/EnemyEnergyRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(104, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+
+[node name="EnemyEnergyBar" type="ProgressBar" parent="Root/TopBar/TopRow/EnemyPanel/EnemyMargin/EnemyBox/EnemyEnergyRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(170, 16)
+layout_mode = 2
+size_flags_vertical = 4
+show_percentage = false
+
 [node name="EnemyArmourRow" type="HBoxContainer" parent="Root/TopBar/TopRow/EnemyPanel/EnemyMargin/EnemyBox"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
+
+[node name="EnemyArmourIcon" type="TextureRect" parent="Root/TopBar/TopRow/EnemyPanel/EnemyMargin/EnemyBox/EnemyArmourRow"]
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("4")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="EnemyArmourLabel" type="Label" parent="Root/TopBar/TopRow/EnemyPanel/EnemyMargin/EnemyBox/EnemyArmourRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(120, 0)
+custom_minimum_size = Vector2(104, 0)
 layout_mode = 2
 theme_override_font_sizes/font_size = 15
 
@@ -188,13 +263,26 @@ layout_mode = 2
 alignment = 2
 theme_override_constants/separation = 4
 
+[node name="AnnounceLabel" type="Label" parent="Root"]
+unique_name_in_owner = true
+modulate = Color(1, 1, 1, 0)
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 160.0
+offset_bottom = 230.0
+grow_horizontal = 2
+label_settings = SubResource("LabelSettings_announce")
+horizontal_alignment = 1
+autowrap_mode = 2
+
 [node name="BottomBar" type="MarginContainer" parent="Root"]
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -190.0
+offset_top = -128.0
 grow_horizontal = 2
 grow_vertical = 0
 theme_override_constants/margin_left = 14
@@ -205,104 +293,66 @@ theme_override_constants/margin_bottom = 12
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="LogPanel" type="PanelContainer" parent="Root/BottomBar/BottomRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="LogMargin" type="MarginContainer" parent="Root/BottomBar/BottomRow/LogPanel"]
-layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 6
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 6
-
-[node name="CombatLog" type="RichTextLabel" parent="Root/BottomBar/BottomRow/LogPanel/LogMargin"]
+[node name="HintLabel" type="Label" parent="Root/BottomBar/BottomRow"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/normal_font_size = 15
-scroll_following = true
+size_flags_horizontal = 3
+size_flags_vertical = 8
+theme_override_colors/font_color = Color(1, 0.85, 0.45, 1)
+theme_override_font_sizes/font_size = 15
+autowrap_mode = 2
 
-[node name="RightBox" type="VBoxContainer" parent="Root/BottomBar/BottomRow"]
+[node name="ActionBar" type="HBoxContainer" parent="Root/BottomBar/BottomRow"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 8
 theme_override_constants/separation = 8
 
-[node name="HintLabel" type="Label" parent="Root/BottomBar/BottomRow/RightBox"]
+[node name="AttackButton" type="Button" parent="Root/BottomBar/BottomRow/ActionBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(96, 84)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+icon_alignment = 1
+vertical_icon_alignment = 0
+expand_icon = true
+
+[node name="DefendButton" type="Button" parent="Root/BottomBar/BottomRow/ActionBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(96, 84)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+icon_alignment = 1
+vertical_icon_alignment = 0
+expand_icon = true
+
+[node name="ApproachButton" type="Button" parent="Root/BottomBar/BottomRow/ActionBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(96, 84)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+icon_alignment = 1
+vertical_icon_alignment = 0
+expand_icon = true
+
+[node name="RetreatButton" type="Button" parent="Root/BottomBar/BottomRow/ActionBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(96, 84)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+icon_alignment = 1
+vertical_icon_alignment = 0
+expand_icon = true
+
+[node name="RestButton" type="Button" parent="Root/BottomBar/BottomRow/ActionBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(96, 84)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+icon_alignment = 1
+vertical_icon_alignment = 0
+expand_icon = true
+
+[node name="SkillSeparator" type="VSeparator" parent="Root/BottomBar/BottomRow/ActionBar"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.85, 0.45, 1)
-theme_override_font_sizes/font_size = 15
-horizontal_alignment = 2
-
-[node name="ActionBar" type="HBoxContainer" parent="Root/BottomBar/BottomRow/RightBox"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="AttackButton" type="Button" parent="Root/BottomBar/BottomRow/RightBox/ActionBar"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(120, 58)
-layout_mode = 2
-theme_override_font_sizes/font_size = 18
-
-[node name="SkillsButton" type="Button" parent="Root/BottomBar/BottomRow/RightBox/ActionBar"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(120, 58)
-layout_mode = 2
-theme_override_font_sizes/font_size = 18
-
-[node name="DefendButton" type="Button" parent="Root/BottomBar/BottomRow/RightBox/ActionBar"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(120, 58)
-layout_mode = 2
-theme_override_font_sizes/font_size = 18
-
-[node name="ApproachButton" type="Button" parent="Root/BottomBar/BottomRow/RightBox/ActionBar"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(120, 58)
-layout_mode = 2
-theme_override_font_sizes/font_size = 18
-
-[node name="RetreatButton" type="Button" parent="Root/BottomBar/BottomRow/RightBox/ActionBar"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(120, 58)
-layout_mode = 2
-theme_override_font_sizes/font_size = 18
-
-[node name="RestButton" type="Button" parent="Root/BottomBar/BottomRow/RightBox/ActionBar"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(120, 58)
-layout_mode = 2
-theme_override_font_sizes/font_size = 18
-
-[node name="SkillPanel" type="PanelContainer" parent="Root"]
-unique_name_in_owner = true
-visible = false
-layout_mode = 1
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -480.0
-offset_top = -500.0
-offset_right = -14.0
-offset_bottom = -200.0
-grow_horizontal = 0
-grow_vertical = 0
-
-[node name="SkillMargin" type="MarginContainer" parent="Root/SkillPanel"]
-layout_mode = 2
-theme_override_constants/margin_left = 8
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 8
-theme_override_constants/margin_bottom = 8
-
-[node name="SkillScroll" type="ScrollContainer" parent="Root/SkillPanel/SkillMargin"]
-layout_mode = 2
-horizontal_scroll_mode = 0
-
-[node name="SkillList" type="VBoxContainer" parent="Root/SkillPanel/SkillMargin/SkillScroll"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 6

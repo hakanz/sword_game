@@ -1,12 +1,14 @@
-[gd_resource type="Resource" script_class="SkillData" format=3 load_steps=2]
+[gd_resource type="Resource" script_class="SkillData" format=3 load_steps=3]
 
 [ext_resource type="Script" path="res://data/models/skill_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/icons/skill_crushing_blow.svg" id="9"]
 
 [resource]
 script = ExtResource("1")
 id = &"skill.crushing_blow"
 name_key = "skill.crushing_blow.name"
 description_key = "skill.crushing_blow.desc"
+icon = ExtResource("9")
 target = 0
 energy_cost = 14
 mana_cost = 0

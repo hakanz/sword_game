@@ -8,12 +8,16 @@ enum Mode { BUY, SELL }
 
 var _mode: Mode = Mode.BUY
 
+## Pending old-item sale offered after an auto-equip: {is_weapon, id, price}.
+var _pending_sale: Dictionary = {}
+
 @onready var _title: Label = %TitleLabel
 @onready var _gold: Label = %GoldLabel
 @onready var _tab_buy: Button = %BuyTabButton
 @onready var _tab_sell: Button = %SellTabButton
 @onready var _list: VBoxContainer = %ItemList
 @onready var _back: Button = %BackButton
+@onready var _auto_equip_dialog: ConfirmationDialog = %AutoEquipDialog
 
 
 func _ready() -> void:
@@ -24,6 +28,9 @@ func _ready() -> void:
 	_tab_buy.text = tr("shop.tab_buy")
 	_tab_sell.text = tr("shop.tab_sell")
 	_back.text = tr("common.back")
+	_auto_equip_dialog.title = tr("shop.auto_equipped_title")
+	_auto_equip_dialog.cancel_button_text = tr("shop.keep")
+	_auto_equip_dialog.confirmed.connect(_on_sale_confirmed)
 	_tab_buy.pressed.connect(func() -> void: _set_mode(Mode.BUY))
 	_tab_sell.pressed.connect(func() -> void: _set_mode(Mode.SELL))
 	_back.pressed.connect(SceneRouter.goto_main_menu)
@@ -84,11 +91,74 @@ func _buy(profile: PlayerProfile, is_weapon: bool, item: Resource) -> void:
 	if profile.gold < price:
 		return
 	profile.gold -= price
+	AudioManager.play(&"coin")
 	if is_weapon:
 		profile.inventory_weapon_ids.append(item.get("id"))
 	else:
 		profile.inventory_armour_ids.append(item.get("id"))
+
+	# Auto-equip upgrades (session-2 directive), then offer the old piece
+	# for sale at its current price.
+	var old_id: StringName = &""
+	if is_weapon:
+		var weapon := item as WeaponData
+		if EquipmentService.is_weapon_upgrade(profile, weapon) \
+				and EquipmentService.weapon_block_reason(profile, weapon) == "":
+			old_id = profile.weapon_id
+			if not EquipmentService.equip_weapon(profile, weapon.id):
+				old_id = &""
+	else:
+		var piece := item as ArmourData
+		if EquipmentService.is_armour_upgrade(profile, piece) \
+				and EquipmentService.armour_block_reason(profile, piece) == "":
+			old_id = _worn_in_slot(profile, piece.slot)
+			if not EquipmentService.equip_armour(profile, piece.id):
+				old_id = &""
+
 	SaveManager.save_profile(profile)  # autosave after purchases (charter §31)
+	_refresh()
+	if old_id != &"":
+		_offer_old_item_sale(profile, is_weapon, old_id, item)
+
+
+## Which piece is worn in `slot` right now ("" when the slot is empty).
+func _worn_in_slot(profile: PlayerProfile, slot: Enums.EquipSlot) -> StringName:
+	for worn_id in profile.armour_ids:
+		var worn: ArmourData = ItemDB.armour_piece(worn_id)
+		if worn != null and worn.slot == slot:
+			return worn_id
+	return &""
+
+
+func _offer_old_item_sale(
+		profile: PlayerProfile, is_weapon: bool, old_id: StringName, new_item: Resource) -> void:
+	var old_item: Resource = ItemDB.weapon(old_id) if is_weapon else ItemDB.armour_piece(old_id)
+	if old_item == null:
+		return
+	var price: int = EconomyCalculator.sell_price(
+			GameManager.ECONOMY_CONFIG, old_item.get("value"), profile.attributes.charisma)
+	_pending_sale = {"is_weapon": is_weapon, "id": old_id, "price": price}
+	_auto_equip_dialog.dialog_text = tr("shop.auto_equipped_text").format({
+		"new": tr(new_item.get("name_key")),
+		"old": tr(old_item.get("name_key")),
+		"price": price,
+	})
+	_auto_equip_dialog.ok_button_text = "%s (+%d)" % [tr("shop.tab_sell"), price]
+	_auto_equip_dialog.popup_centered()
+
+
+func _on_sale_confirmed() -> void:
+	if _pending_sale.is_empty():
+		return
+	var profile: PlayerProfile = GameManager.profile
+	if _pending_sale["is_weapon"]:
+		profile.inventory_weapon_ids.erase(_pending_sale["id"])
+	else:
+		profile.inventory_armour_ids.erase(_pending_sale["id"])
+	profile.gold += _pending_sale["price"]
+	AudioManager.play(&"coin")
+	_pending_sale = {}
+	SaveManager.save_profile(profile)
 	_refresh()
 
 
@@ -100,6 +170,7 @@ func _sell(profile: PlayerProfile, is_weapon: bool, id: StringName, value: int) 
 	else:
 		profile.inventory_armour_ids.erase(id)
 	profile.gold += price
+	AudioManager.play(&"coin")
 	SaveManager.save_profile(profile)
 	_refresh()
 

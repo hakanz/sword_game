@@ -16,6 +16,7 @@ var killed: bool = false
 
 # Rest fields
 var energy_restored: int = 0
+var hp_restored: int = 0
 
 # Movement fields
 var distance_after: Enums.DistanceBand = Enums.DistanceBand.MEDIUM

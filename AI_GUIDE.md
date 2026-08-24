@@ -19,12 +19,13 @@ Humorous cartoon-violence tone (see `docs/writing_style.md`). Priority order whe
 quality > combat feel > content volume > polish.**
 
 ## Technology Stack
-- **Godot 4.4.1-stable (pinned).** Engine version bumps are explicit, documented decisions
-  (decision-log format), never silent.
+- **Godot 4.7 (pinned; project owner bumped from 4.4.1 on 2026-08-24, commit "Update
+  project settings for Godot 4.7").** Engine version bumps are explicit, documented
+  decisions (decision-log format), never silent.
 - **GDScript only**, fully typed. No C# (breaks/limits Web export).
 - **Compatibility renderer** on all platforms (mobile/Web reach). Forward+ only behind a
   quality toggle if a specific effect demands it, with a Compatibility fallback.
-- Local dev binary on this machine: `C:\Users\HAKAN\Tools\Godot\Godot_v4.4.1-stable_win64_console.exe`
+- Local dev binary on this machine: `C:\Users\HAKAN\Tools\Godot\Godot_v4.7.2-stable_win64_console.exe`
   (machine-specific note; CI downloads its own copy).
 
 ## Supported Platforms
@@ -93,6 +94,8 @@ See `docs/combat.md` for formulas. Flow: `CombatController` orchestrates
 `docs/ai.md`) -> `CombatAction` validation -> calculators -> `Combatant` state -> `EventBus`
 events -> HUD/rig presentation. Damage pipeline order is fixed (charter §15); armour is a
 depleting pool; excess damage always carries into HP. Hit chance clamped 5%–95%.
+Owner directives (2026-08-24): attacks only at ADJACENT (enforced in weapon data);
+movement is personal (per-fighter cells — see docs/combat.md); no combat log panel.
 
 ## Character / Item / Skill Architecture
 - 8 attributes (`AttributeBlock`): strength, agility, attack, defence, vitality, stamina,

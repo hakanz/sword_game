@@ -13,8 +13,7 @@ func _duelists() -> Array[Combatant]:
 func test_closes_distance_when_out_of_melee_range() -> void:
 	RngService.set_seed(11)
 	var pair := _duelists()
-	var ctx := CombatContext.new()
-	ctx.distance = Enums.DistanceBand.LONG
+	var ctx := CombatFixtures.make_context(pair[0], pair[1], 4)
 	assert_eq(CombatAI.choose_action(pair[0], pair[1], ctx).type, Enums.ActionType.APPROACH,
 			"melee fighter far away must approach")
 	pair[0].free()
@@ -24,8 +23,7 @@ func test_closes_distance_when_out_of_melee_range() -> void:
 func test_attacks_when_adjacent_and_able() -> void:
 	RngService.set_seed(11)
 	var pair := _duelists()
-	var ctx := CombatContext.new()
-	ctx.distance = Enums.DistanceBand.ADJACENT
+	var ctx := CombatFixtures.make_context(pair[0], pair[1], 1)
 	assert_eq(CombatAI.choose_action(pair[0], pair[1], ctx).type, Enums.ActionType.ATTACK,
 			"healthy fighter in range with energy must attack")
 	pair[0].free()
@@ -35,8 +33,7 @@ func test_attacks_when_adjacent_and_able() -> void:
 func test_rests_when_exhausted() -> void:
 	RngService.set_seed(11)
 	var pair := _duelists()
-	var ctx := CombatContext.new()
-	ctx.distance = Enums.DistanceBand.ADJACENT
+	var ctx := CombatFixtures.make_context(pair[0], pair[1], 1)
 	pair[0].current_energy = 0
 	assert_eq(CombatAI.choose_action(pair[0], pair[1], ctx).type, Enums.ActionType.REST,
 			"exhausted fighter must recover energy")
@@ -54,8 +51,7 @@ func test_stalling_has_diminishing_returns() -> void:
 	var turtle := CombatFixtures.make_combatant(
 			CombatFixtures.make_character(null, null, personality))
 	var foe := CombatFixtures.make_combatant()
-	var ctx := CombatContext.new()
-	ctx.distance = Enums.DistanceBand.ADJACENT
+	var ctx := CombatFixtures.make_context(turtle, foe, 1)
 	turtle.current_hp = roundi(turtle.max_hp * 0.2)
 
 	var first_choice: Enums.ActionType = CombatAI.choose_action(turtle, foe, ctx).type
@@ -79,8 +75,7 @@ func test_crowd_impatience_forces_convergence() -> void:
 	var turtle := CombatFixtures.make_combatant(
 			CombatFixtures.make_character(null, null, personality))
 	var foe := CombatFixtures.make_combatant()
-	var ctx := CombatContext.new()
-	ctx.distance = Enums.DistanceBand.ADJACENT
+	var ctx := CombatFixtures.make_context(turtle, foe, 1)
 	turtle.current_hp = roundi(turtle.max_hp * 0.2)
 	ctx.round_number = 80
 	assert_eq(CombatAI.choose_action(turtle, foe, ctx).type, Enums.ActionType.ATTACK,
@@ -97,8 +92,7 @@ func test_aggressive_personality_prefers_attack_over_defend() -> void:
 	var attacker := CombatFixtures.make_combatant(
 			CombatFixtures.make_character(null, null, personality))
 	var defender := CombatFixtures.make_combatant()
-	var ctx := CombatContext.new()
-	ctx.distance = Enums.DistanceBand.ADJACENT
+	var ctx := CombatFixtures.make_context(attacker, defender, 1)
 	var attacks: int = 0
 	for _i in 10:
 		if CombatAI.choose_action(attacker, defender, ctx).type == Enums.ActionType.ATTACK:
