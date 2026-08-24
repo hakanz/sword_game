@@ -1,0 +1,256 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://ui/combat_hud.gd" id="1"]
+
+[node name="CombatHUD" type="CanvasLayer"]
+script = ExtResource("1")
+
+[node name="Root" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="TopBar" type="MarginContainer" parent="Root"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+grow_horizontal = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 14
+
+[node name="TopRow" type="HBoxContainer" parent="Root/TopBar"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="PlayerPanel" type="PanelContainer" parent="Root/TopBar/TopRow"]
+layout_mode = 2
+
+[node name="PlayerMargin" type="MarginContainer" parent="Root/TopBar/TopRow/PlayerPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="PlayerBox" type="VBoxContainer" parent="Root/TopBar/TopRow/PlayerPanel/PlayerMargin"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="PlayerName" type="Label" parent="Root/TopBar/TopRow/PlayerPanel/PlayerMargin/PlayerBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+
+[node name="PlayerHPRow" type="HBoxContainer" parent="Root/TopBar/TopRow/PlayerPanel/PlayerMargin/PlayerBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PlayerHPLabel" type="Label" parent="Root/TopBar/TopRow/PlayerPanel/PlayerMargin/PlayerBox/PlayerHPRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+
+[node name="PlayerHPBar" type="ProgressBar" parent="Root/TopBar/TopRow/PlayerPanel/PlayerMargin/PlayerBox/PlayerHPRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(170, 16)
+layout_mode = 2
+size_flags_vertical = 4
+show_percentage = false
+
+[node name="PlayerEnergyRow" type="HBoxContainer" parent="Root/TopBar/TopRow/PlayerPanel/PlayerMargin/PlayerBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PlayerEnergyLabel" type="Label" parent="Root/TopBar/TopRow/PlayerPanel/PlayerMargin/PlayerBox/PlayerEnergyRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+
+[node name="PlayerEnergyBar" type="ProgressBar" parent="Root/TopBar/TopRow/PlayerPanel/PlayerMargin/PlayerBox/PlayerEnergyRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(170, 16)
+layout_mode = 2
+size_flags_vertical = 4
+show_percentage = false
+
+[node name="PlayerArmourRow" type="HBoxContainer" parent="Root/TopBar/TopRow/PlayerPanel/PlayerMargin/PlayerBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PlayerArmourLabel" type="Label" parent="Root/TopBar/TopRow/PlayerPanel/PlayerMargin/PlayerBox/PlayerArmourRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+
+[node name="PlayerArmourBar" type="ProgressBar" parent="Root/TopBar/TopRow/PlayerPanel/PlayerMargin/PlayerBox/PlayerArmourRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(170, 16)
+layout_mode = 2
+size_flags_vertical = 4
+show_percentage = false
+
+[node name="CenterBox" type="VBoxContainer" parent="Root/TopBar/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="RoundLabel" type="Label" parent="Root/TopBar/TopRow/CenterBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+
+[node name="TurnLabel" type="Label" parent="Root/TopBar/TopRow/CenterBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+
+[node name="DistanceLabel" type="Label" parent="Root/TopBar/TopRow/CenterBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.8, 0.7, 1)
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+
+[node name="EnemyPanel" type="PanelContainer" parent="Root/TopBar/TopRow"]
+layout_mode = 2
+
+[node name="EnemyMargin" type="MarginContainer" parent="Root/TopBar/TopRow/EnemyPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="EnemyBox" type="VBoxContainer" parent="Root/TopBar/TopRow/EnemyPanel/EnemyMargin"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="EnemyName" type="Label" parent="Root/TopBar/TopRow/EnemyPanel/EnemyMargin/EnemyBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 2
+
+[node name="EnemyHPRow" type="HBoxContainer" parent="Root/TopBar/TopRow/EnemyPanel/EnemyMargin/EnemyBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="EnemyHPLabel" type="Label" parent="Root/TopBar/TopRow/EnemyPanel/EnemyMargin/EnemyBox/EnemyHPRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+
+[node name="EnemyHPBar" type="ProgressBar" parent="Root/TopBar/TopRow/EnemyPanel/EnemyMargin/EnemyBox/EnemyHPRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(170, 16)
+layout_mode = 2
+size_flags_vertical = 4
+show_percentage = false
+
+[node name="EnemyArmourRow" type="HBoxContainer" parent="Root/TopBar/TopRow/EnemyPanel/EnemyMargin/EnemyBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="EnemyArmourLabel" type="Label" parent="Root/TopBar/TopRow/EnemyPanel/EnemyMargin/EnemyBox/EnemyArmourRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+
+[node name="EnemyArmourBar" type="ProgressBar" parent="Root/TopBar/TopRow/EnemyPanel/EnemyMargin/EnemyBox/EnemyArmourRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(170, 16)
+layout_mode = 2
+size_flags_vertical = 4
+show_percentage = false
+
+[node name="BottomBar" type="MarginContainer" parent="Root"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -190.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="BottomRow" type="HBoxContainer" parent="Root/BottomBar"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="LogPanel" type="PanelContainer" parent="Root/BottomBar/BottomRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LogMargin" type="MarginContainer" parent="Root/BottomBar/BottomRow/LogPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 6
+
+[node name="CombatLog" type="RichTextLabel" parent="Root/BottomBar/BottomRow/LogPanel/LogMargin"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/normal_font_size = 15
+scroll_following = true
+
+[node name="RightBox" type="VBoxContainer" parent="Root/BottomBar/BottomRow"]
+layout_mode = 2
+size_flags_vertical = 8
+theme_override_constants/separation = 8
+
+[node name="HintLabel" type="Label" parent="Root/BottomBar/BottomRow/RightBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.45, 1)
+theme_override_font_sizes/font_size = 15
+horizontal_alignment = 2
+
+[node name="ActionBar" type="HBoxContainer" parent="Root/BottomBar/BottomRow/RightBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="AttackButton" type="Button" parent="Root/BottomBar/BottomRow/RightBox/ActionBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 58)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+
+[node name="DefendButton" type="Button" parent="Root/BottomBar/BottomRow/RightBox/ActionBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 58)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+
+[node name="ApproachButton" type="Button" parent="Root/BottomBar/BottomRow/RightBox/ActionBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 58)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+
+[node name="RetreatButton" type="Button" parent="Root/BottomBar/BottomRow/RightBox/ActionBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 58)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+
+[node name="RestButton" type="Button" parent="Root/BottomBar/BottomRow/RightBox/ActionBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 58)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18

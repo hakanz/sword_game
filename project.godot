@@ -13,6 +13,7 @@ config_version=5
 config/name="Arena Legends"
 config/description="Original 2D turn-based gladiator RPG (working title — see PROJECT_STATE.md before public release)."
 config/version="0.1.0-dev"
+run/main_scene="res://scenes/boot/boot.tscn"
 config/features=PackedStringArray("4.4", "GL Compatibility")
 config/icon="res://icon.svg"
 
@@ -37,6 +38,11 @@ window/size/viewport_height=720
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 window/handheld/orientation=4
+
+[internationalization]
+
+locale/translations=PackedStringArray("res://localization/strings.en.translation", "res://localization/strings.tr.translation")
+locale/fallback="en"
 
 [rendering]
 

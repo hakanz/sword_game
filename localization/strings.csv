@@ -1,0 +1,46 @@
+keys,en,tr
+app.title,Arena Legends,Arena Legends
+menu.play,Enter the Arena,Arenaya Gir
+menu.quit,Quit,Çıkış
+menu.language,Language: English,Dil: Türkçe
+menu.subtitle,A gladiator saga of questionable glory,Şüpheli şanla dolu bir gladyatör destanı
+boot.loading,Loading...,Yükleniyor...
+combat.action.attack,Attack,Saldır
+combat.action.defend,Defend,Savun
+combat.action.approach,Approach,Yaklaş
+combat.action.retreat,Retreat,Geri Çekil
+combat.action.rest,Rest,Dinlen
+combat.hud.round,"Round {round}","Raunt {round}"
+combat.hud.your_turn,Your turn!,Sıra sende!
+combat.hud.enemy_turn,"{name} is thinking...","{name} düşünüyor..."
+combat.hud.hp,HP,Can
+combat.hud.energy,Energy,Enerji
+combat.hud.armour,Armour,Zırh
+combat.distance.adjacent,Adjacent,Bitişik
+combat.distance.close,Close,Yakın
+combat.distance.medium,Medium,Orta
+combat.distance.long,Long,Uzak
+combat.float.miss,Miss!,Iska!
+combat.hint.too_far,"Too far to attack — approach first!","Saldırmak için çok uzak — önce yaklaş!"
+combat.hint.no_energy,"Not enough energy — rest to recover!","Yeterli enerji yok — dinlenerek toparlan!"
+combat.log.combat_start,"The fight begins: {player} vs {enemy}!","Dövüş başlıyor: {player} karşısında {enemy}!"
+combat.log.round,"--- Round {round} ---","--- Raunt {round} ---"
+combat.log.attack_hit,"{attacker} hits {defender} for {damage} damage ({absorbed} absorbed by armour).","{attacker}, {defender} adlı rakibe {damage} hasar verdi (zırh {absorbed} hasar emdi)."
+combat.log.attack_miss,"{attacker} attacks {defender} — and misses! ({chance}% chance)","{attacker}, {defender} adlı rakibe saldırdı — ve ıskaladı! (%{chance} şans)"
+combat.log.defend,"{name} raises their guard.","{name} savunmaya geçti."
+combat.log.approach,"{name} steps closer. Distance: {distance}.","{name} yaklaştı. Mesafe: {distance}."
+combat.log.retreat,"{name} backs away. Distance: {distance}.","{name} geri çekildi. Mesafe: {distance}."
+combat.log.rest,"{name} catches their breath (+{energy} Energy).","{name} nefeslendi (+{energy} Enerji)."
+combat.log.death,"{name} collapses! The crowd roars!","{name} yere yığıldı! Seyirciler çıldırdı!"
+results.victory,VICTORY!,ZAFER!
+results.defeat,DEFEAT,YENİLGİ
+results.rounds,"The duel lasted {rounds} rounds.","Düello {rounds} raunt sürdü."
+results.damage_dealt,"Damage dealt: {damage}","Verilen hasar: {damage}"
+results.back_to_menu,Back to Menu,Menüye Dön
+character.default_name,New Gladiator,Yeni Gladyatör
+item.weapon.training_shortsword.name,Training Shortsword,Talim Kısa Kılıcı
+item.weapon.pit_hatchet.name,Pit Hatchet,Çukur Baltası
+item.armour.padded_vest.name,Padded Vest,Dolgulu Yelek
+item.armour.scrap_helm.name,Scrap Helm,Hurda Miğfer
+item.armour.leather_straps.name,Leather Straps,Deri Kayışlar
+arena.gravelmaw.name,Gravelmaw Arena,Gravelmaw Arenası
