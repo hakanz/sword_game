@@ -7,3 +7,4 @@ extends Resource
 
 @export var weapons: Array[WeaponData] = []
 @export var armour: Array[ArmourData] = []
+@export var skills: Array[SkillData] = []

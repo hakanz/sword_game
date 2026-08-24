@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="SkillData" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"skill.sunder_guard"
+name_key = "skill.sunder_guard.name"
+description_key = "skill.sunder_guard.desc"
+target = 0
+energy_cost = 12
+mana_cost = 0
+cooldown_rounds = 0
+power_multiplier = 1.0
+accuracy_mod = 0
+armour_pen_bonus = 0.5
+range_extend = 0
+required_level = 1
+allowed_weapon_classes = Array[int]([1, 2, 3, 4])

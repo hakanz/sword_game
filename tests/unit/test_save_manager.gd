@@ -90,6 +90,27 @@ func test_v1_save_migrates_to_v2() -> void:
 	)
 
 
+func test_v2_save_migrates_to_v3() -> void:
+	_with_test_path(func() -> void:
+		# v2 envelope: inventories but no known skills (added in v3).
+		var file := FileAccess.open(TEST_PATH, FileAccess.WRITE)
+		file.store_string(JSON.stringify({
+			"save_version": 2,
+			"profile": {
+				"character_name": "Unschooled", "level": 6, "skill_points": 2,
+				"inventory_weapon_ids": ["weapon.pit_hatchet"],
+			},
+		}))
+		file.close()
+		var loaded: PlayerProfile = SaveManager.load_profile()
+		assert_true(loaded != null, "v2 saves must migrate")
+		assert_eq(loaded.character_name, "Unschooled")
+		assert_eq(loaded.known_skill_ids.size(), 0, "migrated fighters know no skills yet")
+		assert_eq(loaded.skill_points, 2, "banked skill points survive migration")
+		assert_true(loaded.inventory_weapon_ids.has(&"weapon.pit_hatchet"))
+	)
+
+
 func test_disabled_writes_touch_nothing() -> void:
 	_with_test_path(func() -> void:
 		SaveManager.disk_writes_enabled = false

@@ -97,6 +97,12 @@ layout_mode = 2
 size_flags_vertical = 4
 show_percentage = false
 
+[node name="PlayerStatusRow" type="HBoxContainer" parent="Root/TopBar/TopRow/PlayerPanel/PlayerMargin/PlayerBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+theme_override_constants/separation = 4
+
 [node name="CenterBox" type="VBoxContainer" parent="Root/TopBar/TopRow"]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -175,6 +181,13 @@ layout_mode = 2
 size_flags_vertical = 4
 show_percentage = false
 
+[node name="EnemyStatusRow" type="HBoxContainer" parent="Root/TopBar/TopRow/EnemyPanel/EnemyMargin/EnemyBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+alignment = 2
+theme_override_constants/separation = 4
+
 [node name="BottomBar" type="MarginContainer" parent="Root"]
 layout_mode = 1
 anchors_preset = 12
@@ -231,6 +244,12 @@ custom_minimum_size = Vector2(120, 58)
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 
+[node name="SkillsButton" type="Button" parent="Root/BottomBar/BottomRow/RightBox/ActionBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 58)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+
 [node name="DefendButton" type="Button" parent="Root/BottomBar/BottomRow/RightBox/ActionBar"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(120, 58)
@@ -254,3 +273,36 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(120, 58)
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
+
+[node name="SkillPanel" type="PanelContainer" parent="Root"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -480.0
+offset_top = -500.0
+offset_right = -14.0
+offset_bottom = -200.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="SkillMargin" type="MarginContainer" parent="Root/SkillPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="SkillScroll" type="ScrollContainer" parent="Root/SkillPanel/SkillMargin"]
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="SkillList" type="VBoxContainer" parent="Root/SkillPanel/SkillMargin/SkillScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6

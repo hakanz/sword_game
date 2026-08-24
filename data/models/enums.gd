@@ -63,14 +63,15 @@ enum EquipSlot {
 	RING,
 }
 
-## Combat actions available in the current phase. Skills/spells/consumables
-## extend this in later phases (charter §15 lists the full target set).
+## Combat actions available in the current phase. Spells/consumables extend
+## this in later phases (charter §15 lists the full target set).
 enum ActionType {
 	ATTACK,
 	DEFEND,
 	APPROACH,
 	RETREAT,
 	REST,
+	SKILL,
 }
 
 enum Stance {

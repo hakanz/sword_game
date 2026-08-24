@@ -13,6 +13,11 @@ func _ready() -> void:
 	await get_tree().process_frame
 	if GameManager.smoke_test:
 		GameManager.profile = PlayerProfile.create_default()
+		# Give the AI-driven player a skill kit so the smoke run exercises
+		# the skill/status path end to end.
+		GameManager.profile.known_skill_ids.append_array([
+			&"skill.crushing_blow", &"skill.venom_smear", &"skill.war_bellow",
+		])
 		GameManager.start_next_duel()
 	else:
 		SceneRouter.goto_main_menu()

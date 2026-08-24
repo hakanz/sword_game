@@ -1,14 +1,8 @@
 class_name CombatAI
 ## Utility-based enemy AI (charter §20) — NEVER uniform-random selection.
-## Every valid action gets a utility score in a single currency: EXPECTED
-## DAMAGE (dealt, or incoming-damage prevented). That keeps offense and
-## defense comparable, so no action can drift into always-dominant:
-##   attack  ~ hit_chance * expected_damage * aggression + kill_bonus - cost
-##   defend  ~ (incoming if I stand - incoming if I guard) * caution
-##   retreat ~ escape value when hurt / kiting value for ranged builds
-## Repeated DEFEND/RETREAT decay via consecutive-use counters — a fighter can
-## turtle or flee for a moment, never forever (anti-stall, see docs/ai.md).
-## A tiny seeded jitter (< 0.75) only breaks near-ties.
+## Every valid action (base actions AND known skills) gets a utility score in
+## a single currency: EXPECTED DAMAGE dealt or prevented. See docs/ai.md for
+## the full formula table and the anti-stall design notes.
 ##
 ## Debug: scores are emitted on EventBus.ai_scores_computed for the
 ## AI-decision overlay (charter §34).
@@ -23,40 +17,54 @@ const DEFEND_FOE_SWING_PROBABILITY: float = 0.65
 ## Blood scent: attacks scale up as the foe's HP fraction drops (finish the
 ## wounded instead of trading pot-shots with a fleeing turtle).
 const FINISHER_SCALING: float = 0.8
-## Crowd impatience: from this round on, ATTACK gains flat utility per round.
+## Crowd impatience: from this round on, offense gains flat utility per round.
 ## Guarantees every duel converges long before the MAX_ROUNDS failsafe.
 const IMPATIENCE_START_ROUND: int = 20
 const IMPATIENCE_PER_ROUND: float = 0.15
 ## Each retreat this combat makes the next retreat this much less appealing.
 const RETREAT_FATIGUE: float = 0.5
+## Flat bonus for landing a status the foe doesn't already carry.
+const NEW_STATUS_VALUE: float = 6.0
 
 
-static func choose_action(actor: Combatant, foe: Combatant, ctx: CombatContext) -> Enums.ActionType:
+static func choose_action(actor: Combatant, foe: Combatant, ctx: CombatContext) -> CombatDecision:
 	var personality: AIPersonality = actor.data.personality
 	if personality == null:
 		# Player character driven by AI (smoke test): behave like a balanced fighter.
 		personality = AIPersonality.new()
 
-	var scores: Dictionary = {}
+	var best: CombatDecision = null
+	var best_score: float = -INF
+	var debug: Dictionary = {}
+
 	for type: Enums.ActionType in Enums.ActionType.values():
-		if CombatAction.is_valid(type, actor, ctx):
-			scores[type] = _score(type, actor, foe, ctx, personality) \
-					+ RngService.randf_range(0.0, TIE_BREAK_JITTER)
+		if type == Enums.ActionType.SKILL:
+			continue
+		if not CombatAction.is_valid(type, actor, ctx):
+			continue
+		var score: float = _score_base(type, actor, foe, ctx, personality) \
+				+ RngService.randf_range(0.0, TIE_BREAK_JITTER)
+		debug[Enums.ActionType.keys()[type]] = snappedf(score, 0.1)
+		if score > best_score:
+			best_score = score
+			best = CombatDecision.base_action(type)
 
-	assert(not scores.is_empty(), "CombatAI: no valid actions (DEFEND should always be reachable)")
+	for skill in actor.get_skills():
+		if not CombatAction.is_skill_valid(skill, actor, ctx):
+			continue
+		var score: float = _score_skill(skill, actor, foe, ctx, personality) \
+				+ RngService.randf_range(0.0, TIE_BREAK_JITTER)
+		debug[String(skill.id)] = snappedf(score, 0.1)
+		if score > best_score:
+			best_score = score
+			best = CombatDecision.skill_action(skill)
 
-	var best_type: Enums.ActionType = scores.keys()[0]
-	var best_score: float = scores[best_type]
-	for type: Enums.ActionType in scores.keys():
-		if scores[type] > best_score:
-			best_score = scores[type]
-			best_type = type
-
-	EventBus.ai_scores_computed.emit(actor.display_name(), _debug_scores(scores))
-	return best_type
+	assert(best != null, "CombatAI: no valid actions (DEFEND should always be reachable)")
+	EventBus.ai_scores_computed.emit(actor.display_name(), debug)
+	return best
 
 
-static func _score(
+static func _score_base(
 		type: Enums.ActionType,
 		actor: Combatant,
 		foe: Combatant,
@@ -68,16 +76,7 @@ static func _score(
 
 	match type:
 		Enums.ActionType.ATTACK:
-			var chance: float = HitCalculator.hit_chance(actor, foe)
-			var est: DamageCalculator.MitigationResult = _estimate_hit(actor, foe,
-					foe.stance == Enums.Stance.DEFENDING)
-			var expected: float = chance * float(est.hp_damage + est.absorbed)
-			var foe_hp_fraction: float = float(foe.current_hp) / float(foe.max_hp)
-			var finisher: float = 1.0 + (1.0 - foe_hp_fraction) * FINISHER_SCALING
-			var kill_bonus: float = 0.0
-			if est.hp_damage >= foe.current_hp:
-				kill_bonus = 50.0 * chance
-			return expected * p.aggression * finisher + kill_bonus + _impatience(ctx) \
+			return _score_strike(actor, foe, ctx, p, 1.0, 0, 0.0) \
 					- attack_cost * ENERGY_COST_WEIGHT * p.resource_care
 
 		Enums.ActionType.APPROACH:
@@ -125,19 +124,67 @@ static func _score(
 			return 0.0
 
 
+static func _score_skill(
+		skill: SkillData,
+		actor: Combatant,
+		foe: Combatant,
+		ctx: CombatContext,
+		p: AIPersonality) -> float:
+	var hp_fraction: float = float(actor.current_hp) / float(actor.max_hp)
+	var cost_penalty: float = skill.energy_cost * ENERGY_COST_WEIGHT * p.resource_care
+
+	if skill.target == SkillData.Target.SELF:
+		var effect: StatusEffectData = skill.applies_status
+		if effect == null:
+			return 0.0
+		if StatusEffectSystem.find(actor, effect.id) != null:
+			return 0.5 - cost_penalty  # refreshing an active buff is rarely urgent
+		var value: float = 4.0
+		if effect.periodic_heal > 0:
+			value += 14.0 * (1.0 - hp_fraction)
+		if effect.damage_dealt_mult > 1.0:
+			# A damage buff is only good if we can actually reach the foe soon.
+			var reach: float = 1.0 if actor.get_weapon().can_attack_from(ctx.distance) else 0.4
+			value += 7.0 * p.aggression * reach
+		return value - cost_penalty
+
+	var value: float = _score_strike(actor, foe, ctx, p,
+			skill.power_multiplier, skill.accuracy_mod, skill.armour_pen_bonus)
+	if skill.applies_status != null \
+			and StatusEffectSystem.find(foe, skill.applies_status.id) == null:
+		value += NEW_STATUS_VALUE
+	return value - cost_penalty
+
+
+## Shared expected-value math for normal attacks and FOE skills.
+static func _score_strike(
+		actor: Combatant, foe: Combatant, ctx: CombatContext, p: AIPersonality,
+		multiplier: float, accuracy_mod: int, pen_bonus: float) -> float:
+	var chance: float = HitCalculator.hit_chance(actor, foe, accuracy_mod)
+	var est: DamageCalculator.MitigationResult = _estimate_hit(actor, foe,
+			foe.stance == Enums.Stance.DEFENDING, multiplier, pen_bonus)
+	var expected: float = chance * float(est.hp_damage + est.absorbed)
+	var foe_hp_fraction: float = float(foe.current_hp) / float(foe.max_hp)
+	var finisher: float = 1.0 + (1.0 - foe_hp_fraction) * FINISHER_SCALING
+	var kill_bonus: float = 0.0
+	if est.hp_damage >= foe.current_hp:
+		kill_bonus = 50.0 * chance
+	return expected * p.aggression * finisher + kill_bonus + _impatience(ctx)
+
+
 static func _impatience(ctx: CombatContext) -> float:
 	return maxf(0.0, (ctx.round_number - IMPATIENCE_START_ROUND) * IMPATIENCE_PER_ROUND)
 
 
 ## Average-damage mitigation estimate for attacker hitting target.
 static func _estimate_hit(
-		attacker: Combatant, target: Combatant,
-		target_defending: bool) -> DamageCalculator.MitigationResult:
+		attacker: Combatant, target: Combatant, target_defending: bool,
+		multiplier: float = 1.0, pen_bonus: float = 0.0) -> DamageCalculator.MitigationResult:
 	return DamageCalculator.compute_mitigation(
-			roundi(DamageCalculator.average_attack_damage(attacker)),
+			roundi(DamageCalculator.average_attack_damage(attacker, multiplier)),
 			target.get_resistance(attacker.get_weapon().damage_type),
 			target_defending,
-			attacker.get_weapon().armour_penetration,
+			clampf(attacker.get_weapon().armour_penetration + pen_bonus, 0.0, 1.0),
 			target.armour_current)
 
 
@@ -152,10 +199,3 @@ static func _expected_incoming(
 	var chance: float = HitCalculator.hit_chance(attacker, target, 0, stance)
 	var est: DamageCalculator.MitigationResult = _estimate_hit(attacker, target, target_defending)
 	return chance * float(est.hp_damage + est.absorbed)
-
-
-static func _debug_scores(scores: Dictionary) -> Dictionary:
-	var readable: Dictionary = {}
-	for type: Enums.ActionType in scores.keys():
-		readable[Enums.ActionType.keys()[type]] = snappedf(scores[type], 0.1)
-	return readable

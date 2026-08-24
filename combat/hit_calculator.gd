@@ -7,7 +7,8 @@ class_name HitCalculator
 
 static func accuracy_score(attacker: Combatant, accuracy_mod: int = 0) -> int:
 	var weapon_bonus: int = attacker.get_weapon().accuracy_bonus if attacker.get_weapon() != null else 0
-	return attacker.attack_rating + weapon_bonus + accuracy_mod
+	return attacker.attack_rating + weapon_bonus + accuracy_mod \
+			+ StatusEffectSystem.accuracy_mod(attacker)
 
 
 ## `stance_override`: pass an Enums.Stance value to evaluate a hypothetical
@@ -17,7 +18,9 @@ static func avoidance_score(defender: Combatant, stance_override: int = -1) -> i
 	var stance_bonus: int = 0
 	if stance == Enums.Stance.DEFENDING:
 		stance_bonus = CombatTuning.DEFEND_AVOIDANCE_BONUS
-	return defender.defence_rating + defender.evasion_value + stance_bonus
+	return defender.defence_rating + defender.evasion_value + stance_bonus \
+			+ StatusEffectSystem.defence_mod(defender) \
+			+ StatusEffectSystem.evasion_mod(defender)
 
 
 static func hit_chance(

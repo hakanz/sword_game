@@ -24,6 +24,8 @@ const STARTER: CharacterData = preload("res://data/characters/player_default.tre
 ## Owned but not equipped (charter §16 inventory).
 @export var inventory_weapon_ids: Array[StringName] = []
 @export var inventory_armour_ids: Array[StringName] = []
+## Learned active skills (charter §17).
+@export var known_skill_ids: Array[StringName] = []
 @export var body_color: Color = Color(0.85, 0.64, 0.47)
 @export var accent_color: Color = Color(0.22, 0.36, 0.6)
 
@@ -55,6 +57,12 @@ func to_character_data() -> CharacterData:
 		if piece != null:
 			pieces.append(piece)
 	data.armour_pieces = pieces
+	var skill_list: Array[SkillData] = []
+	for skill_id in known_skill_ids:
+		var skill: SkillData = ItemDB.skill(skill_id)
+		if skill != null:
+			skill_list.append(skill)
+	data.skills = skill_list
 	data.personality = null
 	data.body_color = body_color
 	data.accent_color = accent_color
@@ -87,6 +95,8 @@ func to_dict() -> Dictionary:
 		"inventory_weapon_ids": inventory_weapon_ids.map(
 				func(id: StringName) -> String: return String(id)),
 		"inventory_armour_ids": inventory_armour_ids.map(
+				func(id: StringName) -> String: return String(id)),
+		"known_skill_ids": known_skill_ids.map(
 				func(id: StringName) -> String: return String(id)),
 		"body_color": body_color.to_html(),
 		"accent_color": accent_color.to_html(),
@@ -124,6 +134,8 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 		profile.inventory_weapon_ids.append(StringName(str(id)))
 	for id in data.get("inventory_armour_ids", []):
 		profile.inventory_armour_ids.append(StringName(str(id)))
+	for id in data.get("known_skill_ids", []):
+		profile.known_skill_ids.append(StringName(str(id)))
 	profile.body_color = Color.from_string(str(data.get("body_color", "")), profile.body_color)
 	profile.accent_color = Color.from_string(str(data.get("accent_color", "")), profile.accent_color)
 	return profile

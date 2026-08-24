@@ -68,6 +68,12 @@ custom_minimum_size = Vector2(280, 54)
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 
+[node name="SkillsButton" type="Button" parent="Center/MenuBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(280, 54)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+
 [node name="InventoryButton" type="Button" parent="Center/MenuBox"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(280, 54)

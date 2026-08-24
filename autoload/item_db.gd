@@ -11,6 +11,7 @@ const REGISTRY: ItemRegistry = preload("res://data/registry/item_registry.tres")
 
 var _weapons: Dictionary = {}
 var _armour: Dictionary = {}
+var _skills: Dictionary = {}
 var _indexed: bool = false
 
 
@@ -26,6 +27,10 @@ func _index_if_needed() -> void:
 		if _armour.has(piece.id):
 			push_warning("ItemDB: duplicate armour id %s" % piece.id)
 		_armour[piece.id] = piece
+	for skill_data in REGISTRY.skills:
+		if _skills.has(skill_data.id):
+			push_warning("ItemDB: duplicate skill id %s" % skill_data.id)
+		_skills[skill_data.id] = skill_data
 
 
 func weapon(id: StringName) -> WeaponData:
@@ -44,9 +49,21 @@ func armour_piece(id: StringName) -> ArmourData:
 	return _armour[id]
 
 
+func skill(id: StringName) -> SkillData:
+	_index_if_needed()
+	if not _skills.has(id):
+		push_warning("ItemDB: unknown skill id '%s'" % id)
+		return null
+	return _skills[id]
+
+
 func all_weapons() -> Array[WeaponData]:
 	return REGISTRY.weapons.duplicate()
 
 
 func all_armour() -> Array[ArmourData]:
 	return REGISTRY.armour.duplicate()
+
+
+func all_skills() -> Array[SkillData]:
+	return REGISTRY.skills.duplicate()

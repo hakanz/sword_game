@@ -8,6 +8,7 @@ const SCENE_RESULTS: String = "res://scenes/results/results.tscn"
 const SCENE_CHARACTER_SHEET: String = "res://scenes/character/character_sheet.tscn"
 const SCENE_SHOP: String = "res://scenes/shops/shop.tscn"
 const SCENE_INVENTORY: String = "res://scenes/inventory/inventory.tscn"
+const SCENE_SKILLS: String = "res://scenes/skills/skills.tscn"
 
 
 func goto_main_menu() -> void:
@@ -38,6 +39,11 @@ func goto_shop() -> void:
 func goto_inventory() -> void:
 	GameManager.change_state(GameManager.GameState.INVENTORY)
 	_change_scene(SCENE_INVENTORY)
+
+
+func goto_skills() -> void:
+	GameManager.change_state(GameManager.GameState.SKILLS)
+	_change_scene(SCENE_SKILLS)
 
 
 func _change_scene(path: String) -> void:

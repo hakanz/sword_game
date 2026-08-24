@@ -54,6 +54,7 @@ static func generate(player_level: int) -> CharacterData:
 				break
 
 	_assign_gear(data, level)
+	_assign_skills(data, level)
 
 	# Slight cosmetic variation so opponents don't look identical.
 	var hue_shift: float = RngService.randf_range(-0.04, 0.04)
@@ -78,6 +79,23 @@ static func _assign_gear(data: CharacterData, level: int) -> void:
 	_maybe_add_piece(pieces, Enums.EquipSlot.LEGS, 0.5, max_tier)
 	_maybe_add_piece(pieces, Enums.EquipSlot.BOOTS, 0.3, max_tier)
 	data.armour_pieces = pieces
+
+
+## From level 3 up, enemies bring 1-2 skills their weapon can actually use —
+## the same catalog the player learns from.
+static func _assign_skills(data: CharacterData, level: int) -> void:
+	if level < 3:
+		return
+	var pool: Array[SkillData] = ItemDB.all_skills().filter(
+			func(s: SkillData) -> bool:
+				return s.required_level <= level and s.usable_with(data.weapon.weapon_class))
+	var count: int = mini(RngService.randi_range(1, 2), pool.size())
+	var chosen: Array[SkillData] = []
+	for _i in count:
+		var pick: SkillData = RngService.pick(pool)
+		if not chosen.has(pick):
+			chosen.append(pick)
+	data.skills = chosen
 
 
 static func _maybe_add_piece(

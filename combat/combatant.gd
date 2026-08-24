@@ -30,6 +30,16 @@ var initiative_value: int = 0
 
 var stance: Enums.Stance = Enums.Stance.NEUTRAL
 
+## Active status effects (managed by StatusEffectSystem).
+var status_effects: Array[StatusEffectInstance] = []
+
+## Skill cooldowns: skill id -> rounds remaining. Ticked at own turn start.
+var cooldowns: Dictionary = {}
+
+## Guards the death animation/event against double-firing when a fighter
+## falls to a DoT tick after already-resolved damage.
+var death_announced: bool = false
+
 ## Total damage this fighter dealt (HP + armour), for the results screen.
 var damage_dealt_total: int = 0
 
@@ -77,11 +87,56 @@ func get_weapon() -> WeaponData:
 	return data.weapon
 
 
-## Resistance fraction (0-1) against a damage type. Always 0 in the combat
-## prototype — resistances arrive with the equipment/status phases and will
-## be summed here from armour + effects.
+## Resistance fraction (0-1) against a damage type. Always 0 for now —
+## elemental resistances arrive with later equipment tiers and will be
+## summed here from armour + effects.
 func get_resistance(_damage_type: Enums.DamageType) -> float:
 	return 0.0
+
+
+func get_skills() -> Array[SkillData]:
+	return data.skills
+
+
+## Direct HP damage (status DoTs) — bypasses the armour pool by design.
+func take_direct_damage(amount: int) -> void:
+	if amount <= 0:
+		return
+	current_hp = maxi(current_hp - amount, 0)
+	hp_changed.emit(current_hp, max_hp)
+	if current_hp <= 0:
+		died.emit()
+
+
+## Returns the amount actually healed (capped at max HP).
+func heal(amount: int) -> int:
+	var healed: int = mini(amount, max_hp - current_hp)
+	if healed > 0:
+		current_hp += healed
+		hp_changed.emit(current_hp, max_hp)
+	return healed
+
+
+func spend_mana(amount: int) -> void:
+	if amount <= 0:
+		return
+	current_mana = maxi(current_mana - amount, 0)
+
+
+func set_cooldown(skill_id: StringName, rounds: int) -> void:
+	if rounds > 0:
+		cooldowns[skill_id] = rounds
+
+
+func cooldown_remaining(skill_id: StringName) -> int:
+	return int(cooldowns.get(skill_id, 0))
+
+
+func tick_cooldowns() -> void:
+	for skill_id: StringName in cooldowns.keys():
+		cooldowns[skill_id] = int(cooldowns[skill_id]) - 1
+		if int(cooldowns[skill_id]) <= 0:
+			cooldowns.erase(skill_id)
 
 
 func is_alive() -> bool:

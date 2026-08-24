@@ -71,64 +71,83 @@ func _run_combat() -> void:
 			ctx.round_number = turn_manager.round_number
 			EventBus.round_started.emit(turn_manager.round_number)
 		actor.on_turn_started()
+		actor.tick_cooldowns()
 		EventBus.turn_started.emit(actor)
 
-		var choice: Enums.ActionType
-		if actor.is_player_controlled and not GameManager.smoke_test:
-			hud.begin_player_turn(actor)
-			choice = await hud.action_selected
-			hud.end_player_turn()
+		if StatusEffectSystem.is_stunned(actor):
+			# Stunned: the action is lost, but end-of-turn resolution still runs.
+			EventBus.turn_skipped.emit(actor)
+			await _delay(0.6)
 		else:
-			await _delay(0.5)
-			choice = CombatAI.choose_action(actor, _foe_of(actor), ctx)
+			var decision: CombatDecision
+			if actor.is_player_controlled and not GameManager.smoke_test:
+				hud.begin_player_turn(actor)
+				var selection: Array = await hud.action_selected
+				hud.end_player_turn()
+				decision = CombatDecision.new()
+				decision.type = selection[0]
+				decision.skill = selection[1]
+			else:
+				await _delay(0.5)
+				decision = CombatAI.choose_action(actor, _foe_of(actor), ctx)
+			await _execute(actor, decision)
 
-		await _execute(actor, choice)
+		# STATUS_RESOLUTION (charter §11): DoTs/buffs tick on the actor's turn end.
+		var ticks: Array[StatusEffectSystem.TickResult] = StatusEffectSystem.tick_turn_end(actor)
+		if not ticks.is_empty():
+			EventBus.status_ticked.emit(actor, ticks)
+			await _delay(0.35)
 
-		# Death check (charter §11) — combat ends immediately on a kill.
+		# Death check (charter §11) — combat ends immediately on a kill
+		# (including a fighter succumbing to their own wounds' DoTs).
 		if not player.is_alive() or not enemy.is_alive():
+			var fallen: Combatant = player if not player.is_alive() else enemy
+			if not fallen.death_announced:
+				fallen.death_announced = true
+				fallen.rig.play_death()
+				EventBus.combatant_died.emit(fallen)
 			break
 	await _finish()
 
 
-func _execute(actor: Combatant, type: Enums.ActionType) -> void:
-	assert(CombatAction.is_valid(type, actor, ctx),
-			"Invalid action reached execution: %s" % Enums.ActionType.keys()[type])
+func _execute(actor: Combatant, decision: CombatDecision) -> void:
+	var type: Enums.ActionType = decision.type
+	if type == Enums.ActionType.SKILL:
+		assert(CombatAction.is_skill_valid(decision.skill, actor, ctx),
+				"Invalid skill reached execution: %s" % decision.skill.id)
+	else:
+		assert(CombatAction.is_valid(type, actor, ctx),
+				"Invalid action reached execution: %s" % Enums.ActionType.keys()[type])
 	var foe: Combatant = _foe_of(actor)
 	var result := ActionResult.new()
 	result.actor = actor
 	result.action = type
 	result.distance_after = ctx.distance
 
-	actor.spend_energy(CombatAction.energy_cost(type, actor))
+	if type == Enums.ActionType.SKILL:
+		result.skill = decision.skill
+		actor.spend_energy(decision.skill.energy_cost)
+		actor.spend_mana(decision.skill.mana_cost)
+		actor.set_cooldown(decision.skill.id, decision.skill.cooldown_rounds)
+		if decision.skill.target == SkillData.Target.SELF:
+			if decision.skill.applies_status != null:
+				StatusEffectSystem.apply(actor, decision.skill.applies_status)
+				result.applied_status = decision.skill.applies_status
+				_spawn_float_text(actor, tr(decision.skill.applies_status.name_key),
+						decision.skill.applies_status.tint)
+			await _delay(0.4)
+		else:
+			result.target = foe
+			await _resolve_strike(actor, foe, result, decision.skill.power_multiplier,
+					decision.skill.accuracy_mod, decision.skill.armour_pen_bonus,
+					decision.skill.applies_status)
+	else:
+		actor.spend_energy(CombatAction.energy_cost(type, actor))
 
 	match type:
 		Enums.ActionType.ATTACK:
 			result.target = foe
-			result.hit_chance = HitCalculator.hit_chance(actor, foe)
-			result.hit = RngService.chance(result.hit_chance)
-			actor.rig.play_attack_lunge()
-			await _delay(0.16)
-			if result.hit:
-				var raw: int = DamageCalculator.roll_attack_damage(actor)
-				var mitigation := DamageCalculator.compute_mitigation(
-						raw,
-						foe.get_resistance(actor.get_weapon().damage_type),
-						foe.stance == Enums.Stance.DEFENDING,
-						actor.get_weapon().armour_penetration,
-						foe.armour_current)
-				foe.take_damage(mitigation)
-				actor.damage_dealt_total += mitigation.after_stance
-				result.mitigation = mitigation
-				result.killed = not foe.is_alive()
-				foe.rig.play_hit_flash()
-				_spawn_float_text(foe, str(mitigation.after_stance),
-						Color(1.0, 0.85, 0.3) if mitigation.hp_damage == 0 else Color(1.0, 0.35, 0.3))
-				if result.killed:
-					foe.rig.play_death()
-			else:
-				foe.rig.play_miss_dodge()
-				_spawn_float_text(foe, tr("combat.float.miss"), Color(0.8, 0.8, 0.85))
-			await _delay(0.35)
+			await _resolve_strike(actor, foe, result, 1.0, 0, 0.0, null)
 
 		Enums.ActionType.DEFEND:
 			actor.set_stance(Enums.Stance.DEFENDING)
@@ -159,13 +178,15 @@ func _execute(actor: Combatant, type: Enums.ActionType) -> void:
 	if GameManager.smoke_test:
 		# Console combat trace for CI/headless diagnosis (charter §34).
 		var detail: String = ""
-		if type == Enums.ActionType.ATTACK:
+		if result.skill != null:
+			detail = "[%s] " % result.skill.id
+		if result.target != null:
 			if result.hit:
-				detail = "hit=%d (absorbed=%d hp=%d) chance=%.2f" % [
+				detail += "hit=%d (absorbed=%d hp=%d) chance=%.2f" % [
 					result.mitigation.after_stance, result.mitigation.absorbed,
 					result.mitigation.hp_damage, result.hit_chance]
 			else:
-				detail = "MISS chance=%.2f" % result.hit_chance
+				detail += "MISS chance=%.2f" % result.hit_chance
 		print("R%03d %-24s %-9s %s [hp=%d/%d en=%d/%d arm=%d dist=%d]" % [
 			turn_manager.round_number, actor.display_name(),
 			Enums.ActionType.keys()[type], detail,
@@ -174,8 +195,45 @@ func _execute(actor: Combatant, type: Enums.ActionType) -> void:
 
 	EventBus.action_resolved.emit(result)
 	if result.killed:
+		foe.death_announced = true
 		EventBus.combatant_died.emit(foe)
 	await _delay(0.25)
+
+
+## Shared strike resolution for normal attacks and FOE-targeted skills:
+## hit roll -> damage pipeline -> optional on-hit status.
+func _resolve_strike(
+		actor: Combatant, foe: Combatant, result: ActionResult,
+		multiplier: float, accuracy_mod: int, pen_bonus: float,
+		on_hit_status: StatusEffectData) -> void:
+	result.hit_chance = HitCalculator.hit_chance(actor, foe, accuracy_mod)
+	result.hit = RngService.chance(result.hit_chance)
+	actor.rig.play_attack_lunge()
+	await _delay(0.16)
+	if result.hit:
+		var raw: int = DamageCalculator.roll_attack_damage(actor, multiplier)
+		var mitigation := DamageCalculator.compute_mitigation(
+				raw,
+				foe.get_resistance(actor.get_weapon().damage_type),
+				foe.stance == Enums.Stance.DEFENDING,
+				clampf(actor.get_weapon().armour_penetration + pen_bonus, 0.0, 1.0),
+				foe.armour_current)
+		foe.take_damage(mitigation)
+		actor.damage_dealt_total += mitigation.after_stance
+		result.mitigation = mitigation
+		result.killed = not foe.is_alive()
+		foe.rig.play_hit_flash()
+		_spawn_float_text(foe, str(mitigation.after_stance),
+				Color(1.0, 0.85, 0.3) if mitigation.hp_damage == 0 else Color(1.0, 0.35, 0.3))
+		if on_hit_status != null and foe.is_alive():
+			StatusEffectSystem.apply(foe, on_hit_status)
+			result.applied_status = on_hit_status
+		if result.killed:
+			foe.rig.play_death()
+	else:
+		foe.rig.play_miss_dodge()
+		_spawn_float_text(foe, tr("combat.float.miss"), Color(0.8, 0.8, 0.85))
+	await _delay(0.35)
 
 
 func _finish() -> void:

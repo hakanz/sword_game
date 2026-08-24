@@ -13,7 +13,7 @@ extends Node
 
 const SETTINGS_PATH: String = "user://settings.cfg"
 const SETTINGS_SECTION: String = "settings"
-const SAVE_VERSION: int = 2
+const SAVE_VERSION: int = 3
 
 ## Overridable for tests; gameplay always uses the default.
 var profile_path: String = "user://save_slot_1.json"
@@ -129,6 +129,8 @@ func _migrate(payload: Dictionary, from_version: int) -> Dictionary:
 				payload = _migrate_v0_to_v1(payload)
 			1:
 				payload = _migrate_v1_to_v2(payload)
+			2:
+				payload = _migrate_v2_to_v3(payload)
 			_:
 				push_warning("SaveManager: no migration path from save_version %d" % version)
 				return {}
@@ -154,5 +156,15 @@ static func _migrate_v1_to_v2(payload: Dictionary) -> Dictionary:
 		profile_fields["inventory_weapon_ids"] = []
 	if not profile_fields.has("inventory_armour_ids"):
 		profile_fields["inventory_armour_ids"] = []
+	payload["profile"] = profile_fields
+	return payload
+
+
+## v3 added learned skills (skill phase). Older saves know none yet; their
+## banked skill points are already in the profile and stay spendable.
+static func _migrate_v2_to_v3(payload: Dictionary) -> Dictionary:
+	var profile_fields: Dictionary = payload.get("profile", {})
+	if not profile_fields.has("known_skill_ids"):
+		profile_fields["known_skill_ids"] = []
 	payload["profile"] = profile_fields
 	return payload

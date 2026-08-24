@@ -19,3 +19,8 @@ var energy_restored: int = 0
 
 # Movement fields
 var distance_after: Enums.DistanceBand = Enums.DistanceBand.MEDIUM
+
+# Skill fields
+var skill: SkillData = null
+## Status applied this action (on-hit debuff or self buff).
+var applied_status: StatusEffectData = null

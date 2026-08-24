@@ -14,6 +14,8 @@ extends Resource
 @export var attributes: AttributeBlock
 @export var weapon: WeaponData
 @export var armour_pieces: Array[ArmourData] = []
+## Active combat skills this fighter knows.
+@export var skills: Array[SkillData] = []
 ## Null for the player; enemies must have a personality (charter §20:
 ## AI is never random).
 @export var personality: AIPersonality

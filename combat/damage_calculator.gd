@@ -28,19 +28,28 @@ class MitigationResult:
 	var armour_remaining: int = 0
 
 
-## Rolls raw attack damage: weapon range roll + attribute scaling bonus.
-static func roll_attack_damage(attacker: Combatant) -> int:
+## Rolls raw attack damage: weapon roll + attribute scaling, then the
+## skill multiplier step (1.0 for normal attacks) and status multipliers
+## (Rage and friends) — matching the charter §15 pipeline order.
+static func roll_attack_damage(attacker: Combatant, skill_multiplier: float = 1.0) -> int:
 	var weapon: WeaponData = attacker.get_weapon()
 	var weapon_roll: int = RngService.randi_range(weapon.damage_min, weapon.damage_max)
-	return weapon_roll + ProgressionCalculator.attribute_damage_bonus(
+	var base: int = weapon_roll + ProgressionCalculator.attribute_damage_bonus(
 			attacker.data.attributes, weapon.weapon_class)
+	return roundi(base * skill_multiplier * StatusEffectSystem.damage_dealt_multiplier(attacker))
 
 
 ## Expected value of roll_attack_damage — used by AI estimates and tooltips.
-static func average_attack_damage(attacker: Combatant) -> float:
+static func average_attack_damage(attacker: Combatant, skill_multiplier: float = 1.0) -> float:
 	var weapon: WeaponData = attacker.get_weapon()
-	return weapon.average_damage() + ProgressionCalculator.attribute_damage_bonus(
+	var base: float = weapon.average_damage() + ProgressionCalculator.attribute_damage_bonus(
 			attacker.data.attributes, weapon.weapon_class)
+	return base * skill_multiplier * StatusEffectSystem.damage_dealt_multiplier(attacker)
+
+
+## Direct-to-HP damage (status DoTs): resistance applies, armour does not.
+static func compute_direct_damage(raw_damage: int, resistance: float) -> int:
+	return roundi(maxi(raw_damage, 0) * (1.0 - clampf(resistance, 0.0, 1.0)))
 
 
 ## Pure mitigation math. `resistance` is the target's resistance fraction to

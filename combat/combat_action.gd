@@ -14,6 +14,26 @@ static func energy_cost(type: Enums.ActionType, actor: Combatant) -> int:
 			return 0
 
 
+## "" when the skill is usable now, otherwise the blocking reason key.
+static func skill_invalid_reason(skill: SkillData, actor: Combatant, ctx: CombatContext) -> String:
+	if actor.cooldown_remaining(skill.id) > 0:
+		return "combat.hint.cooldown"
+	if actor.current_energy < skill.energy_cost or actor.current_mana < skill.mana_cost:
+		return "combat.hint.no_energy"
+	if not skill.usable_with(actor.get_weapon().weapon_class):
+		return "combat.hint.wrong_weapon"
+	if skill.target == SkillData.Target.FOE:
+		var weapon: WeaponData = actor.get_weapon()
+		var max_band: int = mini(weapon.range_max + skill.range_extend, Enums.DistanceBand.LONG)
+		if ctx.distance < weapon.range_min or ctx.distance > max_band:
+			return "combat.hint.too_far"
+	return ""
+
+
+static func is_skill_valid(skill: SkillData, actor: Combatant, ctx: CombatContext) -> bool:
+	return skill_invalid_reason(skill, actor, ctx) == ""
+
+
 static func is_valid(type: Enums.ActionType, actor: Combatant, ctx: CombatContext) -> bool:
 	return invalid_reason_key(type, actor, ctx) == ""
 

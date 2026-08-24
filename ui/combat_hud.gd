@@ -5,7 +5,7 @@ extends CanvasLayer
 ## keyboard requirement. All visible text comes from translation keys.
 ## Reads combat state; NEVER computes combat math (charter §6).
 
-signal action_selected(action: Enums.ActionType)
+signal action_selected(action: Enums.ActionType, skill: SkillData)
 
 var player: Combatant = null
 var enemy: Combatant = null
@@ -28,6 +28,11 @@ var ctx: CombatContext = null
 @onready var _distance_label: Label = %DistanceLabel
 @onready var _hint_label: Label = %HintLabel
 @onready var _log: RichTextLabel = %CombatLog
+@onready var _player_status_row: HBoxContainer = %PlayerStatusRow
+@onready var _enemy_status_row: HBoxContainer = %EnemyStatusRow
+@onready var _skills_button: Button = %SkillsButton
+@onready var _skill_panel: PanelContainer = %SkillPanel
+@onready var _skill_list: VBoxContainer = %SkillList
 @onready var _buttons: Dictionary = {
 	Enums.ActionType.ATTACK: %AttackButton,
 	Enums.ActionType.DEFEND: %DefendButton,
@@ -43,16 +48,22 @@ func _ready() -> void:
 	(%ApproachButton as Button).text = tr("combat.action.approach")
 	(%RetreatButton as Button).text = tr("combat.action.retreat")
 	(%RestButton as Button).text = tr("combat.action.rest")
+	_skills_button.text = tr("combat.action.skills")
 	for type: Enums.ActionType in _buttons.keys():
 		(_buttons[type] as Button).pressed.connect(_on_action_button.bind(type))
+	_skills_button.pressed.connect(_on_skills_toggled)
 	end_player_turn()
 	_hint_label.text = ""
 
 	EventBus.combat_started.connect(_on_combat_started)
 	EventBus.round_started.connect(_on_round_started)
 	EventBus.turn_started.connect(_on_turn_started)
+	EventBus.turn_skipped.connect(_on_turn_skipped)
 	EventBus.action_resolved.connect(_on_action_resolved)
 	EventBus.combatant_died.connect(_on_combatant_died)
+	EventBus.status_applied.connect(_on_status_applied)
+	EventBus.status_ticked.connect(_on_status_ticked)
+	EventBus.status_expired.connect(_on_status_expired)
 
 
 func setup(new_player: Combatant, new_enemy: Combatant, combat_ctx: CombatContext) -> void:
@@ -70,12 +81,15 @@ func setup(new_player: Combatant, new_enemy: Combatant, combat_ctx: CombatContex
 	enemy.armour_changed.connect(func(_c: int, _m: int) -> void: _refresh_stat_rows())
 
 	_refresh_stat_rows()
+	_refresh_status_rows()
 	_refresh_distance()
 
 
 func begin_player_turn(actor: Combatant) -> void:
 	for type: Enums.ActionType in _buttons.keys():
 		(_buttons[type] as Button).disabled = not CombatAction.is_valid(type, actor, ctx)
+	_skills_button.disabled = actor.get_skills().is_empty()
+	_populate_skill_panel(actor)
 	var attack_reason: String = CombatAction.invalid_reason_key(Enums.ActionType.ATTACK, actor, ctx)
 	_hint_label.text = tr(attack_reason) if attack_reason != "" else ""
 
@@ -83,12 +97,41 @@ func begin_player_turn(actor: Combatant) -> void:
 func end_player_turn() -> void:
 	for type: Enums.ActionType in _buttons.keys():
 		(_buttons[type] as Button).disabled = true
+	_skills_button.disabled = true
+	_skill_panel.visible = false
 	_hint_label.text = ""
 
 
 func _on_action_button(type: Enums.ActionType) -> void:
 	end_player_turn()
-	action_selected.emit(type)
+	action_selected.emit(type, null)
+
+
+func _on_skills_toggled() -> void:
+	_skill_panel.visible = not _skill_panel.visible
+
+
+## Rebuilds the expand-on-demand skill submenu (charter §28) for this turn.
+func _populate_skill_panel(actor: Combatant) -> void:
+	for child in _skill_list.get_children():
+		child.queue_free()
+	for skill in actor.get_skills():
+		var button := Button.new()
+		var reason: String = CombatAction.skill_invalid_reason(skill, actor, ctx)
+		var cooldown: int = actor.cooldown_remaining(skill.id)
+		var label: String = "%s  (%d)" % [tr(skill.name_key), skill.energy_cost]
+		if cooldown > 0:
+			label = tr("combat.hint.cooldown").format({"rounds": cooldown}) + " — " + label
+		button.text = label
+		button.custom_minimum_size = Vector2(0, 48)
+		button.disabled = reason != ""
+		button.pressed.connect(_on_skill_button.bind(skill))
+		_skill_list.add_child(button)
+
+
+func _on_skill_button(skill: SkillData) -> void:
+	end_player_turn()
+	action_selected.emit(Enums.ActionType.SKILL, skill)
 
 
 # --- EventBus listeners -----------------------------------------------------
@@ -112,6 +155,44 @@ func _on_turn_started(combatant: Combatant) -> void:
 		_turn_label.text = tr("combat.hud.enemy_turn").format({"name": combatant.display_name()})
 
 
+func _on_turn_skipped(combatant: Combatant) -> void:
+	_append_log(tr("combat.log.stunned").format({"name": combatant.display_name()}))
+
+
+func _on_status_applied(target: Combatant, instance: StatusEffectInstance) -> void:
+	_append_log(tr("combat.log.status_applied").format({
+		"name": target.display_name(),
+		"status": tr(instance.data.name_key),
+	}))
+	_refresh_status_rows()
+
+
+func _on_status_ticked(target: Combatant, results: Array[StatusEffectSystem.TickResult]) -> void:
+	for tick in results:
+		if tick.damage > 0:
+			_append_log(tr("combat.log.status_damage").format({
+				"name": target.display_name(),
+				"damage": tick.damage,
+				"status": tr(tick.effect.name_key),
+			}))
+		if tick.healing > 0:
+			_append_log(tr("combat.log.status_heal").format({
+				"name": target.display_name(),
+				"healing": tick.healing,
+				"status": tr(tick.effect.name_key),
+			}))
+	_refresh_stat_rows()
+	_refresh_status_rows()
+
+
+func _on_status_expired(target: Combatant, effect: StatusEffectData) -> void:
+	_append_log(tr("combat.log.status_expired").format({
+		"name": target.display_name(),
+		"status": tr(effect.name_key),
+	}))
+	_refresh_status_rows()
+
+
 func _on_action_resolved(result: ActionResult) -> void:
 	var actor_name: String = result.actor.display_name()
 	match result.action:
@@ -127,6 +208,27 @@ func _on_action_resolved(result: ActionResult) -> void:
 				_append_log(tr("combat.log.attack_miss").format({
 					"attacker": actor_name,
 					"defender": result.target.display_name(),
+					"chance": roundi(result.hit_chance * 100.0),
+				}))
+		Enums.ActionType.SKILL:
+			if result.target == null:
+				_append_log(tr("combat.log.buff").format({
+					"name": actor_name,
+					"skill": tr(result.skill.name_key),
+				}))
+			elif result.hit:
+				_append_log(tr("combat.log.skill_hit").format({
+					"attacker": actor_name,
+					"defender": result.target.display_name(),
+					"skill": tr(result.skill.name_key),
+					"damage": result.mitigation.after_stance,
+					"absorbed": result.mitigation.absorbed,
+				}))
+			else:
+				_append_log(tr("combat.log.skill_miss").format({
+					"attacker": actor_name,
+					"defender": result.target.display_name(),
+					"skill": tr(result.skill.name_key),
 					"chance": roundi(result.hit_chance * 100.0),
 				}))
 		Enums.ActionType.DEFEND:
@@ -178,6 +280,29 @@ func _set_row(label: Label, bar: ProgressBar, key: String, current: int, max_val
 
 func _refresh_distance() -> void:
 	_distance_label.text = tr(Enums.distance_band_key(ctx.distance))
+
+
+## Placeholder status icons: tinted squares + stack count (distinct colors;
+## real colorblind-safe icons arrive with final art — tracked in ASSET_MANIFEST).
+func _refresh_status_rows() -> void:
+	_fill_status_row(_player_status_row, player)
+	_fill_status_row(_enemy_status_row, enemy)
+
+
+func _fill_status_row(row: HBoxContainer, combatant: Combatant) -> void:
+	for child in row.get_children():
+		child.queue_free()
+	for instance in combatant.status_effects:
+		var swatch := ColorRect.new()
+		swatch.color = instance.data.tint
+		swatch.custom_minimum_size = Vector2(16, 16)
+		swatch.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(swatch)
+		if instance.stacks > 1:
+			var stacks := Label.new()
+			stacks.text = "x%d" % instance.stacks
+			stacks.add_theme_font_size_override("font_size", 13)
+			row.add_child(stacks)
 
 
 func _append_log(line: String) -> void:

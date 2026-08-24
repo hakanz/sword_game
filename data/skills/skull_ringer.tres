@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="SkillData" format=3 load_steps=3]
+
+[ext_resource type="Script" path="res://data/models/skill_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/status_effects/stun.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"skill.skull_ringer"
+name_key = "skill.skull_ringer.name"
+description_key = "skill.skull_ringer.desc"
+target = 0
+energy_cost = 18
+mana_cost = 0
+cooldown_rounds = 3
+power_multiplier = 0.8
+accuracy_mod = 0
+armour_pen_bonus = 0.0
+range_extend = 0
+applies_status = ExtResource("2")
+required_level = 4
+allowed_weapon_classes = Array[int]([3])

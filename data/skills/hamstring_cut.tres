@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="SkillData" format=3 load_steps=3]
+
+[ext_resource type="Script" path="res://data/models/skill_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/status_effects/bleed.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"skill.hamstring_cut"
+name_key = "skill.hamstring_cut.name"
+description_key = "skill.hamstring_cut.desc"
+target = 0
+energy_cost = 12
+mana_cost = 0
+cooldown_rounds = 2
+power_multiplier = 1.0
+accuracy_mod = 0
+armour_pen_bonus = 0.0
+range_extend = 0
+applies_status = ExtResource("2")
+required_level = 3
+allowed_weapon_classes = Array[int]([1, 2])

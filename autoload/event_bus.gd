@@ -7,9 +7,19 @@ extends Node
 signal combat_started(player: Combatant, enemy: Combatant)
 signal round_started(round_number: int)
 signal turn_started(combatant: Combatant)
+## The combatant lost their action this turn (stunned).
+signal turn_skipped(combatant: Combatant)
 signal action_resolved(result: ActionResult)
 signal combatant_died(combatant: Combatant)
 signal combat_ended(victor: Combatant, loser: Combatant)
+
+# --- Status effects ---
+signal status_applied(target: Combatant, instance: StatusEffectInstance)
+signal status_expired(target: Combatant, effect: StatusEffectData)
+## One StatusEffectSystem.TickResult per active effect after a fighter's
+## end-of-turn resolution. (Untyped Array on purpose: typing an autoload
+## signal with another class's inner class deadlocks the 4.4 analyzer.)
+signal status_ticked(target: Combatant, results: Array)
 
 # --- Combat presentation ---
 ## Emitted with an already-localized rich text line for the combat log panel.

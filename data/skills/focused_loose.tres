@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="SkillData" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/skill_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"skill.focused_loose"
+name_key = "skill.focused_loose.name"
+description_key = "skill.focused_loose.desc"
+target = 0
+energy_cost = 14
+mana_cost = 0
+cooldown_rounds = 0
+power_multiplier = 1.4
+accuracy_mod = 4
+armour_pen_bonus = 0.0
+range_extend = 0
+required_level = 4
+allowed_weapon_classes = Array[int]([5])

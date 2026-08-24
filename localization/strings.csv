@@ -123,3 +123,48 @@ equip.requires_arcana,"Requires Arcana {value}","Arkana {value} gerekir"
 item.stat.damage,"{min}-{max} dmg","{min}-{max} hasar"
 item.stat.armour,"{armour} armour","{armour} zırh"
 item.stat.tier,"T{tier}","K{tier}"
+status.poison.name,Poison,Zehir
+status.bleed.name,Bleed,Kanama
+status.stun.name,Stun,Sersemleme
+status.slow.name,Slow,Yavaşlama
+status.rage.name,Rage,Öfke
+status.regeneration.name,Regeneration,Yenilenme
+skill.crushing_blow.name,Crushing Blow,Ezici Darbe
+skill.crushing_blow.desc,"A heavy overhead swing. Subtlety not included.","Tepeden inen ağır bir darbe. İncelik dahil değildir."
+skill.sunder_guard.name,Sunder Guard,Zırh Parçalama
+skill.sunder_guard.desc,"Aims for straps and rivets — armour hates this trick.","Kayışlara ve perçinlere nişan alır — zırhlar bu numaradan nefret eder."
+skill.gutter_lunge.name,Gutter Lunge,Hendek Hamlesi
+skill.gutter_lunge.desc,"A vulgar but surprisingly long-reaching stab.","Kaba ama şaşırtıcı derecede uzun menzilli bir saplama."
+skill.venom_smear.name,Venom Smear,Zehir Sürme
+skill.venom_smear.desc,"Poisons the blade. The audience pretends not to see.","Namluyu zehirler. Seyirci görmemiş gibi yapar."
+skill.hamstring_cut.name,Hamstring Cut,Diz Ardı Kesiği
+skill.hamstring_cut.desc,"A low cut that keeps on bleeding.","Kanamaya devam eden alçak bir kesik."
+skill.skull_ringer.name,Skull Ringer,Kafa Çınlatan
+skill.skull_ringer.desc,"Bonk. The target hears bells for a while.","Güm. Hedef bir süre çan sesleri duyar."
+skill.war_bellow.name,War Bellow,Savaş Kükremesi
+skill.war_bellow.desc,"A roar that doubles as a fitness program. Damage up, guard down.","Aynı zamanda spor programı olan bir kükreme. Hasar artar, gard düşer."
+skill.second_wind.name,Second Wind,İkinci Nefes
+skill.second_wind.desc,"Breathe. Regenerate. Pretend it was all planned.","Nefes al. Yenilen. Hepsi planlıymış gibi davran."
+skill.pinning_shot.name,Pinning Shot,Mıhlayan Ok
+skill.pinning_shot.desc,"An arrow to the boot. Running becomes a suggestion.","Bota saplanan bir ok. Koşmak artık sadece bir öneri."
+skill.focused_loose.name,Focused Loose,Odaklı Atış
+skill.focused_loose.desc,"One breath, one shot, very few excuses.","Tek nefes, tek atış, pek az bahane."
+combat.action.skills,Skills,Yetenekler
+combat.hint.cooldown,"On cooldown ({rounds})","Beklemede ({rounds})"
+combat.hint.wrong_weapon,"Wrong weapon type for this skill","Bu yetenek için yanlış silah türü"
+combat.log.skill_hit,"{attacker} uses {skill} on {defender}: {damage} damage ({absorbed} absorbed).","{attacker}, {defender} üzerinde {skill} kullandı: {damage} hasar ({absorbed} emildi)."
+combat.log.skill_miss,"{attacker} tries {skill} on {defender} — and misses! ({chance}% chance)","{attacker}, {defender} üzerinde {skill} denedi — ve ıskaladı! (%{chance} şans)"
+combat.log.buff,"{name} uses {skill}.","{name}, {skill} kullandı."
+combat.log.status_applied,"{name} is afflicted with {status}!","{name}, {status} etkisine girdi!"
+combat.log.status_damage,"{name} suffers {damage} damage from {status}.","{name}, {status} yüzünden {damage} hasar aldı."
+combat.log.status_heal,"{name} recovers {healing} HP from {status}.","{name}, {status} sayesinde {healing} can yeniledi."
+combat.log.status_expired,"{status} fades from {name}.","{name} üzerindeki {status} geçti."
+combat.log.stunned,"{name} is stunned and loses the turn!","{name} sersemledi ve turunu kaybetti!"
+menu.skills,Skills,Yetenekler
+skills.title,Skills,Yetenekler
+skills.learn,Learn,Öğren
+skills.learned,Learned,Öğrenildi
+skills.hint.no_points,No skill points,Yetenek puanı yok
+skills.hint.known,Already learned,Zaten öğrenildi
+skills.cost_energy,"{energy} Energy","{energy} Enerji"
+skills.cooldown,"Cooldown: {rounds} rounds","Bekleme: {rounds} raunt"
