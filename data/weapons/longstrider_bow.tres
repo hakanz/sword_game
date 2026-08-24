@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 load_steps=3]
+
+[ext_resource type="Script" path="res://data/models/weapon_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/weapons/skinning_knife.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"weapon.longstrider_bow"
+name_key = "item.weapon.longstrider_bow.name"
+weapon_class = 5
+damage_type = 1
+damage_min = 14
+damage_max = 20
+accuracy_bonus = 3
+armour_penetration = 0.1
+range_min = 1
+range_max = 3
+ammo = 4
+sidearm = ExtResource("2")
+energy_cost = 8
+tier = 4
+rarity = 1
+value = 255
+required_level = 10
+required_strength = 0
+required_agility = 16
+required_arcana = 0

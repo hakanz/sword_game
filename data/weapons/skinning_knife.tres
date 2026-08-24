@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/weapon_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"weapon.skinning_knife"
+name_key = "item.weapon.skinning_knife.name"
+weapon_class = 1
+damage_type = 1
+damage_min = 4
+damage_max = 7
+accuracy_bonus = 3
+armour_penetration = 0.05
+range_min = 0
+range_max = 0
+energy_cost = 3
+tier = 1
+rarity = 0
+shop_available = false
+value = 10
+required_level = 1
+required_strength = 0
+required_agility = 0
+required_arcana = 0

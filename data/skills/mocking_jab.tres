@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="SkillData" format=3 load_steps=4]
+
+[ext_resource type="Script" path="res://data/models/skill_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/icons/skill_mocking_jab.svg" id="9"]
+[ext_resource type="Resource" path="res://data/status_effects/weakness.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"skill.mocking_jab"
+name_key = "skill.mocking_jab.name"
+description_key = "skill.mocking_jab.desc"
+icon = ExtResource("9")
+target = 0
+energy_cost = 10
+mana_cost = 0
+cooldown_rounds = 2
+power_multiplier = 0.8
+accuracy_mod = 2
+armour_pen_bonus = 0.0
+range_extend = 0
+applies_status = ExtResource("2")
+required_level = 6
+allowed_weapon_classes = Array[int]([1, 2, 3, 4])

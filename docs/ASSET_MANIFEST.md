@@ -17,7 +17,7 @@ license / generation-with-review). Status values: `placeholder` (in-game stand-i
 | armour.leather_straps | torso overlay + icon | none (rig tint only) | torso layer | placeholder |
 | arena.gravelmaw.backdrop | background set | `ArenaVisual` `_draw()` primitives (sky/wall/crowd/sand) | layered parallax-capable backdrop, 1920x1080 safe | placeholder |
 | ui.theme | UI theme/skin | programmatic UITheme (styled buttons/bars/panels) | full art-directed theme | placeholder |
-| ui.icons.* | icon set | 19 original SVGs in assets/icons (actions, stats, skills, coin) | final icon set, same ids | placeholder |
+| ui.icons.* | icon set | 38 original SVGs in assets/icons (actions incl. switch/pause, stats, 14 skills, item classes/slots, coin) | final icon set, same ids | placeholder |
 | app.icon | icon set | original `icon.svg` (sword-on-disc) | store icon sizes per platform | placeholder |
 
 ## Audio

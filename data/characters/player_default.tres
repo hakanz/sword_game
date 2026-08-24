@@ -11,11 +11,11 @@ script = ExtResource("2")
 strength = 8
 agility = 8
 attack = 8
-defence = 7
-vitality = 9
+defence = 8
+vitality = 10
 stamina = 8
-arcana = 3
-charisma = 5
+arcana = 2
+charisma = 4
 
 [resource]
 script = ExtResource("1")

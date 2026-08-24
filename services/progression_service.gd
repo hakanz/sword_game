@@ -10,6 +10,7 @@ class_name ProgressionService
 ## champion roster resource exists in the content-expansion phase).
 const CHAMPION_REWARDS: Dictionary = {
 	&"character.champion_maulhilda": &"weapon.doorslab",
+	&"character.champion_orzha": &"weapon.sablefang",
 }
 
 

@@ -28,6 +28,10 @@ const STARTER: CharacterData = preload("res://data/characters/player_default.tre
 @export var known_skill_ids: Array[StringName] = []
 ## Champions this gladiator has toppled (by CharacterData id).
 @export var defeated_champion_ids: Array[StringName] = []
+## Arena the player currently fights in (charter §21 regions).
+@export var selected_arena_id: StringName = &"arena.gravelmaw"
+## Arenas whose tournament has been won — unlocks the next region.
+@export var completed_tournament_arena_ids: Array[StringName] = []
 @export var body_color: Color = Color(0.85, 0.64, 0.47)
 @export var accent_color: Color = Color(0.22, 0.36, 0.6)
 
@@ -102,6 +106,9 @@ func to_dict() -> Dictionary:
 				func(id: StringName) -> String: return String(id)),
 		"defeated_champion_ids": defeated_champion_ids.map(
 				func(id: StringName) -> String: return String(id)),
+		"selected_arena_id": String(selected_arena_id),
+		"completed_tournament_arena_ids": completed_tournament_arena_ids.map(
+				func(id: StringName) -> String: return String(id)),
 		"body_color": body_color.to_html(),
 		"accent_color": accent_color.to_html(),
 	}
@@ -142,6 +149,10 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 		profile.known_skill_ids.append(StringName(str(id)))
 	for id in data.get("defeated_champion_ids", []):
 		profile.defeated_champion_ids.append(StringName(str(id)))
+	profile.selected_arena_id = StringName(str(
+			data.get("selected_arena_id", String(profile.selected_arena_id))))
+	for id in data.get("completed_tournament_arena_ids", []):
+		profile.completed_tournament_arena_ids.append(StringName(str(id)))
 	profile.body_color = Color.from_string(str(data.get("body_color", "")), profile.body_color)
 	profile.accent_color = Color.from_string(str(data.get("accent_color", "")), profile.accent_color)
 	return profile

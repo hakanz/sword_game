@@ -72,6 +72,7 @@ enum ActionType {
 	RETREAT,
 	REST,
 	SKILL,
+	SWITCH_WEAPON,
 }
 
 enum Stance {

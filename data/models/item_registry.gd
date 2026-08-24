@@ -8,3 +8,5 @@ extends Resource
 @export var weapons: Array[WeaponData] = []
 @export var armour: Array[ArmourData] = []
 @export var skills: Array[SkillData] = []
+## Arena regions, ordered by ArenaData.order.
+@export var arenas: Array[ArenaData] = []

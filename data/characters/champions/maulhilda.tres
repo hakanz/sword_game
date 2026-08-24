@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="CharacterData" format=3 load_steps=11]
+[gd_resource type="Resource" script_class="CharacterData" format=3 load_steps=12]
 
 [ext_resource type="Script" path="res://data/models/character_data.gd" id="1"]
 [ext_resource type="Script" path="res://data/models/attribute_block.gd" id="2"]

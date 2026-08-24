@@ -6,13 +6,9 @@ extends Control
 @onready var _title: Label = %TitleLabel
 @onready var _subtitle: Label = %SubtitleLabel
 @onready var _continue: Button = %ContinueButton
-@onready var _champion: Button = %ChampionButton
 @onready var _new_game: Button = %NewGameButton
-@onready var _character: Button = %CharacterButton
-@onready var _skills: Button = %SkillsButton
-@onready var _inventory: Button = %InventoryButton
-@onready var _shop: Button = %ShopButton
 @onready var _language: Button = %LanguageButton
+@onready var _settings: Button = %SettingsButton
 @onready var _quit: Button = %QuitButton
 @onready var _version: Label = %VersionLabel
 @onready var _confirm_new: ConfirmationDialog = %ConfirmNewDialog
@@ -20,13 +16,9 @@ extends Control
 
 func _ready() -> void:
 	_continue.pressed.connect(_on_continue_pressed)
-	_champion.pressed.connect(func() -> void: _open_profile_screen(GameManager.start_champion_duel))
 	_new_game.pressed.connect(_on_new_game_pressed)
-	_character.pressed.connect(func() -> void: _open_profile_screen(SceneRouter.goto_character_sheet))
-	_skills.pressed.connect(func() -> void: _open_profile_screen(SceneRouter.goto_skills))
-	_inventory.pressed.connect(func() -> void: _open_profile_screen(SceneRouter.goto_inventory))
-	_shop.pressed.connect(func() -> void: _open_profile_screen(SceneRouter.goto_shop))
 	_language.pressed.connect(_on_language_pressed)
+	_settings.pressed.connect(SceneRouter.goto_settings)
 	_quit.pressed.connect(_on_quit_pressed)
 	_confirm_new.confirmed.connect(_start_new_game)
 	# Web builds have no meaningful quit (charter §3: browser matrix).
@@ -43,21 +35,12 @@ func _refresh() -> void:
 	if has_save and GameManager.profile == null:
 		GameManager.profile = SaveManager.load_profile()
 	_continue.visible = has_save
-	_champion.visible = GameManager.is_champion_unlocked()
-	_character.visible = has_save
-	_skills.visible = has_save
-	_inventory.visible = has_save
-	_shop.visible = has_save
 	_title.text = tr("app.title")
 	_subtitle.text = tr("menu.subtitle")
 	_continue.text = tr("menu.continue")
-	_champion.text = tr("menu.champion")
 	_new_game.text = tr("menu.new_game")
-	_character.text = tr("menu.character")
-	_skills.text = tr("menu.skills")
-	_inventory.text = tr("menu.inventory")
-	_shop.text = tr("menu.shop")
 	_language.text = tr("menu.language")
+	_settings.text = tr("menu.settings")
 	_quit.text = tr("menu.quit")
 	_confirm_new.title = tr("menu.confirm_new_title")
 	_confirm_new.dialog_text = tr("menu.confirm_new_text")
@@ -66,7 +49,11 @@ func _refresh() -> void:
 
 
 func _on_continue_pressed() -> void:
-	if not GameManager.continue_game():
+	if GameManager.profile == null:
+		GameManager.profile = SaveManager.load_profile()
+	if GameManager.profile != null:
+		SceneRouter.goto_town()
+	else:
 		# Save unreadable — reflect reality in the UI instead of pretending.
 		_refresh()
 

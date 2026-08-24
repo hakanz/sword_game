@@ -22,6 +22,7 @@ enum GameState {
 	CHAMPION_BATTLE,
 	GAME_OVER,
 	ENDING,
+	SETTINGS,
 }
 
 signal state_changed(previous: GameState, next: GameState)
@@ -30,6 +31,11 @@ const PROGRESSION_CONFIG: ProgressionConfig = preload("res://data/progression/pr
 const ECONOMY_CONFIG: EconomyConfig = preload("res://data/economy/economy_config.tres")
 
 var state: GameState = GameState.BOOT
+
+## Which street merchant the SHOP scene represents (owner design: the
+## weaponsmith and the armourer are separate stalls).
+enum ShopKind { WEAPONS, ARMOUR }
+var shop_kind: ShopKind = ShopKind.WEAPONS
 
 ## The player's persistent progression (loaded/created via menu flows).
 var profile: PlayerProfile = null
@@ -99,35 +105,106 @@ func continue_game() -> bool:
 	return true
 
 
-const CHAMPION_MAULHILDA: CharacterData = preload("res://data/characters/champions/maulhilda.tres")
-## Victories needed before the arena champion accepts a challenge.
-const CHAMPION_UNLOCK_VICTORIES: int = 3
+## Tournament structure (charter §21): Qualification -> Quarter Final ->
+## Semi Final -> Final vs the arena's handcrafted champion.
+const TOURNAMENT_ROUNDS: int = 4
+## Victories needed before an arena's tournament accepts an entrant.
+const TOURNAMENT_UNLOCK_VICTORIES: int = 3
+## Opponent level position within the arena band per non-final round.
+const TOURNAMENT_ROUND_CURVE: Array[float] = [0.25, 0.55, 0.85]
+
+## Active tournament (empty = none). Runs are single-sitting: leaving or
+## losing forfeits progress; COMPLETION persists on the profile.
+var tournament_arena_id: StringName = &""
+var tournament_round: int = 0
+## True only for fights launched by start_tournament_round() — normal duels
+## must never advance the bracket.
+var tournament_fight_pending: bool = false
+## Outcome flags for the results screen (set once in consume_combat_rewards).
+var tournament_won_round: bool = false
+var tournament_completed: bool = false
+var tournament_failed: bool = false
+
+
+func selected_arena() -> ArenaData:
+	if profile == null:
+		return ItemDB.all_arenas()[0]
+	return ItemDB.arena(profile.selected_arena_id)
+
+
+## Region gating: order 1 is open; later regions need the previous arena's
+## tournament completed (charter §21 arena unlock reward).
+func is_arena_unlocked(arena: ArenaData) -> bool:
+	if arena.order <= 1:
+		return true
+	if profile == null:
+		return false
+	for other in ItemDB.all_arenas():
+		if other.order == arena.order - 1:
+			return profile.completed_tournament_arena_ids.has(other.id)
+	return false
+
+
+func is_tournament_unlocked(arena: ArenaData) -> bool:
+	return profile != null and is_arena_unlocked(arena) \
+			and profile.victories >= TOURNAMENT_UNLOCK_VICTORIES
+
+
+func in_tournament() -> bool:
+	return tournament_arena_id != &""
 
 
 ## Builds combatants from the profile + a generated opponent, enters the arena.
 func start_next_duel() -> void:
 	assert(profile != null, "start_next_duel without a profile")
+	# A normal duel forfeits any bracket left hanging (leaving = forfeit).
+	abandon_tournament()
+	var arena: ArenaData = selected_arena()
+	current_arena = arena
 	player_character = profile.to_character_data()
-	next_opponent = OpponentGenerator.generate(profile.level)
+	next_opponent = OpponentGenerator.generate_for_arena(profile.level, arena)
 	last_combat_result = null
 	last_reward = null
 	SceneRouter.goto_arena()
 
 
-func is_champion_unlocked() -> bool:
-	return profile != null \
-			and profile.victories >= CHAMPION_UNLOCK_VICTORIES \
-			and not profile.defeated_champion_ids.has(CHAMPION_MAULHILDA.id)
+func start_tournament(arena: ArenaData) -> void:
+	assert(is_tournament_unlocked(arena), "tournament started while locked")
+	tournament_arena_id = arena.id
+	tournament_round = 0
+	_clear_tournament_flags()
+	SceneRouter.goto_tournament()
 
 
-## Challenge the handcrafted arena champion (charter §20/§21).
-func start_champion_duel() -> void:
-	assert(profile != null, "start_champion_duel without a profile")
+func abandon_tournament() -> void:
+	tournament_arena_id = &""
+	tournament_round = 0
+	tournament_fight_pending = false
+	_clear_tournament_flags()
+
+
+## Enters the current tournament round's fight (final = arena champion).
+func start_tournament_round() -> void:
+	assert(in_tournament(), "no active tournament")
+	var arena: ArenaData = ItemDB.arena(tournament_arena_id)
+	current_arena = arena
 	player_character = profile.to_character_data()
-	next_opponent = CHAMPION_MAULHILDA.duplicate(true)
+	if tournament_round >= TOURNAMENT_ROUNDS - 1:
+		next_opponent = arena.champion.duplicate(true)
+	else:
+		var t: float = TOURNAMENT_ROUND_CURVE[tournament_round]
+		next_opponent = OpponentGenerator.generate_at_level(
+				roundi(lerpf(arena.min_level, arena.max_level, t)))
+	tournament_fight_pending = true
 	last_combat_result = null
 	last_reward = null
 	SceneRouter.goto_arena()
+
+
+func _clear_tournament_flags() -> void:
+	tournament_won_round = false
+	tournament_completed = false
+	tournament_failed = false
 
 
 ## Dev-only visual check (`--screenshot-dir=`): captures menu, creation and
@@ -149,6 +226,25 @@ func run_screenshot_capture(dir: String) -> void:
 	start_next_duel()
 	await get_tree().create_timer(2.4).timeout
 	get_viewport().get_texture().get_image().save_png(dir.path_join("arena.png"))
+	SceneRouter.goto_settings()
+	await get_tree().create_timer(1.0).timeout
+	get_viewport().get_texture().get_image().save_png(dir.path_join("settings.png"))
+	profile.victories = TOURNAMENT_UNLOCK_VICTORIES
+	SceneRouter.goto_arena_select()
+	await get_tree().create_timer(1.0).timeout
+	get_viewport().get_texture().get_image().save_png(dir.path_join("arenas.png"))
+	tournament_arena_id = &"arena.gravelmaw"
+	tournament_round = 1
+	SceneRouter.goto_tournament()
+	await get_tree().create_timer(1.0).timeout
+	get_viewport().get_texture().get_image().save_png(dir.path_join("tournament.png"))
+	abandon_tournament()
+	SceneRouter.goto_town()
+	await get_tree().create_timer(1.0).timeout
+	get_viewport().get_texture().get_image().save_png(dir.path_join("town.png"))
+	SceneRouter.goto_weaponsmith()
+	await get_tree().create_timer(1.0).timeout
+	get_viewport().get_texture().get_image().save_png(dir.path_join("weaponsmith.png"))
 	get_tree().quit(0)
 
 
@@ -163,5 +259,24 @@ func consume_combat_rewards() -> ProgressionService.RewardResult:
 	last_reward = ProgressionService.apply_combat_rewards(
 			profile, PROGRESSION_CONFIG, ECONOMY_CONFIG, last_combat_result)
 	last_combat_result.rewards_applied = true
+
+	# Tournament bookkeeping (once per fight, same idempotence guard).
+	_clear_tournament_flags()
+	if in_tournament() and tournament_fight_pending:
+		tournament_fight_pending = false
+		if last_combat_result.player_won:
+			tournament_round += 1
+			tournament_won_round = true
+			if tournament_round >= TOURNAMENT_ROUNDS:
+				tournament_completed = true
+				if not profile.completed_tournament_arena_ids.has(tournament_arena_id):
+					profile.completed_tournament_arena_ids.append(tournament_arena_id)
+				tournament_arena_id = &""
+				tournament_round = 0
+		else:
+			tournament_failed = true
+			tournament_arena_id = &""
+			tournament_round = 0
+
 	SaveManager.save_profile(profile)
 	return last_reward

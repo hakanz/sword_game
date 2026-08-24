@@ -56,8 +56,18 @@ func _draw() -> void:
 	# Wall ledge
 	draw_rect(Rect2(-2000, 485, 5280, 18), arena.wall_color.darkened(0.25))
 
-	# Sand
+	# Flanking stone columns for depth
+	for column_x in [30.0, 1200.0]:
+		draw_rect(Rect2(column_x, 240, 50, 250), arena.wall_color.lightened(0.18))
+		draw_rect(Rect2(column_x + 8, 240, 12, 250), arena.wall_color.lightened(0.32))
+		draw_rect(Rect2(column_x - 8, 228, 66, 16), arena.wall_color.lightened(0.25))
+		draw_rect(Rect2(column_x - 8, 486, 66, 16), arena.wall_color.lightened(0.1))
+
+	# Sand with a lit fighting oval
 	draw_rect(Rect2(-2000, 503, 5280, 1500), arena.ground_color)
+	draw_set_transform(Vector2(640, 520), 0.0, Vector2(1.0, 0.22))
+	draw_circle(Vector2.ZERO, 560.0, arena.ground_color.lightened(0.1))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	var speck_rng := RandomNumberGenerator.new()
 	speck_rng.seed = 90210
 	for _i in 90:

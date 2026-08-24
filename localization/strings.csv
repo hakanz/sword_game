@@ -1,6 +1,5 @@
 keys,en,tr
 app.title,Arena Legends,Arena Legends
-menu.play,Enter the Arena,Arenaya Gir
 menu.quit,Quit,Çıkış
 menu.language,Language: English,Dil: Türkçe
 menu.subtitle,A gladiator saga of questionable glory,Şüpheli şanla dolu bir gladyatör destanı
@@ -21,13 +20,24 @@ combat.distance.close,Close,Yakın
 combat.distance.medium,Medium,Orta
 combat.distance.long,Long,Uzak
 combat.float.miss,Miss!,Iska!
+combat.action.switch,Switch,Silah Değiştir
+combat.hint.no_ammo,"Out of arrows — switch weapons!","Ok bitti — silah değiştir!"
+combat.hint.no_sidearm,No sidearm carried,Yedek silah yok
+item.weapon.skinning_knife.name,Skinning Knife,Yüzme Bıçağı
+class.unarmed,Unarmed,Silahsız
+class.sword,Sword,Kılıç
+class.axe,Axe,Balta
+class.blunt,Blunt,Topuz
+class.spear,Spear,Mızrak
+class.ranged,Bow,Yay
+class.magical,Staff,Asa
+skills.requires_class,"Weapon: {classes}","Silah: {classes}"
 combat.hint.too_far,"Too far to attack — approach first!","Saldırmak için çok uzak — önce yaklaş!"
 combat.hint.no_energy,"Not enough energy — rest to recover!","Yeterli enerji yok — dinlenerek toparlan!"
 results.victory,VICTORY!,ZAFER!
 results.defeat,DEFEAT,YENİLGİ
 results.rounds,"The duel lasted {rounds} rounds.","Düello {rounds} raunt sürdü."
 results.damage_dealt,"Damage dealt: {damage}","Verilen hasar: {damage}"
-results.back_to_menu,Back to Menu,Menüye Dön
 character.default_name,New Gladiator,Yeni Gladyatör
 character.enemy_vosk.name,Vosk the Gravel-Chewer,Çakıl Çiğneyen Vosk
 menu.version,"v{version}","v{version}"
@@ -40,7 +50,6 @@ item.armour.leather_straps.name,Leather Straps,Deri Kayışlar
 arena.gravelmaw.name,Gravelmaw Arena,Gravelmaw Arenası
 menu.continue,Continue,Devam Et
 menu.new_game,New Gladiator,Yeni Gladyatör
-menu.character,Character,Karakter
 menu.confirm_new_title,Start over?,Baştan başla?
 menu.confirm_new_text,"This will erase your current gladiator. Continue?","Bu, mevcut gladyatörünü silecek. Devam edilsin mi?"
 common.confirm,Confirm,Onayla
@@ -91,16 +100,12 @@ item.armour.boiled_leather_cuirass.name,Boiled Leather Cuirass,Kaynatılmış De
 item.armour.bronze_cap.name,Bronze Cap,Bronz Tas
 item.armour.iron_chainmail.name,Iron Chainmail,Demir Zincir Zırh
 item.armour.iron_helm.name,Iron Helm,Demir Miğfer
-menu.shop,The Armoury,Cephanelik
-menu.inventory,Inventory,Envanter
-shop.title,The Armoury,Cephanelik
 shop.tab_buy,Buy,Satın Al
 shop.tab_sell,Sell,Sat
 shop.gold,"Gold: {gold}","Altın: {gold}"
 shop.owned,Owned,Sahipsin
 shop.buy,Buy,Satın Al
 shop.sell,"Sell ({price})","Sat ({price})"
-shop.not_enough_gold,Not enough gold,Yetersiz altın
 inventory.title,Inventory,Envanter
 inventory.weapons,Weapons,Silahlar
 inventory.armour,Armour,Zırhlar
@@ -140,10 +145,8 @@ skill.pinning_shot.name,Pinning Shot,Mıhlayan Ok
 skill.pinning_shot.desc,"An arrow to the boot. Running becomes a suggestion.","Bota saplanan bir ok. Koşmak artık sadece bir öneri."
 skill.focused_loose.name,Focused Loose,Odaklı Atış
 skill.focused_loose.desc,"One breath, one shot, very few excuses.","Tek nefes, tek atış, pek az bahane."
-combat.action.skills,Skills,Yetenekler
 combat.hint.cooldown,"On cooldown ({rounds})","Beklemede ({rounds})"
 combat.hint.wrong_weapon,"Wrong weapon type for this skill","Bu yetenek için yanlış silah türü"
-menu.skills,Skills,Yetenekler
 skills.title,Skills,Yetenekler
 skills.learn,Learn,Öğren
 skills.learned,Learned,Öğrenildi
@@ -151,12 +154,11 @@ skills.hint.no_points,No skill points,Yetenek puanı yok
 skills.hint.known,Already learned,Zaten öğrenildi
 skills.cost_energy,"{energy} Energy","{energy} Enerji"
 skills.cooldown,"Cooldown: {rounds} rounds","Bekleme: {rounds} raunt"
-menu.champion,Champion Challenge,Şampiyon Meydan Okuması
 character.champion_maulhilda.name,Maulhilda the Unmoved,Sarsılmaz Maulhilda
 champion.maulhilda.intro,"Maulhilda cracks her knuckles: 'I have been furniture in this arena longer than you have been alive.'","Maulhilda parmaklarını çıtlatıyor: 'Ben bu arenada, senin ömründen uzun süredir mobilyayım.'"
 champion.maulhilda.defeat,"Maulhilda topples like a wardrobe full of anvils. The crowd is SPEECHLESS.","Maulhilda, örs dolu bir gardırop gibi devriliyor. Seyircinin dili tutuldu."
 item.weapon.doorslab.name,The Doorslab,Kapı Kütlesi
-results.champion_defeated,"CHAMPION DEFEATED! Gravelmaw bows to you!","ŞAMPİYON YENİLDİ! Gravelmaw önünde eğiliyor!"
+results.champion_defeated,"CHAMPION DEFEATED! {arena} bows to you!","ŞAMPİYON YENİLDİ! {arena} önünde eğiliyor!"
 results.champion_reward,"Unique reward: {item}","Benzersiz ödül: {item}"
 creation.title,Forge Your Gladiator,Gladyatörünü Yarat
 creation.name_label,Name,İsim
@@ -169,6 +171,82 @@ creation.preset.brawler,Brawler,Kavgacı
 creation.preset.brawler.desc,"Hits hard, thinks later. Sometimes never.","Önce vurur, sonra düşünür. Bazen hiç düşünmez."
 creation.preset.swift,Swift,Çevik
 creation.preset.swift.desc,"Never quite where the axe lands.","Balta indiğinde asla tam orada değildir."
+menu.settings,Settings,Ayarlar
+settings.title,Settings,Ayarlar
+settings.volume_master,Master Volume,Ana Ses
+settings.volume_music,Music,Müzik
+settings.volume_sfx,Effects,Efektler
+settings.screen_shake,Screen Shake,Ekran Sarsıntısı
+settings.reduced_fx,Reduced hit effects,Azaltılmış vuruş efektleri
+pause.title,Paused,Duraklatıldı
+pause.resume,Resume,Devam Et
+pause.leave,Leave the Fight,Dövüşten Ayrıl
+pause.leave_confirm,"Leave without rewards? An active tournament run is forfeited.","Ödülsüz ayrılıyorsun; aktif turnuva ilerlemesi de yanar. Emin misin?"
+arenas.title,Arena Regions,Arena Bölgeleri
+arenas.level_range,"Levels {min}-{max}","Seviye {min}-{max}"
+arenas.locked_hint,"Win the previous arena's tournament to unlock.","Açmak için önceki arenanın turnuvasını kazan."
+arenas.selected,Selected,Seçili
+arenas.select,Select,Seç
+arenas.tournament,Tournament,Turnuva
+arenas.champion_waits,"Champion: {champion}","Şampiyon: {champion}"
+arenas.champion_beaten,"{champion} — defeated!","{champion} — yenildi!"
+tournament.title,"{arena} Tournament","{arena} Turnuvası"
+tournament.subtitle,"Four rounds. At the end: {champion}.","Dört tur. Sonunda: {champion}."
+tournament.round.qualification,Qualification,Eleme
+tournament.round.quarter,Quarter Final,Çeyrek Final
+tournament.round.semi,Semi Final,Yarı Final
+tournament.round.final,"Final — the Champion","Final — Şampiyon"
+tournament.fight,Fight!,Dövüş!
+tournament.abandon,Abandon Tournament,Turnuvayı Bırak
+tournament.abandon_confirm,"Leaving forfeits your tournament run. Sure?","Ayrılırsan turnuva ilerlemen yanar. Emin misin?"
+results.next_round,Next Round,Sonraki Tur
+results.tournament_complete,"TOURNAMENT WON! A new arena has opened.","TURNUVA KAZANILDI! Yeni bir arena açıldı."
+results.tournament_failed,"Knocked out of the tournament. Train and return!","Turnuvadan elendin. Çalış ve geri dön!"
+arena.emberholt.name,Emberholt Ring,Emberholt Halkası
+character.champion_orzha.name,Orzha Sablewind,Orzha Kararüzgârı
+champion.orzha.intro,"Orzha bows theatrically: 'I will make this quick. The crowd bores easily.'","Orzha tiyatral bir reverans yapar: 'Çabuk bitireceğim. Seyirci çabuk sıkılır.'"
+champion.orzha.defeat,"Orzha blinks at the sand: 'Huh. Usually that works.' The crowd erupts!","Orzha kuma bakakalır: 'Hm. Normalde bu işe yarar.' Seyirci coşuyor!"
+item.weapon.sablefang.name,Sablefang,Samurdişi
+item.weapon.ashwood_staff.name,Ashwood Staff,Dişbudak Asa
+item.weapon.emberglass_staff.name,Emberglass Staff,Korcam Asa
+item.weapon.steel_sabre.name,Steel Sabre,Çelik Pala
+item.weapon.horned_maul.name,Horned Maul,Boynuzlu Varyos
+item.weapon.serpent_pike.name,Serpent Pike,Yılan Kargısı
+item.weapon.longstrider_bow.name,Longstrider Bow,Uzunadım Yayı
+item.armour.iron_shoulderguards.name,Iron Shoulderguards,Demir Omuzluk
+item.armour.hide_belt.name,Hide Belt,Post Kemer
+item.armour.steel_breastplate.name,Steel Breastplate,Çelik Göğüslük
+item.armour.steel_greathelm.name,Steel Greathelm,Çelik Tolga
+item.armour.duelist_boots.name,Duelist Boots,Düellocu Botları
+item.armour.riveted_leggings.name,Riveted Leggings,Perçinli Tozluk
+status.burn.name,Burn,Yanık
+status.weakness.name,Weakness,Güçsüzlük
+status.stoneguard.name,Stoneguard,Taş Siperi
+skill.ember_bolt.name,Ember Bolt,Kor Saçması
+skill.ember_bolt.desc,"A fistful of angry embers. Sets pride and eyebrows alike alight.","Bir avuç öfkeli kor. Gururu da kaşları da tutuşturur."
+skill.enfeebling_hex.name,Enfeebling Hex,Dermansızlık Laneti
+skill.enfeebling_hex.desc,"The target suddenly remembers every skipped training day.","Hedef, astığı her antrenman gününü bir anda hatırlar."
+skill.mocking_jab.name,Mocking Jab,Alaycı Dürtme
+skill.mocking_jab.desc,"A poke so insulting it saps the will to swing.","O kadar aşağılayıcı bir dürtme ki vurma isteğini emer."
+skill.brace_up.name,Brace Up,Siper Al
+skill.brace_up.desc,"Plant your feet. Become furniture. Angry furniture.","Ayaklarını sabitle. Mobilyaya dönüş. Öfkeli bir mobilyaya."
 shop.auto_equipped_title,Upgrade equipped!,Yükseltme kuşanıldı!
 shop.auto_equipped_text,"{new} was equipped automatically. Sell your old {old} for {price} gold?","{new} otomatik olarak kuşanıldı. Eski {old}, {price} altına satılsın mı?"
 shop.keep,Keep,Sakla
+results.back_to_town,Back to Town,Kasabaya Dön
+item.stat.ammo,"{ammo} arrows","{ammo} ok"
+shop.weaponsmith.title,"Bragga's Blades","Bragga'nın Bıçakları"
+shop.weaponsmith.flavor,"'If it doesn't cut, hit harder.' — Bragga","'Kesmiyorsa daha sert vur.' — Bragga"
+shop.armourer.title,"Tetta's Ironwear","Tetta'nın Zırhhanesi"
+shop.armourer.flavor,"'Dents are just character.' — Tetta","'Göçükler karakter katar.' — Tetta"
+town.title,Dustwell,Tozkuyu
+town.subtitle,"The fighters' quarter","Dövüşçüler mahallesi"
+town.fight,Fight!,Dövüş!
+town.regions,Arenas,Arenalar
+town.weaponsmith,Weaponsmith,Silahçı
+town.armourer,Armourer,Zırhçı
+town.trainer,Trainer,Eğitmen
+town.character,Character,Karakter
+town.inventory,Inventory,Envanter
+town.leave,Main Menu,Ana Menü
+combat.hint.no_mana,"Not enough mana for that spell!","Bu büyü için yeterli mana yok!"

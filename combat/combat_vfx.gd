@@ -9,6 +9,8 @@ class_name CombatVfx
 static func spawn_sparks(
 		parent: Node, pos: Vector2, color: Color,
 		amount: int = 14, soft: bool = false) -> void:
+	if bool(SaveManager.get_setting("reduced_fx", false)):
+		amount = maxi(4, amount / 2)
 	var particles := CPUParticles2D.new()
 	particles.position = pos
 	particles.one_shot = true

@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/weapon_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"weapon.emberglass_staff"
+name_key = "item.weapon.emberglass_staff.name"
+weapon_class = 6
+damage_type = 3
+damage_min = 15
+damage_max = 23
+accuracy_bonus = 2
+armour_penetration = 0.1
+range_min = 0
+range_max = 0
+energy_cost = 9
+tier = 4
+rarity = 2
+value = 260
+required_level = 12
+required_strength = 0
+required_agility = 0
+required_arcana = 22

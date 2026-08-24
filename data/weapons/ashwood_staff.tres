@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/weapon_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"weapon.ashwood_staff"
+name_key = "item.weapon.ashwood_staff.name"
+weapon_class = 6
+damage_type = 7
+damage_min = 8
+damage_max = 14
+accuracy_bonus = 1
+armour_penetration = 0.05
+range_min = 0
+range_max = 0
+energy_cost = 7
+tier = 2
+rarity = 0
+value = 75
+required_level = 3
+required_strength = 0
+required_agility = 0
+required_arcana = 12

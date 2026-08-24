@@ -56,12 +56,14 @@ func test_losing_to_champion_grants_nothing_special() -> void:
 	assert_false(profile.defeated_champion_ids.has(MAULHILDA.id))
 
 
-func test_unlock_rule() -> void:
-	var previous: PlayerProfile = GameManager.profile
-	GameManager.profile = PlayerProfile.create_default()
-	assert_false(GameManager.is_champion_unlocked(), "fresh gladiators must earn the challenge")
-	GameManager.profile.victories = GameManager.CHAMPION_UNLOCK_VICTORIES
-	assert_true(GameManager.is_champion_unlocked())
-	GameManager.profile.defeated_champion_ids.append(MAULHILDA.id)
-	assert_false(GameManager.is_champion_unlocked(), "a beaten champion stays beaten (until NG+)")
-	GameManager.profile = previous
+func test_second_champion_preset_is_complete() -> void:
+	var orzha: CharacterData = preload("res://data/characters/champions/orzha.tres")
+	assert_true(orzha.is_champion)
+	assert_true(orzha.personality != null)
+	assert_true(orzha.skills.size() >= 2, "Orzha needs her signature kit")
+	assert_true(orzha.weapon != null and not orzha.weapon.shop_available)
+	assert_true(orzha.intro_key != "" and orzha.defeat_key != "")
+	assert_true(ProgressionService.CHAMPION_REWARDS.has(orzha.id),
+			"every champion carries a unique first-kill reward")
+	# Duelist identity: she dodges, she doesn't tank.
+	assert_true(orzha.attributes.agility > orzha.attributes.defence)

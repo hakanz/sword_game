@@ -120,6 +120,22 @@ static func _score_base(
 				return 30.0 * maxf(p.resource_care, 0.5)
 			return (1.0 - energy_fraction) * 10.0 * p.resource_care
 
+		Enums.ActionType.SWITCH_WEAPON:
+			# Draw whichever weapon actually works from here (archer flow:
+			# open on the knife, switch to the bow to shoot, back to steel
+			# when the quiver empties or the foe closes in).
+			var current: WeaponData = actor.get_weapon()
+			var other: WeaponData = actor.sidearm if actor.wielding_main else actor.main_weapon
+			var current_usable: bool = current.can_attack_from(ctx.band()) \
+					and (not current.is_ranged() or actor.arrows > 0)
+			var other_usable: bool = other.can_attack_from(ctx.band()) \
+					and (not other.is_ranged() or actor.arrows > 0)
+			if other_usable and not current_usable:
+				return 16.0 * p.aggression
+			if not current_usable and other.is_ranged() and actor.arrows > 0:
+				return 8.0  # draw the bow, then open distance to fire
+			return 0.5
+
 		_:
 			return 0.0
 

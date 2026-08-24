@@ -27,6 +27,7 @@ Rules (mandatory):
 | 2 | + `inventory_weapon_ids`, `inventory_armour_ids` (equipment phase) | empty satchels |
 | 3 | + `known_skill_ids` (skill phase) | none known; banked points stay |
 | 4 | + `defeated_champion_ids` (arena phase) | empty record |
+| 5 | + `selected_arena_id`, `completed_tournament_arena_ids` | default arena; an already-beaten Maulhilda credits the Gravelmaw tournament |
 
 ## Autosave points (charter §31)
 After battle rewards, after purchases/sales, after equip changes, after attribute

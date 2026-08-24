@@ -4,10 +4,11 @@ Status: combat + skills + status effects implemented. Crits, spells, shields,
 consumables and the crowd meter land in later phases; their pipeline slots are marked.
 
 **Session-2 design directives (2026-08-24, owner decision):**
-- **Attacks land only toe to toe (ADJACENT).** Every weapon and strike skill hits at
-  separation 1 and nowhere else — enforced in DATA (all weapon ranges 0-0), the range
-  code stays band-capable if ranged combat ever returns (docs/balancing.md notes the
-  paused ranged identity).
+- **Melee lands only toe to toe (ADJACENT).** Every melee weapon and strike skill hits
+  at separation 1 (data-enforced). **Bows are the session-3 exception:** ranged again,
+  firing from CLOSE..LONG (never point-blank) with a 4-arrow quiver per fight, a knife
+  sidearm auto-carried, and weapon switching as its own action — archers OPEN on the
+  knife and must switch to shoot. Arrows are spent hit or miss; empty quiver = knife time.
 - **Movement is personal.** Each fighter stands on their own cell of an 8-cell arena
   line; approach/retreat moves ONLY the acting fighter one cell (never both). Bands
   derive from cell separation: 1=ADJACENT, 2=CLOSE, 3=MEDIUM, 4+=LONG. The arena wall
@@ -31,10 +32,11 @@ COMBAT_START -> [ROUND_START -> per fighter: TURN_START -> action select
 ## Actions (current set)
 | Action | Energy | Effect |
 |---|---|---|
-| Attack | weapon `energy_cost` | only at ADJACENT; roll to hit, damage pipeline below |
+| Attack | weapon `energy_cost` | melee at ADJACENT; bows CLOSE..LONG with 4 arrows | 
 | Defend | 0 | stance until own next turn: +8 avoidance, −30% damage taken |
 | Approach / Retreat | 2 | move OWN cell by 1 (wall-clamped; cannot enter foe's cell) |
 | Rest | 0 | +40% max Energy and +8% max HP (invalid only when both are full) |
+| Switch weapon | 0 | swap main <-> sidearm (archers only for now); consumes the turn |
 
 Validation + costs: single source `CombatAction` (HUD buttons, AI filtering, and controller
 execution all call it).
@@ -43,7 +45,8 @@ execution all call it).
 ```
 accuracy  = attack_rating + weapon.accuracy_bonus + modifiers
 avoidance = defence_rating + evasion + stance_bonus (defend: +8)
-chance    = clamp(0.50 + 0.02 * (accuracy - avoidance), 0.05, 0.95)
+chance    = clamp(0.50 + 0.015 * (accuracy - avoidance), 0.05, 0.95)
+            (0.02 -> 0.015 in session 3 — see docs/balancing.md)
 ```
 Normal attacks are never 0%/100% (guaranteed-hit skills must bypass explicitly, later).
 
@@ -80,6 +83,13 @@ attribute damage bonus per weapon class:
 ```
 All coefficients are tuning values (`CombatTuning` for combat, these functions for
 progression) — change freely with balancing evidence, document swings in docs/balancing.md.
+
+## Tournaments & regions (charter §21)
+Arena regions live in data (`ArenaData.order/min_level/max_level/champion`);
+region N+1 unlocks by winning region N's 4-round tournament (Qualification/
+Quarter/Semi/Final-vs-champion, single sitting, leaving forfeits). Flow state
+sits on GameManager (`tournament_*`); completion persists on the profile
+(save v5). Normal-duel opponents clamp to the selected region's level band.
 
 ## Determinism
 All combat randomness flows through `RngService` (`--combat-seed=N` reproduces a fight).

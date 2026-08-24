@@ -13,7 +13,7 @@ extends Node
 
 const SETTINGS_PATH: String = "user://settings.cfg"
 const SETTINGS_SECTION: String = "settings"
-const SAVE_VERSION: int = 4
+const SAVE_VERSION: int = 5
 
 ## Overridable for tests; gameplay always uses the default.
 var profile_path: String = "user://save_slot_1.json"
@@ -133,6 +133,8 @@ func _migrate(payload: Dictionary, from_version: int) -> Dictionary:
 				payload = _migrate_v2_to_v3(payload)
 			3:
 				payload = _migrate_v3_to_v4(payload)
+			4:
+				payload = _migrate_v4_to_v5(payload)
 			_:
 				push_warning("SaveManager: no migration path from save_version %d" % version)
 				return {}
@@ -177,5 +179,22 @@ static func _migrate_v3_to_v4(payload: Dictionary) -> Dictionary:
 	var profile_fields: Dictionary = payload.get("profile", {})
 	if not profile_fields.has("defeated_champion_ids"):
 		profile_fields["defeated_champion_ids"] = []
+	payload["profile"] = profile_fields
+	return payload
+
+
+## v5 added arena selection + tournament record (arena-progression phase).
+static func _migrate_v4_to_v5(payload: Dictionary) -> Dictionary:
+	var profile_fields: Dictionary = payload.get("profile", {})
+	if not profile_fields.has("selected_arena_id"):
+		profile_fields["selected_arena_id"] = "arena.gravelmaw"
+	if not profile_fields.has("completed_tournament_arena_ids"):
+		# Pre-tournament saves that already beat Maulhilda earned the old
+		# champion challenge — credit them with the Gravelmaw tournament so
+		# arena progression stays consistent.
+		var completed: Array = []
+		if profile_fields.get("defeated_champion_ids", []).has("character.champion_maulhilda"):
+			completed.append("arena.gravelmaw")
+		profile_fields["completed_tournament_arena_ids"] = completed
 	payload["profile"] = profile_fields
 	return payload

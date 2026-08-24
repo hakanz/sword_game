@@ -20,7 +20,7 @@ func _ready() -> void:
 	_weapons_title.text = tr("inventory.weapons")
 	_armour_title.text = tr("inventory.armour")
 	_back.text = tr("common.back")
-	_back.pressed.connect(SceneRouter.goto_main_menu)
+	_back.pressed.connect(SceneRouter.goto_town)
 	_refresh()
 
 

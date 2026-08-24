@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="StatusEffectData" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/status_effect_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"status.weakness"
+name_key = "status.weakness.name"
+duration_rounds = 2
+max_stacks = 1
+periodic_damage = 0
+periodic_damage_type = 0
+periodic_heal = 0
+accuracy_mod = 0
+defence_mod = 0
+evasion_mod = 0
+damage_dealt_mult = 0.75
+skips_turn = false
+tint = Color(0.6, 0.5, 0.7, 1)

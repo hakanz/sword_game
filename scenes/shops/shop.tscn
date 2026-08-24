@@ -40,14 +40,35 @@ theme_override_constants/separation = 10
 layout_mode = 2
 theme_override_constants/separation = 16
 
-[node name="TitleLabel" type="Label" parent="Margin/Layout/Header"]
-unique_name_in_owner = true
+[node name="TitleBox" type="VBoxContainer" parent="Margin/Layout/Header"]
 layout_mode = 2
 size_flags_horizontal = 3
+
+[node name="TitleLabel" type="Label" parent="Margin/Layout/Header/TitleBox"]
+unique_name_in_owner = true
+layout_mode = 2
 theme_override_font_sizes/font_size = 30
 theme_override_colors/font_color = Color(0.93, 0.76, 0.35, 1)
 
-[node name="GoldLabel" type="Label" parent="Margin/Layout/Header"]
+[node name="FlavorLabel" type="Label" parent="Margin/Layout/Header/TitleBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.75, 0.7, 0.8, 1)
+
+[node name="GoldBox" type="HBoxContainer" parent="Margin/Layout/Header"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="GoldIcon" type="TextureRect" parent="Margin/Layout/Header/GoldBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+size_flags_vertical = 4
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GoldLabel" type="Label" parent="Margin/Layout/Header/GoldBox"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 22

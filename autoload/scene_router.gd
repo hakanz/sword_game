@@ -10,6 +10,10 @@ const SCENE_SHOP: String = "res://scenes/shops/shop.tscn"
 const SCENE_INVENTORY: String = "res://scenes/inventory/inventory.tscn"
 const SCENE_SKILLS: String = "res://scenes/skills/skills.tscn"
 const SCENE_CHARACTER_CREATION: String = "res://scenes/creation/character_creation.tscn"
+const SCENE_ARENA_SELECT: String = "res://scenes/arena_select/arena_select.tscn"
+const SCENE_TOURNAMENT: String = "res://scenes/tournament/tournament.tscn"
+const SCENE_SETTINGS: String = "res://scenes/settings/settings.tscn"
+const SCENE_TOWN: String = "res://scenes/town/town.tscn"
 
 
 func goto_main_menu() -> void:
@@ -32,7 +36,19 @@ func goto_character_sheet() -> void:
 	_change_scene(SCENE_CHARACTER_SHEET)
 
 
-func goto_shop() -> void:
+func goto_town() -> void:
+	GameManager.change_state(GameManager.GameState.TOWN)
+	_change_scene(SCENE_TOWN)
+
+
+func goto_weaponsmith() -> void:
+	GameManager.shop_kind = GameManager.ShopKind.WEAPONS
+	GameManager.change_state(GameManager.GameState.SHOP)
+	_change_scene(SCENE_SHOP)
+
+
+func goto_armourer() -> void:
+	GameManager.shop_kind = GameManager.ShopKind.ARMOUR
 	GameManager.change_state(GameManager.GameState.SHOP)
 	_change_scene(SCENE_SHOP)
 
@@ -52,6 +68,23 @@ func goto_character_creation() -> void:
 	_change_scene(SCENE_CHARACTER_CREATION)
 
 
+func goto_arena_select() -> void:
+	GameManager.change_state(GameManager.GameState.ARENA_SELECT)
+	_change_scene(SCENE_ARENA_SELECT)
+
+
+func goto_tournament() -> void:
+	GameManager.change_state(GameManager.GameState.TOURNAMENT)
+	_change_scene(SCENE_TOURNAMENT)
+
+
+func goto_settings() -> void:
+	GameManager.change_state(GameManager.GameState.SETTINGS)
+	_change_scene(SCENE_SETTINGS)
+
+
 func _change_scene(path: String) -> void:
+	# Defensive: leaving any screen must never strand a paused tree.
+	get_tree().paused = false
 	# Deferred so a scene change is safe from within signal callbacks.
 	get_tree().change_scene_to_file.call_deferred(path)

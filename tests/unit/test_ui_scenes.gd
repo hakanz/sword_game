@@ -10,6 +10,8 @@ const SCENES: PackedStringArray = [
 	"res://scenes/inventory/inventory.tscn",
 	"res://scenes/skills/skills.tscn",
 	"res://scenes/creation/character_creation.tscn",
+	"res://scenes/arena_select/arena_select.tscn",
+	"res://scenes/tournament/tournament.tscn",
 	"res://scenes/results/results.tscn",
 ]
 
@@ -19,6 +21,9 @@ func test_menu_flow_scenes_instantiate_cleanly() -> void:
 	GameManager.profile = PlayerProfile.create_default()
 	GameManager.profile.inventory_weapon_ids.append(&"weapon.bronze_gladius")
 	GameManager.profile.inventory_armour_ids.append(&"armour.rag_hood")
+	# The tournament screen redirects unless a bracket is active.
+	GameManager.tournament_arena_id = &"arena.gravelmaw"
+	GameManager.tournament_round = 1
 
 	var tree := Engine.get_main_loop() as SceneTree
 	for path in SCENES:
@@ -32,4 +37,5 @@ func test_menu_flow_scenes_instantiate_cleanly() -> void:
 		tree.root.remove_child(node)
 		node.free()
 
+	GameManager.abandon_tournament()
 	GameManager.profile = previous_profile

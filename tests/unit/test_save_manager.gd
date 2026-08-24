@@ -111,6 +111,27 @@ func test_v2_save_migrates_to_v3() -> void:
 	)
 
 
+func test_v4_save_migrates_to_v5() -> void:
+	_with_test_path(func() -> void:
+		# v4: champion record exists, no arena/tournament fields. A save that
+		# already beat Maulhilda gets credited with the Gravelmaw tournament.
+		var file := FileAccess.open(TEST_PATH, FileAccess.WRITE)
+		file.store_string(JSON.stringify({
+			"save_version": 4,
+			"profile": {
+				"character_name": "Regionless", "level": 7,
+				"defeated_champion_ids": ["character.champion_maulhilda"],
+			},
+		}))
+		file.close()
+		var loaded: PlayerProfile = SaveManager.load_profile()
+		assert_true(loaded != null, "v4 saves must migrate")
+		assert_eq(loaded.selected_arena_id, &"arena.gravelmaw", "default arena selected")
+		assert_true(loaded.completed_tournament_arena_ids.has(&"arena.gravelmaw"),
+				"old champion kills convert to tournament completion")
+	)
+
+
 func test_disabled_writes_touch_nothing() -> void:
 	_with_test_path(func() -> void:
 		SaveManager.disk_writes_enabled = false

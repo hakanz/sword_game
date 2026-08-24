@@ -1,9 +1,9 @@
 class_name CombatHUD
 extends CanvasLayer
-## Combat HUD (charter §28): both fighters' HP/Energy/Armour with icons,
-## an icon action bar with the player's skills inlined (no submenu — session-2
-## directive), a hint line, and a fading announcement banner for champion
-## lines. Fully mouse/touch driven; all visible text via translation keys.
+## Combat HUD (charter §28): fighter panels with icons, a RADIAL action menu
+## that pops up around the player's gladiator on their turn (owner design,
+## session 3), hint line, pause overlay, and an announcement banner.
+## Fully mouse/touch driven; all visible text via translation keys.
 ## Reads combat state; NEVER computes combat math (charter §6).
 
 signal action_selected(action: Enums.ActionType, skill: SkillData)
@@ -14,17 +14,18 @@ const ACTION_ICONS: Dictionary = {
 	Enums.ActionType.APPROACH: preload("res://assets/icons/action_approach.svg"),
 	Enums.ActionType.RETREAT: preload("res://assets/icons/action_retreat.svg"),
 	Enums.ActionType.REST: preload("res://assets/icons/action_rest.svg"),
+	Enums.ActionType.SWITCH_WEAPON: preload("res://assets/icons/action_switch.svg"),
 }
 
-const COST_COLOR := Color(0.88, 0.66, 0.25)
-const COOLDOWN_COLOR := Color(0.9, 0.4, 0.35)
+const COST_COLOR := Color(0.98, 0.8, 0.35)
+const COOLDOWN_COLOR := Color(1.0, 0.45, 0.4)
+const AMMO_COLOR := Color(0.75, 0.9, 1.0)
+const RADIAL_RADIUS: float = 128.0
+const RADIAL_BUTTON: float = 58.0
 
 var player: Combatant = null
 var enemy: Combatant = null
 var ctx: CombatContext = null
-
-## SkillData -> Button, built once per combat in setup().
-var _skill_buttons: Dictionary = {}
 
 @onready var _player_name: Label = %PlayerName
 @onready var _player_hp_label: Label = %PlayerHPLabel
@@ -47,29 +48,16 @@ var _skill_buttons: Dictionary = {}
 @onready var _announce_label: Label = %AnnounceLabel
 @onready var _player_status_row: HBoxContainer = %PlayerStatusRow
 @onready var _enemy_status_row: HBoxContainer = %EnemyStatusRow
-@onready var _action_bar: HBoxContainer = %ActionBar
-@onready var _skill_separator: VSeparator = %SkillSeparator
-@onready var _buttons: Dictionary = {
-	Enums.ActionType.ATTACK: %AttackButton,
-	Enums.ActionType.DEFEND: %DefendButton,
-	Enums.ActionType.APPROACH: %ApproachButton,
-	Enums.ActionType.RETREAT: %RetreatButton,
-	Enums.ActionType.REST: %RestButton,
-}
+@onready var _radial: Control = %RadialMenu
+@onready var _pause_button: Button = %PauseButton
+@onready var _pause_panel: Control = %PausePanel
+@onready var _pause_title: Label = %PauseTitle
+@onready var _resume_button: Button = %ResumeButton
+@onready var _leave_button: Button = %LeaveButton
+@onready var _leave_dialog: ConfirmationDialog = %LeaveDialog
 
 
 func _ready() -> void:
-	(%AttackButton as Button).text = tr("combat.action.attack")
-	(%DefendButton as Button).text = tr("combat.action.defend")
-	(%ApproachButton as Button).text = tr("combat.action.approach")
-	(%RetreatButton as Button).text = tr("combat.action.retreat")
-	(%RestButton as Button).text = tr("combat.action.rest")
-	for type: Enums.ActionType in _buttons.keys():
-		var button: Button = _buttons[type]
-		button.icon = ACTION_ICONS[type]
-		button.add_theme_constant_override("icon_max_width", 30)
-		button.pressed.connect(_on_action_button.bind(type))
-
 	# Semantic bar colors (same meaning on both panels): HP green,
 	# Energy amber, Armour steel-blue.
 	var hp_fill := UITheme.bar_fill(Color(0.44, 0.75, 0.35))
@@ -82,9 +70,22 @@ func _ready() -> void:
 	_player_armour_bar.add_theme_stylebox_override("fill", armour_fill)
 	_enemy_armour_bar.add_theme_stylebox_override("fill", armour_fill)
 
+	_pause_title.text = tr("pause.title")
+	_resume_button.text = tr("pause.resume")
+	_leave_button.text = tr("pause.leave")
+	_leave_dialog.title = tr("pause.leave")
+	_leave_dialog.dialog_text = tr("pause.leave_confirm")
+	_leave_dialog.ok_button_text = tr("common.confirm")
+	_leave_dialog.cancel_button_text = tr("common.cancel")
+	_pause_button.pressed.connect(_set_paused.bind(true))
+	_resume_button.pressed.connect(_set_paused.bind(false))
+	_leave_button.pressed.connect(_leave_dialog.popup_centered)
+	_leave_dialog.confirmed.connect(_on_leave_confirmed)
+
 	end_player_turn()
 	_hint_label.text = ""
 
+	EventBus.combat_ended.connect(_on_combat_ended)
 	EventBus.combat_started.connect(_on_combat_started)
 	EventBus.round_started.connect(_on_round_started)
 	EventBus.turn_started.connect(_on_turn_started)
@@ -110,67 +111,175 @@ func setup(new_player: Combatant, new_enemy: Combatant, combat_ctx: CombatContex
 	enemy.energy_changed.connect(func(_c: int, _m: int) -> void: _refresh_stat_rows())
 	enemy.armour_changed.connect(func(_c: int, _m: int) -> void: _refresh_stat_rows())
 
-	_build_skill_buttons()
 	_refresh_stat_rows()
 	_refresh_status_rows()
 	_refresh_distance()
 
 
-## The player's skills live directly on the action bar as icon buttons
-## (session-2 directive: no popup submenu). Built once per combat.
-func _build_skill_buttons() -> void:
-	for skill in _skill_buttons.keys():
-		(_skill_buttons[skill] as Button).queue_free()
-	_skill_buttons.clear()
-	_skill_separator.visible = not player.get_skills().is_empty()
-	for skill in player.get_skills():
-		var button := Button.new()
-		button.icon = skill.icon
-		button.text = str(skill.energy_cost)
-		button.custom_minimum_size = Vector2(72, 84)
-		button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		button.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
-		button.expand_icon = true
-		button.add_theme_constant_override("icon_max_width", 36)
-		button.add_theme_font_size_override("font_size", 14)
-		button.add_theme_color_override("font_color", COST_COLOR)
-		button.tooltip_text = "%s — %s" % [tr(skill.name_key), tr(skill.description_key)]
-		button.pressed.connect(_on_skill_button.bind(skill))
-		_action_bar.add_child(button)
-		_skill_buttons[skill] = button
-
+# --- Radial action menu (owner design: actions orbit the gladiator) ---------
 
 func begin_player_turn(actor: Combatant) -> void:
-	for type: Enums.ActionType in _buttons.keys():
-		(_buttons[type] as Button).disabled = not CombatAction.is_valid(type, actor, ctx)
-	for skill: SkillData in _skill_buttons.keys():
-		var button: Button = _skill_buttons[skill]
-		var cooldown: int = actor.cooldown_remaining(skill.id)
-		button.disabled = not CombatAction.is_skill_valid(skill, actor, ctx)
-		# Amber number = energy cost; red number = rounds of cooldown left.
-		button.text = str(cooldown) if cooldown > 0 else str(skill.energy_cost)
-		button.add_theme_color_override("font_color",
-				COOLDOWN_COLOR if cooldown > 0 else COST_COLOR)
+	_build_radial(actor)
 	var attack_reason: String = CombatAction.invalid_reason_key(Enums.ActionType.ATTACK, actor, ctx)
 	_hint_label.text = tr(attack_reason) if attack_reason != "" else ""
 
 
 func end_player_turn() -> void:
-	for type: Enums.ActionType in _buttons.keys():
-		(_buttons[type] as Button).disabled = true
-	for skill: SkillData in _skill_buttons.keys():
-		(_skill_buttons[skill] as Button).disabled = true
+	for child in _radial.get_children():
+		child.queue_free()
+	_radial.visible = false
 	_hint_label.text = ""
 
 
-func _on_action_button(type: Enums.ActionType) -> void:
-	end_player_turn()
-	action_selected.emit(type, null)
+func _build_radial(actor: Combatant) -> void:
+	for child in _radial.get_children():
+		child.queue_free()
+	_radial.visible = true
+
+	# Screen anchor: the gladiator's chest (world root offset + fighter pos).
+	var center: Vector2 = actor.get_parent().position + actor.position + Vector2(0, -72)
+	var toward_foe: float = 0.0 if ctx.foe_of(actor).position.x >= actor.position.x else PI
+
+	var entries: Array[Dictionary] = []
+	entries.append(_base_entry(actor, Enums.ActionType.ATTACK))
+	for skill in actor.get_skills():
+		entries.append(_skill_entry(actor, skill))
+	entries.append(_base_entry(actor, Enums.ActionType.DEFEND))
+	if actor.can_switch_weapon():
+		entries.append(_base_entry(actor, Enums.ActionType.SWITCH_WEAPON))
+	entries.append(_base_entry(actor, Enums.ActionType.REST))
+	entries.append(_base_entry(actor, Enums.ActionType.RETREAT))
+	entries.append(_base_entry(actor, Enums.ActionType.APPROACH))
+
+	var count: int = entries.size()
+	for index in count:
+		var angle: float = toward_foe + TAU * index / count
+		var pos: Vector2 = center + Vector2(cos(angle), sin(angle)) * RADIAL_RADIUS
+		_spawn_radial_button(entries[index], pos, index)
 
 
-func _on_skill_button(skill: SkillData) -> void:
-	end_player_turn()
-	action_selected.emit(Enums.ActionType.SKILL, skill)
+func _base_entry(actor: Combatant, type: Enums.ActionType) -> Dictionary:
+	var badge: String = ""
+	var badge_color: Color = COST_COLOR
+	match type:
+		Enums.ActionType.ATTACK:
+			if actor.get_weapon().is_ranged():
+				badge = str(actor.arrows)
+				badge_color = AMMO_COLOR
+			elif actor.get_weapon().energy_cost > 0:
+				badge = str(actor.get_weapon().energy_cost)
+		Enums.ActionType.APPROACH, Enums.ActionType.RETREAT:
+			badge = str(CombatTuning.MOVE_ENERGY_COST)
+		_:
+			pass
+	return {
+		"icon": ACTION_ICONS[type],
+		"name": tr(_action_name_key(type)),
+		"badge": badge,
+		"badge_color": badge_color,
+		"valid": CombatAction.is_valid(type, actor, ctx),
+		"callback": func() -> void:
+			end_player_turn()
+			action_selected.emit(type, null),
+	}
+
+
+func _skill_entry(actor: Combatant, skill: SkillData) -> Dictionary:
+	var cooldown: int = actor.cooldown_remaining(skill.id)
+	var badge: String = str(cooldown) if cooldown > 0 else str(maxi(skill.energy_cost, skill.mana_cost))
+	return {
+		"icon": skill.icon,
+		"name": tr(skill.name_key),
+		"badge": badge,
+		"badge_color": COOLDOWN_COLOR if cooldown > 0 else COST_COLOR,
+		"valid": CombatAction.is_skill_valid(skill, actor, ctx),
+		"callback": func() -> void:
+			end_player_turn()
+			action_selected.emit(Enums.ActionType.SKILL, skill),
+	}
+
+
+func _spawn_radial_button(entry: Dictionary, pos: Vector2, index: int) -> void:
+	var button := Button.new()
+	button.custom_minimum_size = Vector2(RADIAL_BUTTON, RADIAL_BUTTON)
+	button.size = button.custom_minimum_size
+	button.position = pos - button.size / 2.0
+	button.icon = entry["icon"]
+	button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	button.expand_icon = true
+	button.add_theme_constant_override("icon_max_width", 32)
+	button.disabled = not entry["valid"]
+	button.tooltip_text = entry["name"]
+	for state in ["normal", "hover", "pressed", "disabled"]:
+		button.add_theme_stylebox_override(state, UITheme.round_button_box(state))
+	button.pressed.connect(entry["callback"])
+	_radial.add_child(button)
+
+	var name_label := Label.new()
+	name_label.text = entry["name"]
+	name_label.add_theme_font_size_override("font_size", 12)
+	name_label.add_theme_color_override("font_color",
+			Color(0.95, 0.93, 0.98) if entry["valid"] else Color(0.6, 0.57, 0.65))
+	name_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.8))
+	name_label.add_theme_constant_override("shadow_offset_y", 1)
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_label.custom_minimum_size = Vector2(110, 0)
+	name_label.position = pos + Vector2(-55, RADIAL_BUTTON / 2.0 + 2)
+	_radial.add_child(name_label)
+
+	if entry["badge"] != "":
+		var badge := Label.new()
+		badge.text = entry["badge"]
+		badge.add_theme_font_size_override("font_size", 13)
+		badge.add_theme_color_override("font_color", entry["badge_color"])
+		badge.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+		badge.add_theme_constant_override("shadow_offset_y", 1)
+		badge.position = pos + Vector2(RADIAL_BUTTON / 2.0 - 12, -RADIAL_BUTTON / 2.0 - 8)
+		_radial.add_child(badge)
+
+	# Pop-in: each ring slot scales up with a tiny stagger.
+	button.pivot_offset = button.size / 2.0
+	button.scale = Vector2(0.3, 0.3)
+	var tween: Tween = create_tween()
+	tween.tween_interval(0.02 * index)
+	tween.tween_property(button, "scale", Vector2.ONE, 0.12) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func _action_name_key(type: Enums.ActionType) -> String:
+	match type:
+		Enums.ActionType.ATTACK: return "combat.action.attack"
+		Enums.ActionType.DEFEND: return "combat.action.defend"
+		Enums.ActionType.APPROACH: return "combat.action.approach"
+		Enums.ActionType.RETREAT: return "combat.action.retreat"
+		Enums.ActionType.REST: return "combat.action.rest"
+		Enums.ActionType.SWITCH_WEAPON: return "combat.action.switch"
+		_: return ""
+
+
+# --- Pause ------------------------------------------------------------------
+
+func _unhandled_input(event: InputEvent) -> void:
+	# Optional desktop shortcut — pause stays fully reachable by touch.
+	# (This CanvasLayer runs with PROCESS_MODE_ALWAYS so Esc also unpauses.)
+	if event.is_action_pressed("ui_cancel") and GameManager.last_combat_result == null:
+		_set_paused(not get_tree().paused)
+
+
+func _set_paused(paused: bool) -> void:
+	get_tree().paused = paused
+	_pause_panel.visible = paused
+	_pause_button.visible = not paused
+
+
+## Leaving mid-fight: no rewards, an active tournament run is forfeited.
+func _on_leave_confirmed() -> void:
+	if GameManager.last_combat_result != null:
+		return  # fight already resolved while the dialog was open
+	get_tree().paused = false
+	GameManager.abandon_tournament()
+	GameManager.last_combat_result = null
+	SceneRouter.goto_town()
 
 
 ## Fading center-screen banner (champion intros/defeats and other big beats).
@@ -183,6 +292,14 @@ func show_announcement(text: String) -> void:
 
 
 # --- EventBus listeners -----------------------------------------------------
+
+func _on_combat_ended(_victor: Combatant, _loser: Combatant) -> void:
+	# No pausing/forfeiting a finished fight.
+	_set_paused(false)
+	_pause_button.visible = false
+	if _leave_dialog.visible:
+		_leave_dialog.hide()
+
 
 func _on_combat_started(_p: Combatant, e: Combatant) -> void:
 	if e.data.intro_key != "":

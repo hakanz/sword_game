@@ -24,6 +24,10 @@ static func get_stream(sfx_name: StringName) -> AudioStreamWAV:
 			])
 		&"miss":
 			samples = _whoosh(0.22)
+		&"arrow":
+			samples = _mix([_sine_sweep(0.18, 950.0, 280.0, 10.0, 0.4), _noise_burst(0.05, 40.0, 0.3)])
+		&"switch":
+			samples = _mix([_tone(0.08, 620.0, 26.0, 0.4), _noise_burst(0.04, 45.0, 0.25)])
 		&"skill":
 			samples = _mix([_sine_sweep(0.26, 330.0, 70.0, 6.0, 0.8), _noise_burst(0.1, 12.0)])
 		&"buff":

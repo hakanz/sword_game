@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ArmourData" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/armour_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"armour.riveted_leggings"
+name_key = "item.armour.riveted_leggings.name"
+slot = 5
+armour_class = 1
+armour = 12
+evasion_mod = -1
+tier = 3
+rarity = 1
+value = 110
+required_level = 9
+required_strength = 0

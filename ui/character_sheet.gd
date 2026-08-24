@@ -155,4 +155,4 @@ func _on_confirm_pressed() -> void:
 
 
 func _on_back_pressed() -> void:
-	SceneRouter.goto_main_menu()
+	SceneRouter.goto_town()

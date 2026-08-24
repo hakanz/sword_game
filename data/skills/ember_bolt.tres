@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="SkillData" format=3 load_steps=4]
+
+[ext_resource type="Script" path="res://data/models/skill_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/icons/skill_ember_bolt.svg" id="9"]
+[ext_resource type="Resource" path="res://data/status_effects/burn.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"skill.ember_bolt"
+name_key = "skill.ember_bolt.name"
+description_key = "skill.ember_bolt.desc"
+icon = ExtResource("9")
+target = 0
+energy_cost = 0
+mana_cost = 15
+cooldown_rounds = 1
+power_multiplier = 1.5
+accuracy_mod = 0
+armour_pen_bonus = 0.0
+range_extend = 0
+applies_status = ExtResource("2")
+required_level = 3
+allowed_weapon_classes = Array[int]([6])

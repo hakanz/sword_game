@@ -1,8 +1,10 @@
 extends Control
-## The Armoury (SHOP state): buy from the full catalog, sell unequipped
-## inventory. Prices come ONLY from EconomyCalculator (charter §22).
-## Buying an item you cannot equip yet is allowed on purpose — "two points
-## away from the next upgrade" anticipation (charter §16).
+## Merchant screen (SHOP state): the street has TWO shops now (owner design,
+## session 3) — Bragga's weapon stall and Tetta's armoury. Which one you are
+## standing in comes from GameManager.shop_kind. Stock is sorted by price and
+## every row carries the item's tier-tinted glyph. Prices come ONLY from
+## EconomyCalculator (charter §22). Buying a strict upgrade auto-equips and
+## offers the old piece for sale.
 
 enum Mode { BUY, SELL }
 
@@ -12,7 +14,9 @@ var _mode: Mode = Mode.BUY
 var _pending_sale: Dictionary = {}
 
 @onready var _title: Label = %TitleLabel
+@onready var _flavor: Label = %FlavorLabel
 @onready var _gold: Label = %GoldLabel
+@onready var _gold_icon: TextureRect = %GoldIcon
 @onready var _tab_buy: Button = %BuyTabButton
 @onready var _tab_sell: Button = %SellTabButton
 @onready var _list: VBoxContainer = %ItemList
@@ -20,11 +24,17 @@ var _pending_sale: Dictionary = {}
 @onready var _auto_equip_dialog: ConfirmationDialog = %AutoEquipDialog
 
 
+func _weapons_mode() -> bool:
+	return GameManager.shop_kind == GameManager.ShopKind.WEAPONS
+
+
 func _ready() -> void:
 	if GameManager.profile == null:
 		SceneRouter.goto_main_menu()
 		return
-	_title.text = tr("shop.title")
+	_title.text = tr("shop.weaponsmith.title") if _weapons_mode() else tr("shop.armourer.title")
+	_flavor.text = tr("shop.weaponsmith.flavor") if _weapons_mode() else tr("shop.armourer.flavor")
+	_gold_icon.texture = preload("res://assets/icons/coin.svg")
 	_tab_buy.text = tr("shop.tab_buy")
 	_tab_sell.text = tr("shop.tab_sell")
 	_back.text = tr("common.back")
@@ -33,7 +43,7 @@ func _ready() -> void:
 	_auto_equip_dialog.confirmed.connect(_on_sale_confirmed)
 	_tab_buy.pressed.connect(func() -> void: _set_mode(Mode.BUY))
 	_tab_sell.pressed.connect(func() -> void: _set_mode(Mode.SELL))
-	_back.pressed.connect(SceneRouter.goto_main_menu)
+	_back.pressed.connect(SceneRouter.goto_town)
 	_set_mode(Mode.BUY)
 
 
@@ -46,43 +56,126 @@ func _set_mode(mode: Mode) -> void:
 
 func _refresh() -> void:
 	var profile: PlayerProfile = GameManager.profile
-	_gold.text = tr("shop.gold").format({"gold": profile.gold})
+	_gold.text = str(profile.gold)
 	for child in _list.get_children():
 		child.queue_free()
+
 	if _mode == Mode.BUY:
-		for weapon in ItemDB.all_weapons():
-			if not weapon.shop_available:
-				continue
-			_add_buy_row(profile, weapon.name_key, _weapon_stats(weapon),
-					_requirement_text(EquipmentService.weapon_block_reason(profile, weapon), weapon, null),
-					weapon.value, EquipmentService.owns_weapon(profile, weapon.id),
-					func() -> void: _buy(profile, true, weapon))
-		for piece in ItemDB.all_armour():
-			if not piece.shop_available:
-				continue
-			_add_buy_row(profile, piece.name_key, _armour_stats(piece),
-					_requirement_text(EquipmentService.armour_block_reason(profile, piece), null, piece),
-					piece.value, EquipmentService.owns_armour(profile, piece.id),
-					func() -> void: _buy(profile, false, piece))
+		if _weapons_mode():
+			var stock: Array[WeaponData] = ItemDB.all_weapons().filter(
+					func(w: WeaponData) -> bool: return w.shop_available)
+			stock.sort_custom(_cheaper_first)
+			for weapon in stock:
+				_add_buy_row(profile, weapon, true)
+		else:
+			var stock: Array[ArmourData] = ItemDB.all_armour().filter(
+					func(a: ArmourData) -> bool: return a.shop_available)
+			stock.sort_custom(_cheaper_first)
+			for piece in stock:
+				_add_buy_row(profile, piece, false)
 	else:
 		var any: bool = false
-		for id in profile.inventory_weapon_ids:
-			var weapon: WeaponData = ItemDB.weapon(id)
-			if weapon != null and weapon.id == id:
-				any = true
-				_add_sell_row(profile, weapon.name_key, _weapon_stats(weapon), weapon.value,
-						func() -> void: _sell(profile, true, id, weapon.value))
-		for id in profile.inventory_armour_ids:
-			var piece: ArmourData = ItemDB.armour_piece(id)
-			if piece != null:
-				any = true
-				_add_sell_row(profile, piece.name_key, _armour_stats(piece), piece.value,
-						func() -> void: _sell(profile, false, id, piece.value))
+		var ids: Array[StringName] = profile.inventory_weapon_ids if _weapons_mode() \
+				else profile.inventory_armour_ids
+		var rows: Array[Resource] = []
+		for id in ids:
+			var item: Resource = ItemDB.weapon(id) if _weapons_mode() else ItemDB.armour_piece(id)
+			if item != null and item.get("id") == id:
+				rows.append(item)
+		rows.sort_custom(_cheaper_first)
+		for item in rows:
+			any = true
+			_add_sell_row(profile, item, _weapons_mode())
 		if not any:
 			var empty := Label.new()
 			empty.text = tr("inventory.empty")
 			empty.add_theme_font_size_override("font_size", 18)
 			_list.add_child(empty)
+
+
+func _cheaper_first(a: Resource, b: Resource) -> bool:
+	return int(a.get("value")) < int(b.get("value"))
+
+
+func _add_buy_row(profile: PlayerProfile, item: Resource, is_weapon: bool) -> void:
+	var price: int = EconomyCalculator.buy_price(
+			GameManager.ECONOMY_CONFIG, item.get("value"), profile.attributes.charisma)
+	var owned: bool = EquipmentService.owns_weapon(profile, item.get("id")) if is_weapon \
+			else EquipmentService.owns_armour(profile, item.get("id"))
+	var reason: String = EquipmentService.weapon_block_reason(profile, item) if is_weapon \
+			else EquipmentService.armour_block_reason(profile, item)
+	var row: HBoxContainer = _make_row(item, is_weapon,
+			_requirement_text(reason, item as WeaponData if is_weapon else null,
+					null if is_weapon else item as ArmourData))
+	if owned:
+		var owned_label := Label.new()
+		owned_label.text = tr("shop.owned")
+		owned_label.add_theme_color_override("font_color", Color(0.6, 0.8, 0.6))
+		owned_label.add_theme_font_size_override("font_size", 16)
+		row.add_child(owned_label)
+	else:
+		var price_label := Label.new()
+		price_label.text = str(price)
+		price_label.add_theme_font_size_override("font_size", 18)
+		price_label.add_theme_color_override("font_color", Color(0.95, 0.85, 0.45))
+		row.add_child(price_label)
+		row.add_child(ItemIcons.make_icon(preload("res://assets/icons/coin.svg"), 5, 20))
+		var button := Button.new()
+		button.text = tr("shop.buy")
+		button.custom_minimum_size = Vector2(110, 48)
+		button.disabled = profile.gold < price
+		button.pressed.connect(_buy.bind(profile, is_weapon, item))
+		row.add_child(button)
+
+
+func _add_sell_row(profile: PlayerProfile, item: Resource, is_weapon: bool) -> void:
+	var price: int = EconomyCalculator.sell_price(
+			GameManager.ECONOMY_CONFIG, item.get("value"), profile.attributes.charisma)
+	var row: HBoxContainer = _make_row(item, is_weapon, "")
+	var button := Button.new()
+	button.text = tr("shop.sell").format({"price": price})
+	button.custom_minimum_size = Vector2(130, 48)
+	button.pressed.connect(_sell.bind(profile, is_weapon, item.get("id") as StringName, int(item.get("value"))))
+	row.add_child(button)
+
+
+func _make_row(item: Resource, is_weapon: bool, requirement: String) -> HBoxContainer:
+	var panel := PanelContainer.new()
+	_list.add_child(panel)
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 10)
+	margin.add_theme_constant_override("margin_right", 10)
+	margin.add_theme_constant_override("margin_top", 6)
+	margin.add_theme_constant_override("margin_bottom", 6)
+	panel.add_child(margin)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	margin.add_child(row)
+
+	var tier: int = int(item.get("tier"))
+	var glyph: Texture2D = ItemIcons.weapon_icon(item) if is_weapon else ItemIcons.armour_icon(item)
+	row.add_child(ItemIcons.make_icon(glyph, tier))
+
+	var info := VBoxContainer.new()
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(info)
+	var name_label := Label.new()
+	name_label.text = tr(item.get("name_key"))
+	name_label.add_theme_font_size_override("font_size", 19)
+	name_label.add_theme_color_override("font_color", ItemIcons.tier_tint(tier).lightened(0.25))
+	info.add_child(name_label)
+	var stats_label := Label.new()
+	stats_label.text = _weapon_stats(item) if is_weapon else _armour_stats(item)
+	stats_label.add_theme_font_size_override("font_size", 14)
+	stats_label.add_theme_color_override("font_color", Color(0.75, 0.72, 0.8))
+	info.add_child(stats_label)
+	if requirement != "":
+		var req_label := Label.new()
+		req_label.text = requirement
+		req_label.add_theme_font_size_override("font_size", 14)
+		req_label.add_theme_color_override("font_color", Color(0.95, 0.75, 0.4))
+		info.add_child(req_label)
+	return row
 
 
 func _buy(profile: PlayerProfile, is_weapon: bool, item: Resource) -> void:
@@ -175,84 +268,14 @@ func _sell(profile: PlayerProfile, is_weapon: bool, id: StringName, value: int) 
 	_refresh()
 
 
-func _add_buy_row(
-		profile: PlayerProfile, name_key: String, stats: String, requirement: String,
-		value: int, owned: bool, on_buy: Callable) -> void:
-	var price: int = EconomyCalculator.buy_price(
-			GameManager.ECONOMY_CONFIG, value, profile.attributes.charisma)
-	var row: HBoxContainer = _make_row(name_key, stats, requirement)
-	if owned:
-		var owned_label := Label.new()
-		owned_label.text = tr("shop.owned")
-		owned_label.add_theme_color_override("font_color", Color(0.6, 0.8, 0.6))
-		owned_label.add_theme_font_size_override("font_size", 16)
-		row.add_child(owned_label)
-	else:
-		var price_label := Label.new()
-		price_label.text = str(price)
-		price_label.add_theme_font_size_override("font_size", 18)
-		price_label.add_theme_color_override("font_color", Color(0.95, 0.85, 0.45))
-		row.add_child(price_label)
-		var button := Button.new()
-		button.text = tr("shop.buy")
-		button.custom_minimum_size = Vector2(110, 48)
-		button.disabled = profile.gold < price
-		button.pressed.connect(on_buy)
-		row.add_child(button)
-
-
-func _add_sell_row(
-		_profile: PlayerProfile, name_key: String, stats: String, value: int,
-		on_sell: Callable) -> void:
-	var price: int = EconomyCalculator.sell_price(
-			GameManager.ECONOMY_CONFIG, value, GameManager.profile.attributes.charisma)
-	var row: HBoxContainer = _make_row(name_key, stats, "")
-	var button := Button.new()
-	button.text = tr("shop.sell").format({"price": price})
-	button.custom_minimum_size = Vector2(130, 48)
-	button.pressed.connect(on_sell)
-	row.add_child(button)
-
-
-func _make_row(name_key: String, stats: String, requirement: String) -> HBoxContainer:
-	var panel := PanelContainer.new()
-	_list.add_child(panel)
-	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 10)
-	margin.add_theme_constant_override("margin_right", 10)
-	margin.add_theme_constant_override("margin_top", 6)
-	margin.add_theme_constant_override("margin_bottom", 6)
-	panel.add_child(margin)
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 12)
-	margin.add_child(row)
-
-	var info := VBoxContainer.new()
-	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(info)
-	var name_label := Label.new()
-	name_label.text = tr(name_key)
-	name_label.add_theme_font_size_override("font_size", 19)
-	info.add_child(name_label)
-	var stats_label := Label.new()
-	stats_label.text = stats
-	stats_label.add_theme_font_size_override("font_size", 14)
-	stats_label.add_theme_color_override("font_color", Color(0.75, 0.72, 0.8))
-	info.add_child(stats_label)
-	if requirement != "":
-		var req_label := Label.new()
-		req_label.text = requirement
-		req_label.add_theme_font_size_override("font_size", 14)
-		req_label.add_theme_color_override("font_color", Color(0.95, 0.75, 0.4))
-		info.add_child(req_label)
-	return row
-
-
 func _weapon_stats(weapon: WeaponData) -> String:
-	return "%s  ·  %s" % [
+	var text: String = "%s  ·  %s" % [
 		tr("item.stat.damage").format({"min": weapon.damage_min, "max": weapon.damage_max}),
 		tr("item.stat.tier").format({"tier": weapon.tier}),
 	]
+	if weapon.is_ranged():
+		text += "  ·  " + tr("item.stat.ammo").format({"ammo": weapon.ammo})
+	return text
 
 
 func _armour_stats(piece: ArmourData) -> String:

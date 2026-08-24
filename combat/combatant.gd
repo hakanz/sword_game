@@ -13,6 +13,14 @@ signal died
 var data: CharacterData = null
 var is_player_controlled: bool = false
 
+## Dual-wield state (owner design, session 3): ranged mains come with a
+## melee sidearm; the fight STARTS on the sidearm and switching weapons is
+## its own action. `arrows` is the per-combat ammo pool of the ranged main.
+var main_weapon: WeaponData = null
+var sidearm: WeaponData = null
+var wielding_main: bool = true
+var arrows: int = 0
+
 var max_hp: int = 1
 var current_hp: int = 1
 var max_energy: int = 1
@@ -75,10 +83,16 @@ func setup(character: CharacterData, player_controlled: bool, facing_left: bool)
 	evasion_value = ProgressionCalculator.evasion(attrs, data.total_evasion_mod())
 	initiative_value = ProgressionCalculator.initiative(attrs)
 
+	main_weapon = data.weapon
+	sidearm = data.weapon.sidearm
+	arrows = data.weapon.ammo
+	# Archers open on the knife and must switch to shoot (owner design).
+	wielding_main = sidearm == null
+
 	rig = PlaceholderRig.new()
 	rig.body_color = data.body_color
 	rig.accent_color = data.accent_color
-	rig.weapon_class = data.weapon.weapon_class
+	rig.weapon_class = get_weapon().weapon_class
 	rig.facing_left = facing_left
 	add_child(rig)
 
@@ -88,7 +102,19 @@ func display_name() -> String:
 
 
 func get_weapon() -> WeaponData:
-	return data.weapon
+	return main_weapon if wielding_main else sidearm
+
+
+func can_switch_weapon() -> bool:
+	return sidearm != null
+
+
+func switch_weapon() -> void:
+	assert(can_switch_weapon())
+	wielding_main = not wielding_main
+	if rig != null:
+		rig.weapon_class = get_weapon().weapon_class
+		rig.queue_redraw()
 
 
 ## Resistance fraction (0-1) against a damage type. Always 0 for now —

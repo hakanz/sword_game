@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ArmourData" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/armour_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"armour.hide_belt"
+name_key = "item.armour.hide_belt.name"
+slot = 4
+armour_class = 0
+armour = 5
+evasion_mod = 0
+tier = 2
+rarity = 0
+value = 38
+required_level = 4
+required_strength = 0

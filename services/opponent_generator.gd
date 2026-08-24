@@ -34,7 +34,18 @@ const GROWTH_WEIGHTS: Dictionary = {
 
 
 static func generate(player_level: int) -> CharacterData:
-	var level: int = maxi(1, player_level + RngService.randi_range(-1, 1))
+	return generate_at_level(maxi(1, player_level + RngService.randi_range(-1, 1)))
+
+
+## Opponent for a normal duel in `arena`: near the player's level but always
+## inside the region's band (charter §21 level gating).
+static func generate_for_arena(player_level: int, arena: ArenaData) -> CharacterData:
+	var level: int = clampi(player_level + RngService.randi_range(-1, 1),
+			arena.min_level, arena.max_level)
+	return generate_at_level(level)
+
+
+static func generate_at_level(level: int) -> CharacterData:
 	var data: CharacterData = BASE.duplicate(true)
 	data.id = &"character.generated"
 	data.is_name_localization_key = false
@@ -68,9 +79,11 @@ static func generate(player_level: int) -> CharacterData:
 ## gear power tracks level (T1 at 1-4, T2 at 5-8, T3 at 9+ ...).
 static func _assign_gear(data: CharacterData, level: int) -> void:
 	var max_tier: int = 1 + (level - 1) / 4
-	# shop_available filter keeps champion-unique rewards out of random hands.
+	# shop_available filter keeps champion-unique rewards out of random hands;
+	# the arcana filter keeps staves off the brute archetype (no ARC growth).
 	var weapon_pool: Array[WeaponData] = ItemDB.all_weapons().filter(
-			func(w: WeaponData) -> bool: return w.tier <= max_tier and w.shop_available)
+			func(w: WeaponData) -> bool:
+				return w.tier <= max_tier and w.shop_available and w.required_arcana == 0)
 	if not weapon_pool.is_empty():
 		data.weapon = RngService.pick(weapon_pool)
 

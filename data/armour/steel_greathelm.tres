@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ArmourData" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/armour_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"armour.steel_greathelm"
+name_key = "item.armour.steel_greathelm.name"
+slot = 0
+armour_class = 2
+armour = 16
+evasion_mod = -2
+tier = 4
+rarity = 1
+value = 210
+required_level = 12
+required_strength = 12

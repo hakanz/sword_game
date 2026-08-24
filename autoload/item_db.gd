@@ -67,3 +67,18 @@ func all_armour() -> Array[ArmourData]:
 
 func all_skills() -> Array[SkillData]:
 	return REGISTRY.skills.duplicate()
+
+
+func arena(id: StringName) -> ArenaData:
+	for arena_data in REGISTRY.arenas:
+		if arena_data.id == id:
+			return arena_data
+	push_warning("ItemDB: unknown arena id '%s', falling back to first" % id)
+	return REGISTRY.arenas[0]
+
+
+## Arenas sorted by region order.
+func all_arenas() -> Array[ArenaData]:
+	var list: Array[ArenaData] = REGISTRY.arenas.duplicate()
+	list.sort_custom(func(a: ArenaData, b: ArenaData) -> bool: return a.order < b.order)
+	return list

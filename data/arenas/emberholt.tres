@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ArenaData" format=3 load_steps=3]
+
+[ext_resource type="Script" path="res://data/models/arena_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/characters/champions/orzha.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"arena.emberholt"
+name_key = "arena.emberholt.name"
+order = 2
+min_level = 8
+max_level = 16
+champion = ExtResource("2")
+sky_color = Color(0.45, 0.24, 0.22, 1)
+ground_color = Color(0.42, 0.36, 0.35, 1)
+wall_color = Color(0.24, 0.16, 0.16, 1)

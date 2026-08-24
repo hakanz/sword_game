@@ -34,6 +34,11 @@ func _ready() -> void:
 		GameManager.profile.known_skill_ids.append_array([
 			&"skill.crushing_blow", &"skill.venom_smear", &"skill.war_bellow",
 		])
+		# `--smoke-weapon=weapon.x` forces the player's weapon (CI archer runs).
+		for arg in OS.get_cmdline_user_args():
+			if arg.begins_with("--smoke-weapon="):
+				GameManager.profile.weapon_id = StringName(arg.get_slice("=", 1))
+				GameManager.profile.known_skill_ids.clear()
 		GameManager.start_next_duel()
 	else:
 		SceneRouter.goto_main_menu()

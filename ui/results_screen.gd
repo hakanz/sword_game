@@ -11,15 +11,19 @@ extends Control
 @onready var _points: Label = %PointsLabel
 @onready var _champion: Label = %ChampionLabel
 @onready var _champion_reward: Label = %ChampionRewardLabel
+@onready var _tournament: Label = %TournamentLabel
+@onready var _next_round: Button = %NextRoundButton
 @onready var _next_duel: Button = %NextDuelButton
 @onready var _back: Button = %BackButton
 
 
 func _ready() -> void:
-	_back.text = tr("results.back_to_menu")
+	_back.text = tr("results.back_to_town")
 	_next_duel.text = tr("results.next_duel")
+	_next_round.text = tr("results.next_round")
 	_back.pressed.connect(_on_back_pressed)
 	_next_duel.pressed.connect(_on_next_duel_pressed)
+	_next_round.pressed.connect(func() -> void: SceneRouter.goto_tournament())
 
 	var result: CombatResult = GameManager.last_combat_result
 	if result == null:
@@ -33,6 +37,8 @@ func _ready() -> void:
 		_points.visible = false
 		_champion.visible = false
 		_champion_reward.visible = false
+		_tournament.visible = false
+		_next_round.visible = false
 		_next_duel.visible = false
 		return
 
@@ -52,13 +58,25 @@ func _ready() -> void:
 	_champion.visible = reward != null and reward.champion_defeated
 	_champion_reward.visible = _champion.visible and reward.reward_item_id != &""
 	if _champion.visible:
-		_champion.text = tr("results.champion_defeated")
+		var arena_name: String = ""
+		if GameManager.current_arena != null:
+			arena_name = tr(GameManager.current_arena.name_key)
+		_champion.text = tr("results.champion_defeated").format({"arena": arena_name})
 		if _champion_reward.visible:
 			var item: WeaponData = ItemDB.weapon(reward.reward_item_id)
 			_champion_reward.text = tr("results.champion_reward").format({
 				"item": tr(item.name_key),
 			})
-	_next_duel.visible = GameManager.profile != null
+	# Tournament flow: mid-run offers the next round; completion/failure
+	# lines come from the bookkeeping done in consume_combat_rewards().
+	var mid_tournament: bool = GameManager.in_tournament() and GameManager.tournament_won_round
+	_next_round.visible = mid_tournament
+	_tournament.visible = GameManager.tournament_completed or GameManager.tournament_failed
+	if GameManager.tournament_completed:
+		_tournament.text = tr("results.tournament_complete")
+	elif GameManager.tournament_failed:
+		_tournament.text = tr("results.tournament_failed")
+	_next_duel.visible = GameManager.profile != null and not mid_tournament
 	if reward != null:
 		_xp.text = tr("results.xp_gained").format({"xp": reward.xp_gained})
 		_gold.text = tr("results.gold_gained").format({"gold": reward.gold_gained})
@@ -83,8 +101,10 @@ func _ready() -> void:
 
 
 func _on_back_pressed() -> void:
+	# Walking away mid-bracket forfeits the run (single-sitting rule).
+	GameManager.abandon_tournament()
 	GameManager.last_combat_result = null
-	SceneRouter.goto_main_menu()
+	SceneRouter.goto_town()
 
 
 func _on_next_duel_pressed() -> void:

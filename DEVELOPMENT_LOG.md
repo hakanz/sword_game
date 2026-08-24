@@ -112,3 +112,43 @@ Ranged weapon identity dormant (owner directive) — see docs/balancing.md.
 
 ### Next Recommended Task
 Tournament structure + second arena region (complete Phase 6, charter §21).
+
+---
+
+## Session 3 (continued) — 2026-08-24 — Owner batch 2: bows, radial UI, town, merchants (Claude)
+
+### Added (owner directives)
+- **Archer redesign:** bows are ranged again (CLOSE..LONG, never point-blank) with a
+  4-arrow quiver per fight; every bow auto-carries a Skinning Knife sidearm; fights
+  OPEN on the knife and SWITCH_WEAPON is its own action; arrows spend hit-or-miss;
+  arrow projectile visual + arrow/switch SFX; AI archer flow (draw bow at range,
+  kite, knife when dry/cornered). `--smoke-weapon=` override for CI archer runs.
+- **Radial action menu:** combat actions + skills orbit the player's gladiator as
+  circular icon buttons with name labels and cost/ammo/cooldown badges (pop-in
+  animation, attack slot faces the foe). Bottom bar reduced to the hint line.
+- **Street merchants:** shop split into Bragga's Blades (weapons) and Tetta's
+  Ironwear (armour), price-sorted rows with tier-tinted item glyphs (13 class/slot
+  SVGs), ammo stat line, NPC flavor quotes.
+- **Dustwell town hub (charter §22):** procedural street backdrop (buildings, lit
+  windows, arena silhouette), location cards (fight/regions/merchants/trainer/
+  character/inventory), status panel; main menu leaned to 5 items (overflow fixed);
+  all sub-screens return to town.
+- **Rig v2 + arena depth:** round-capped capsule limbs, hands/boots/ear/smirk,
+  shield visual on defend; arena columns + lit fighting oval; town visual.
+- **Skill clarity (owner bug report):** weapon-class requirements now shown on the
+  learn screen (Skull Ringer's blunt-only gating was invisible).
+
+### Fixed (18 confirmed findings, 25-agent adversarial review)
+- CRITICAL pause soft-lock: _delay timers now pause-respecting; SceneRouter
+  defensively unpauses; HUD process_mode ALWAYS (Esc works while paused);
+  pause UI closes on combat end; leave guarded post-fight.
+- CRITICAL tournament state leak: `tournament_fight_pending` gates bracket
+  bookkeeping (normal duels can never advance/complete a bracket — regression
+  test added); results Back and start_next_duel forfeit hanging brackets.
+- champion line arena-aware ({arena}); mana gets its own hint key; champion tres
+  load_steps corrected; tournament markers ASCII-safe for Web fonts; settings
+  sliders 44px; dead loc keys removed.
+
+### Tests / balance
+22 suites / 2343 assertions green; multi-seed + archer smoke green; §35 sim re-run
+(archer enemies included): presets hold 40-60%, 0 stalemates.

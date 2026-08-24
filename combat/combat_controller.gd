@@ -106,90 +106,63 @@ func _run_combat() -> void:
 		# Death check (charter §11) — combat ends immediately on a kill
 		# (including a fighter succumbing to their own wounds' DoTs).
 		if not player.is_alive() or not enemy.is_alive():
-			var fallen: Combatant = player if not player.is_alive() else enemy
-			if not fallen.death_announced:
-				fallen.death_announced = true
-				fallen.rig.play_death()
-				EventBus.combatant_died.emit(fallen)
+			# Announce every newly fallen fighter (a striker can die to their
+			# own DoT in the same turn they kill - both must resolve).
+			for fighter: Combatant in [player, enemy]:
+				if not fighter.is_alive() and not fighter.death_announced:
+					fighter.death_announced = true
+					fighter.rig.play_death()
+					EventBus.combatant_died.emit(fighter)
 			break
 	await _finish()
 
 
+## Presentation wrapper around CombatResolver: wind-up animation, then the
+## pure resolution, then impact/movement/rest feedback. Rules live ONLY in
+## the resolver (shared with the battle simulator).
 func _execute(actor: Combatant, decision: CombatDecision) -> void:
-	var type: Enums.ActionType = decision.type
-	if type == Enums.ActionType.SKILL:
-		assert(CombatAction.is_skill_valid(decision.skill, actor, ctx),
-				"Invalid skill reached execution: %s" % decision.skill.id)
-	else:
-		assert(CombatAction.is_valid(type, actor, ctx),
-				"Invalid action reached execution: %s" % Enums.ActionType.keys()[type])
 	var foe: Combatant = _foe_of(actor)
-	var result := ActionResult.new()
-	result.actor = actor
-	result.action = type
-	result.distance_after = ctx.band()
+	var is_strike: bool = decision.type == Enums.ActionType.ATTACK \
+			or (decision.type == Enums.ActionType.SKILL
+					and decision.skill.target == SkillData.Target.FOE)
 
-	if type == Enums.ActionType.SKILL:
-		result.skill = decision.skill
-		actor.spend_energy(decision.skill.energy_cost)
-		actor.spend_mana(decision.skill.mana_cost)
-		actor.set_cooldown(decision.skill.id, decision.skill.cooldown_rounds)
-		if decision.skill.target == SkillData.Target.SELF:
-			AudioManager.play(&"buff")
-			if decision.skill.applies_status != null:
-				StatusEffectSystem.apply(actor, decision.skill.applies_status)
-				result.applied_status = decision.skill.applies_status
-				_spawn_float_text(actor, tr(decision.skill.applies_status.name_key),
-						decision.skill.applies_status.tint)
-				CombatVfx.spawn_sparks(world_root, actor.position + Vector2(0, -80),
-						decision.skill.applies_status.tint, 10, true)
-			await _delay(0.4)
-		else:
+	var ranged_strike: bool = is_strike and actor.get_weapon().is_ranged()
+	if is_strike:
+		if decision.type == Enums.ActionType.SKILL:
 			AudioManager.play(&"skill")
-			result.target = foe
-			await _resolve_strike(actor, foe, result, decision.skill.power_multiplier,
-					decision.skill.accuracy_mod, decision.skill.armour_pen_bonus,
-					decision.skill.applies_status)
+		actor.rig.play_attack_lunge()
+		await _delay(0.16)
+
+	var result: ActionResult = CombatResolver.execute(actor, foe, ctx, decision)
+
+	if is_strike:
+		if ranged_strike:
+			await _animate_arrow(actor, foe, result.hit)
+		await _present_strike(result, foe)
 	else:
-		actor.spend_energy(CombatAction.energy_cost(type, actor))
-
-	match type:
-		Enums.ActionType.ATTACK:
-			result.target = foe
-			await _resolve_strike(actor, foe, result, 1.0, 0, 0.0, null)
-
-		Enums.ActionType.DEFEND:
-			actor.set_stance(Enums.Stance.DEFENDING)
-
-		Enums.ActionType.APPROACH:
-			# Movement is personal: ONLY the acting fighter steps.
-			ctx.approach(actor)
-			result.distance_after = ctx.band()
-			AudioManager.play(&"step")
-			_animate_step(actor)
-			await _delay(0.3)
-
-		Enums.ActionType.RETREAT:
-			ctx.retreat(actor)
-			result.distance_after = ctx.band()
-			AudioManager.play(&"step")
-			_animate_step(actor)
-			await _delay(0.3)
-
-		Enums.ActionType.REST:
-			result.energy_restored = actor.restore_energy(
-					roundi(actor.max_energy * CombatTuning.REST_ENERGY_RESTORE_FRACTION))
-			result.hp_restored = actor.heal(
-					roundi(actor.max_hp * CombatTuning.REST_HP_RESTORE_FRACTION))
-			if result.hp_restored > 0:
-				_spawn_float_text(actor, "+%d" % result.hp_restored, Color(0.5, 0.9, 0.45))
-
-	# Leaky defend counter (not a hard reset): alternating defend/attack
-	# patterns still accumulate stall pressure instead of dodging the decay.
-	actor.consecutive_defends = actor.consecutive_defends + 1 \
-			if type == Enums.ActionType.DEFEND else maxi(actor.consecutive_defends - 1, 0)
-	if type == Enums.ActionType.RETREAT:
-		actor.total_retreats += 1
+		match result.action:
+			Enums.ActionType.SKILL:
+				AudioManager.play(&"buff")
+				if result.applied_status != null:
+					_spawn_float_text(actor, tr(result.applied_status.name_key),
+							result.applied_status.tint)
+					CombatVfx.spawn_sparks(world_root, actor.position + Vector2(0, -80),
+							result.applied_status.tint, 10, true)
+				await _delay(0.4)
+			Enums.ActionType.APPROACH, Enums.ActionType.RETREAT:
+				AudioManager.play(&"step")
+				_animate_step(actor)
+				await _delay(0.3)
+			Enums.ActionType.REST:
+				if result.hp_restored > 0:
+					_spawn_float_text(actor, "+%d" % result.hp_restored, Color(0.5, 0.9, 0.45))
+			Enums.ActionType.SWITCH_WEAPON:
+				AudioManager.play(&"switch")
+				_spawn_float_text(actor, tr(actor.get_weapon().name_key),
+						Color(0.85, 0.85, 0.95))
+				await _delay(0.35)
+			_:
+				pass
 
 	if GameManager.smoke_test:
 		# Console combat trace for CI/headless diagnosis (charter §34).
@@ -205,7 +178,7 @@ func _execute(actor: Combatant, decision: CombatDecision) -> void:
 				detail += "MISS chance=%.2f" % result.hit_chance
 		print("R%03d %-24s %-9s %s [hp=%d/%d en=%d/%d arm=%d dist=%d]" % [
 			turn_manager.round_number, actor.display_name(),
-			Enums.ActionType.keys()[type], detail,
+			Enums.ActionType.keys()[result.action], detail,
 			actor.current_hp, actor.max_hp, actor.current_energy, actor.max_energy,
 			actor.armour_current, ctx.band()])
 
@@ -216,41 +189,35 @@ func _execute(actor: Combatant, decision: CombatDecision) -> void:
 	await _delay(0.25)
 
 
-## Shared strike resolution for normal attacks and FOE-targeted skills:
-## hit roll -> damage pipeline -> optional on-hit status.
-func _resolve_strike(
-		actor: Combatant, foe: Combatant, result: ActionResult,
-		multiplier: float, accuracy_mod: int, pen_bonus: float,
-		on_hit_status: StatusEffectData) -> void:
-	result.hit_chance = HitCalculator.hit_chance(actor, foe, accuracy_mod)
-	result.hit = RngService.chance(result.hit_chance)
-	actor.rig.play_attack_lunge()
-	await _delay(0.16)
+## Placeholder arrow flight from archer to target (misses sail past).
+func _animate_arrow(from: Combatant, to: Combatant, hit: bool) -> void:
+	AudioManager.play(&"arrow")
+	var arrow := ArrowVisual.new()
+	world_root.add_child(arrow)
+	arrow.position = from.position + Vector2(0, -85)
+	var target: Vector2 = to.position + Vector2(0, -70)
+	if not hit:
+		var overshoot: float = 90.0 * signf(target.x - arrow.position.x)
+		target += Vector2(overshoot, -18)
+	arrow.rotation = (target - arrow.position).angle()
+	var tween: Tween = create_tween()
+	tween.tween_property(arrow, "position", target, 0.001 if GameManager.smoke_test else 0.2)
+	await tween.finished
+	arrow.queue_free()
+
+
+## Impact feedback for an already-resolved strike (charter §25): sound +
+## sparks + shake + floating number, tinted by armour-vs-flesh.
+func _present_strike(result: ActionResult, foe: Combatant) -> void:
 	if result.hit:
-		var raw: int = DamageCalculator.roll_attack_damage(actor, multiplier)
-		var mitigation := DamageCalculator.compute_mitigation(
-				raw,
-				foe.get_resistance(actor.get_weapon().damage_type),
-				foe.stance == Enums.Stance.DEFENDING,
-				clampf(actor.get_weapon().armour_penetration + pen_bonus, 0.0, 1.0),
-				foe.armour_current)
-		foe.take_damage(mitigation)
-		actor.damage_dealt_total += mitigation.after_stance
-		result.mitigation = mitigation
-		result.killed = not foe.is_alive()
 		foe.rig.play_hit_flash()
-		# Impact feedback (charter §25): sound + sparks + shake, tinted by
-		# whether armour soaked the blow or flesh took it.
-		var armour_only: bool = mitigation.hp_damage == 0
+		var armour_only: bool = result.mitigation.hp_damage == 0
 		AudioManager.play(&"armour_hit" if armour_only else &"hit")
 		CombatVfx.spawn_sparks(world_root, foe.position + Vector2(0, -75),
 				Color(0.72, 0.8, 0.95) if armour_only else Color(1.0, 0.55, 0.25))
 		_shake(5.0 if armour_only else 8.0)
-		_spawn_float_text(foe, str(mitigation.after_stance),
+		_spawn_float_text(foe, str(result.mitigation.after_stance),
 				Color(1.0, 0.85, 0.3) if armour_only else Color(1.0, 0.35, 0.3))
-		if on_hit_status != null and foe.is_alive():
-			StatusEffectSystem.apply(foe, on_hit_status)
-			result.applied_status = on_hit_status
 		if result.killed:
 			foe.rig.play_death()
 	else:
@@ -335,6 +302,10 @@ func _world_offset() -> Vector2:
 func _shake(strength: float) -> void:
 	if GameManager.smoke_test:
 		return
+	# Accessibility: player-tunable intensity (settings screen, charter §28).
+	strength *= float(SaveManager.get_setting("screen_shake", 100)) / 100.0
+	if strength < 0.5:
+		return
 	var base: Vector2 = _world_offset()
 	var tween: Tween = create_tween()
 	tween.tween_property(world_root, "position", base + Vector2(strength, -strength * 0.5), 0.04)
@@ -346,4 +317,5 @@ func _shake(strength: float) -> void:
 func _delay(seconds: float) -> void:
 	if GameManager.smoke_test:
 		return
-	await get_tree().create_timer(seconds).timeout
+	# process_always=false: presentation timers must respect pause.
+	await get_tree().create_timer(seconds, false).timeout

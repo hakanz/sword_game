@@ -22,6 +22,16 @@ extends Resource
 @export var range_max: Enums.DistanceBand = Enums.DistanceBand.CLOSE
 ## Energy cost of a normal attack with this weapon.
 @export_range(0, 100) var energy_cost: int = 5
+## Shots per combat for ranged weapons (0 = melee/unlimited). Owner design:
+## bows carry 4 arrows; when they run dry the sidearm takes over.
+@export_range(0, 20) var ammo: int = 0
+## Backup melee weapon auto-carried alongside this one (bows link a knife).
+## Fighters START the fight on the sidearm and must switch to shoot.
+@export var sidearm: WeaponData
+
+
+func is_ranged() -> bool:
+	return ammo > 0
 
 @export_group("Progression")
 @export_range(1, 8) var tier: int = 1

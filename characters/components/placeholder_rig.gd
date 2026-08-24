@@ -61,59 +61,73 @@ func play_death() -> void:
 
 
 func _draw() -> void:
-	var outline := Color(0.12, 0.08, 0.1, 0.9)
+	var outline := Color(0.12, 0.08, 0.1, 0.95)
+	var skin := body_color.lightened(0.12)
+	var boot := Color(0.3, 0.19, 0.11)
 
 	# Shadow
-	draw_set_transform(Vector2(0, 4), 0.0, Vector2(1.0, 0.35))
-	draw_circle(Vector2.ZERO, 32.0, Color(0.0, 0.0, 0.0, 0.28))
+	draw_set_transform(Vector2(0, 4), 0.0, Vector2(1.0, 0.32))
+	draw_circle(Vector2.ZERO, 34.0, Color(0.0, 0.0, 0.0, 0.3))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
-	# Legs (back leg darker for depth) + sandals
-	draw_rect(Rect2(-15, -35, 11, 35), accent_color.darkened(0.35))
-	draw_rect(Rect2(-17, -4, 15, 6), outline)
-	draw_rect(Rect2(4, -34, 11, 34), accent_color.darkened(0.15))
-	draw_rect(Rect2(2, -3, 16, 6), Color(0.32, 0.2, 0.12))
+	# --- Cartoon limb rig: thick round-capped strokes over an outline pass ---
+	# Back leg + boot
+	_capsule(Vector2(-7, -40), Vector2(-13, -6), 12.0, outline)
+	_capsule(Vector2(-7, -40), Vector2(-13, -6), 9.0, accent_color.darkened(0.35))
+	draw_circle(Vector2(-14, -5), 7.0, boot.darkened(0.25))
+	# Front leg + boot
+	_capsule(Vector2(7, -40), Vector2(13, -6), 12.0, outline)
+	_capsule(Vector2(7, -40), Vector2(13, -6), 9.0, accent_color.darkened(0.12))
+	draw_circle(Vector2(14, -5), 7.5, boot)
 
-	# Off arm (behind torso)
-	draw_rect(Rect2(-22, -72, 8, 28), body_color.darkened(0.25))
+	# Back arm (behind torso), hand visible
+	_capsule(Vector2(-9, -72), Vector2(-24, -52), 8.5, skin.darkened(0.3))
+	draw_circle(Vector2(-25, -51), 5.0, skin.darkened(0.25))
 
-	# Torso capsule with outline + simple shading
-	draw_rect(Rect2(-20, -80, 40, 51), outline)
-	draw_circle(Vector2(0, -79), 20.0, outline)
-	draw_rect(Rect2(-18, -78, 36, 48), body_color)
-	draw_circle(Vector2(0, -78), 18.0, body_color)
-	draw_rect(Rect2(6, -76, 12, 44), body_color.darkened(0.12))
-	# Chest strap
-	draw_line(Vector2(-16, -72), Vector2(14, -46), accent_color.darkened(0.1), 6.0)
-
+	# Torso: outlined capsule with a two-tone tunic + chest strap
+	_capsule(Vector2(0, -44), Vector2(0, -78), 40.0, outline)
+	_capsule(Vector2(0, -44), Vector2(0, -78), 36.0, body_color)
+	_capsule(Vector2(7, -46), Vector2(7, -76), 18.0, body_color.darkened(0.14))
+	draw_line(Vector2(-15, -74), Vector2(13, -48), accent_color.darkened(0.08), 7.0)
 	# Belt with buckle
-	draw_rect(Rect2(-18, -40, 36, 9), accent_color)
-	draw_rect(Rect2(-4, -40, 9, 9), Color(0.85, 0.72, 0.4))
+	_capsule(Vector2(-17, -42), Vector2(17, -42), 9.0, accent_color)
+	draw_circle(Vector2(0, -42), 5.0, Color(0.9, 0.76, 0.4))
 
-	# Head with outline (oversized, cartoon proportions)
-	draw_circle(Vector2(0, -104), 22.0, outline)
-	draw_circle(Vector2(0, -104), 20.0, body_color.lightened(0.15))
-	# Headband in the accent color
-	draw_rect(Rect2(-19, -118, 38, 7), accent_color)
+	# Front arm + hand (weapon hand)
+	_capsule(Vector2(10, -72), Vector2(25, -58), 9.5, outline)
+	_capsule(Vector2(10, -72), Vector2(25, -58), 7.5, skin)
+	draw_circle(Vector2(26, -58), 6.0, skin)
+
+	# Head: outlined, oversized, with ear, brow, eye and headband
+	draw_circle(Vector2(0, -104), 22.5, outline)
+	draw_circle(Vector2(0, -104), 20.0, skin)
+	draw_circle(Vector2(-14, -103), 5.0, skin.darkened(0.12))  # ear
+	draw_rect(Rect2(-19, -119, 38, 7), accent_color)
+	draw_circle(Vector2(-17, -115), 4.0, accent_color.darkened(0.2))  # band knot
 	if not _dead:
-		# Eye + brow (single visible in side view)
-		draw_circle(Vector2(10, -106), 3.5, Color(0.1, 0.1, 0.12))
-		draw_line(Vector2(5, -112), Vector2(15, -111), Color(0.1, 0.1, 0.12), 2.5)
+		draw_circle(Vector2(10, -106), 3.6, Color(0.1, 0.1, 0.12))
+		draw_line(Vector2(5, -113), Vector2(15, -111), Color(0.1, 0.1, 0.12), 2.6)
+		draw_line(Vector2(14, -96), Vector2(19, -95), Color(0.55, 0.3, 0.25), 2.0)  # smirk
 	else:
-		# Cartoon X-eye on defeat
 		var eye := Vector2(10, -106)
-		draw_line(eye + Vector2(-4, -4), eye + Vector2(4, 4), Color(0.1, 0.1, 0.12), 2.0)
-		draw_line(eye + Vector2(-4, 4), eye + Vector2(4, -4), Color(0.1, 0.1, 0.12), 2.0)
+		draw_line(eye + Vector2(-4, -4), eye + Vector2(4, 4), Color(0.1, 0.1, 0.12), 2.2)
+		draw_line(eye + Vector2(-4, 4), eye + Vector2(4, -4), Color(0.1, 0.1, 0.12), 2.2)
 
-	# Weapon arm + oversized weapon on the facing side
-	draw_rect(Rect2(12, -72, 8, 26), body_color.darkened(0.1))
 	_draw_weapon()
 
 	# Guard/shield pose when defending
 	if _defending:
-		draw_rect(Rect2(20, -90, 14, 50), Color(0.3, 0.32, 0.38))
-		draw_rect(Rect2(22, -88, 10, 46), Color(0.55, 0.57, 0.62))
-		draw_circle(Vector2(27, -65), 4.0, Color(0.75, 0.77, 0.82))
+		draw_circle(Vector2(28, -66), 17.0, outline)
+		draw_circle(Vector2(28, -66), 15.0, Color(0.5, 0.53, 0.6))
+		draw_circle(Vector2(28, -66), 9.0, Color(0.62, 0.65, 0.72))
+		draw_circle(Vector2(28, -66), 3.5, Color(0.78, 0.8, 0.86))
+
+
+## Round-capped thick stroke — the building block of the cartoon rig.
+func _capsule(from: Vector2, to: Vector2, width: float, color: Color) -> void:
+	draw_line(from, to, color, width)
+	draw_circle(from, width / 2.0, color)
+	draw_circle(to, width / 2.0, color)
 
 
 func _draw_weapon() -> void:

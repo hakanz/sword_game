@@ -87,11 +87,6 @@ custom_minimum_size = Vector2(280, 60)
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
 
-[node name="ChampionButton" type="Button" parent="Center/MenuBox"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(280, 56)
-layout_mode = 2
-theme_override_font_sizes/font_size = 21
 
 [node name="NewGameButton" type="Button" parent="Center/MenuBox"]
 unique_name_in_owner = true
@@ -99,31 +94,17 @@ custom_minimum_size = Vector2(280, 54)
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 
-[node name="CharacterButton" type="Button" parent="Center/MenuBox"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(280, 54)
-layout_mode = 2
-theme_override_font_sizes/font_size = 20
 
-[node name="SkillsButton" type="Button" parent="Center/MenuBox"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(280, 54)
-layout_mode = 2
-theme_override_font_sizes/font_size = 20
 
-[node name="InventoryButton" type="Button" parent="Center/MenuBox"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(280, 54)
-layout_mode = 2
-theme_override_font_sizes/font_size = 20
 
-[node name="ShopButton" type="Button" parent="Center/MenuBox"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(280, 54)
-layout_mode = 2
-theme_override_font_sizes/font_size = 20
 
 [node name="LanguageButton" type="Button" parent="Center/MenuBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(280, 48)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+
+[node name="SettingsButton" type="Button" parent="Center/MenuBox"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(280, 48)
 layout_mode = 2

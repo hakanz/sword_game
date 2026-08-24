@@ -96,6 +96,7 @@ events -> HUD/rig presentation. Damage pipeline order is fixed (charter §15); a
 depleting pool; excess damage always carries into HP. Hit chance clamped 5%–95%.
 Owner directives (2026-08-24): attacks only at ADJACENT (enforced in weapon data);
 movement is personal (per-fighter cells — see docs/combat.md); no combat log panel.
+Action execution lives in CombatResolver (pure); CombatController only presents.
 
 ## Character / Item / Skill Architecture
 - 8 attributes (`AttributeBlock`): strength, agility, attack, defence, vitality, stamina,
@@ -147,6 +148,9 @@ sign-off). Gambling events wager in-game gold only. Any future store SDK goes be
   save migration) incl. edge cases (0 armour, 100% resistance, negative values, max level).
 - End-to-end smoke: `godot --headless --path . -- --smoke-test --combat-seed=N` plays a full
   AI-vs-AI duel and exits 0/1. Keep it green.
+- Balance simulation (charter §35): `godot --headless --path . -s res://tools/battle_sim.gd
+  -- --battles=300` runs the REAL combat stack headlessly (CombatResolver — the single
+  execution path shared with CombatController). Tune with its data, log in docs/balancing.md.
 - Also test the real game: launch the affected scene after changes (charter §10.11).
 
 ## Performance Rules

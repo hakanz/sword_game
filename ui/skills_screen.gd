@@ -15,7 +15,7 @@ func _ready() -> void:
 		return
 	_title.text = tr("skills.title")
 	_back.text = tr("common.back")
-	_back.pressed.connect(SceneRouter.goto_main_menu)
+	_back.pressed.connect(SceneRouter.goto_town)
 	_refresh()
 
 
@@ -61,6 +61,16 @@ func _add_row(profile: PlayerProfile, skill: SkillData) -> void:
 	var cost_text: String = tr("skills.cost_energy").format({"energy": skill.energy_cost})
 	if skill.cooldown_rounds > 0:
 		cost_text += "  ·  " + tr("skills.cooldown").format({"rounds": skill.cooldown_rounds})
+	if not skill.allowed_weapon_classes.is_empty():
+		# Make weapon gating unmissable — a learned skill that never lights
+		# up in combat reads as a bug otherwise (owner feedback, session 3).
+		var class_names: PackedStringArray = []
+		for weapon_class in skill.allowed_weapon_classes:
+			class_names.append(tr("class.%s" %
+					(Enums.WeaponClass.keys()[weapon_class] as String).to_lower()))
+		cost_text += "  ·  " + tr("skills.requires_class").format({
+			"classes": ", ".join(class_names),
+		})
 	cost_label.text = cost_text
 	cost_label.add_theme_font_size_override("font_size", 13)
 	cost_label.add_theme_color_override("font_color", Color(0.65, 0.72, 0.85))

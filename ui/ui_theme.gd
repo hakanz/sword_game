@@ -71,6 +71,25 @@ static func build() -> Theme:
 	return theme
 
 
+## Circular stylebox for radial action buttons ("normal"/"hover"/"pressed"/
+## "disabled").
+static func round_button_box(state: String) -> StyleBoxFlat:
+	var color: Color
+	match state:
+		"hover": color = BTN_HOVER
+		"pressed": color = BTN_PRESSED
+		"disabled": color = BTN_DISABLED
+		_: color = BTN_NORMAL
+	var box := StyleBoxFlat.new()
+	box.bg_color = color
+	box.set_corner_radius_all(29)
+	box.set_border_width_all(2)
+	box.border_color = ACCENT if state == "hover" else BTN_BORDER
+	if state == "disabled":
+		box.border_color = Color(BTN_BORDER, 0.4)
+	return box
+
+
 ## Rounded fill stylebox for a ProgressBar in the given color.
 static func bar_fill(color: Color) -> StyleBoxFlat:
 	var fill := StyleBoxFlat.new()

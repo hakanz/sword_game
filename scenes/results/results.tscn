@@ -92,9 +92,22 @@ theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(0.9, 0.75, 0.5, 1)
 horizontal_alignment = 1
 
+[node name="TournamentLabel" type="Label" parent="Center/ResultBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.8, 0.68, 0.95, 1)
+horizontal_alignment = 1
+
 [node name="Spacer" type="Control" parent="Center/ResultBox"]
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
+
+[node name="NextRoundButton" type="Button" parent="Center/ResultBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(280, 58)
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
 
 [node name="NextDuelButton" type="Button" parent="Center/ResultBox"]
 unique_name_in_owner = true

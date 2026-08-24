@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="SkillData" format=3 load_steps=4]
+
+[ext_resource type="Script" path="res://data/models/skill_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/icons/skill_brace_up.svg" id="9"]
+[ext_resource type="Resource" path="res://data/status_effects/stoneguard.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"skill.brace_up"
+name_key = "skill.brace_up.name"
+description_key = "skill.brace_up.desc"
+icon = ExtResource("9")
+target = 1
+energy_cost = 8
+mana_cost = 0
+cooldown_rounds = 3
+power_multiplier = 1.0
+accuracy_mod = 0
+armour_pen_bonus = 0.0
+range_extend = 0
+applies_status = ExtResource("2")
+required_level = 4
+allowed_weapon_classes = Array[int]([])

@@ -26,14 +26,22 @@ func test_armour_upgrade_detection() -> void:
 			"any piece upgrades an empty slot")
 
 
-func test_all_weapons_are_adjacent_only() -> void:
-	# Session-2 rule: no attacks from distance — every weapon strikes at
-	# ADJACENT and nowhere else.
+func test_weapon_range_rules() -> void:
+	# Session-3 owner design: melee strikes only at ADJACENT; bows are the
+	# ranged exception — limited arrows, a knife sidearm, cannot fire adjacent.
 	for weapon in ItemDB.all_weapons():
-		assert_eq(weapon.range_min, Enums.DistanceBand.ADJACENT,
-				"%s range_min must be ADJACENT" % weapon.id)
-		assert_eq(weapon.range_max, Enums.DistanceBand.ADJACENT,
-				"%s range_max must be ADJACENT" % weapon.id)
+		if weapon.is_ranged():
+			assert_true(weapon.range_min >= Enums.DistanceBand.CLOSE,
+					"%s must not fire point-blank" % weapon.id)
+			assert_eq(weapon.range_max, Enums.DistanceBand.LONG, "%s reaches LONG" % weapon.id)
+			assert_eq(weapon.ammo, 4, "%s carries exactly 4 arrows" % weapon.id)
+			assert_true(weapon.sidearm != null and not weapon.sidearm.is_ranged(),
+					"%s needs a melee sidearm" % weapon.id)
+		else:
+			assert_eq(weapon.range_min, Enums.DistanceBand.ADJACENT,
+					"%s range_min must be ADJACENT" % weapon.id)
+			assert_eq(weapon.range_max, Enums.DistanceBand.ADJACENT,
+					"%s range_max must be ADJACENT" % weapon.id)
 	for skill in ItemDB.all_skills():
 		assert_eq(skill.range_extend, 0,
-				"%s must not reach past the adjacent rule" % skill.id)
+				"%s must not reach past its weapon's bands" % skill.id)

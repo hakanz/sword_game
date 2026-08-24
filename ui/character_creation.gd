@@ -6,9 +6,9 @@ extends Control
 
 ## Origin presets: [key, STR, AGI, ATT, DEF, VIT, STA, ARC, CHA] — all 56 pts.
 const PRESETS: Array[Array] = [
-	["balanced", 8, 8, 8, 7, 9, 8, 3, 5],
+	["balanced", 8, 8, 8, 8, 10, 8, 2, 4],
 	["brawler", 11, 6, 8, 7, 11, 8, 2, 3],
-	["swift", 7, 11, 10, 6, 8, 9, 2, 3],
+	["swift", 7, 10, 9, 6, 9, 9, 3, 3],
 ]
 
 const BODY_TONES: Array[Color] = [

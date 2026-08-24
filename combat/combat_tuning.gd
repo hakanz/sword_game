@@ -7,7 +7,9 @@ class_name CombatTuning
 # --- Hit chance (HitCalculator) ---
 const BASE_HIT_CHANCE: float = 0.5
 ## Hit chance shift per point of (accuracy - avoidance).
-const HIT_CHANCE_PER_POINT: float = 0.02
+## Tuned 0.02 -> 0.015 (session 3): §35 simulation showed accuracy stats
+## dominating every matchup at 2%/point (swift preset ~76% win rate).
+const HIT_CHANCE_PER_POINT: float = 0.015
 ## Normal attacks are never a guaranteed hit or miss (charter §15).
 const MIN_HIT_CHANCE: float = 0.05
 const MAX_HIT_CHANCE: float = 0.95
