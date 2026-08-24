@@ -1,0 +1,24 @@
+# Godot 4 import cache — never commit
+.godot/
+
+# Compiled translation artifacts (generated from localization/strings.csv on import)
+*.translation
+
+# Export output
+/builds/
+/export/
+
+# Signing / credential material — never commit
+*.keystore
+*.p12
+*.pem
+*.mobileprovision
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Python tooling cache (dev scripts)
+__pycache__/
+*.pyc

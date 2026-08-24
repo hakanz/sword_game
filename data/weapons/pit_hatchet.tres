@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/weapon_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"weapon.pit_hatchet"
+name_key = "item.weapon.pit_hatchet.name"
+weapon_class = 2
+damage_type = 0
+damage_min = 8
+damage_max = 13
+accuracy_bonus = 0
+armour_penetration = 0.15
+range_min = 0
+range_max = 1
+energy_cost = 7
+tier = 1
+rarity = 0
+value = 30
+required_level = 1
+required_strength = 0
+required_agility = 0
+required_arcana = 0

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ArmourData" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/armour_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"armour.padded_vest"
+name_key = "item.armour.padded_vest.name"
+slot = 1
+armour_class = 0
+armour = 12
+evasion_mod = 0
+tier = 1
+rarity = 0
+value = 20
+required_level = 1
+required_strength = 0

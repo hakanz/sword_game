@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/weapon_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"weapon.training_shortsword"
+name_key = "item.weapon.training_shortsword.name"
+weapon_class = 1
+damage_type = 0
+damage_min = 6
+damage_max = 10
+accuracy_bonus = 2
+armour_penetration = 0.05
+range_min = 0
+range_max = 1
+energy_cost = 5
+tier = 1
+rarity = 0
+value = 25
+required_level = 1
+required_strength = 0
+required_agility = 0
+required_arcana = 0

@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="CharacterData" format=3 load_steps=9]
+
+[ext_resource type="Script" path="res://data/models/character_data.gd" id="1"]
+[ext_resource type="Script" path="res://data/models/attribute_block.gd" id="2"]
+[ext_resource type="Script" path="res://data/models/armour_data.gd" id="3"]
+[ext_resource type="Resource" path="res://data/weapons/pit_hatchet.tres" id="4"]
+[ext_resource type="Resource" path="res://data/armour/scrap_helm.tres" id="5"]
+[ext_resource type="Resource" path="res://data/armour/leather_straps.tres" id="6"]
+[ext_resource type="Resource" path="res://data/characters/personalities/aggressive.tres" id="7"]
+
+[sub_resource type="Resource" id="Resource_attrs"]
+script = ExtResource("2")
+strength = 10
+agility = 6
+attack = 7
+defence = 6
+vitality = 8
+stamina = 7
+arcana = 2
+charisma = 3
+
+[resource]
+script = ExtResource("1")
+id = &"character.enemy_vosk"
+name_text = "Vosk the Gravel-Chewer"
+is_name_localization_key = false
+level = 1
+attributes = SubResource("Resource_attrs")
+weapon = ExtResource("4")
+armour_pieces = Array[ExtResource("3")]([ExtResource("5"), ExtResource("6")])
+personality = ExtResource("7")
+body_color = Color(0.73, 0.55, 0.42, 1)
+accent_color = Color(0.55, 0.2, 0.2, 1)

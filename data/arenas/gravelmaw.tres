@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ArenaData" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/arena_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"arena.gravelmaw"
+name_key = "arena.gravelmaw.name"
+min_level = 1
+max_level = 8
+sky_color = Color(0.72, 0.52, 0.4, 1)
+ground_color = Color(0.83, 0.68, 0.42, 1)
+wall_color = Color(0.45, 0.3, 0.22, 1)

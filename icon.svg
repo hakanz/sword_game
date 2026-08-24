@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- Original placeholder icon: stylized gladius on an arena disc. -->
+  <circle cx="64" cy="64" r="60" fill="#2b2137"/>
+  <circle cx="64" cy="64" r="52" fill="#c8873a"/>
+  <circle cx="64" cy="64" r="44" fill="#e8b45a"/>
+  <g transform="rotate(45 64 64)">
+    <rect x="60" y="18" width="8" height="58" rx="3" fill="#d8dde4"/>
+    <polygon points="60,18 68,18 64,8" fill="#d8dde4"/>
+    <rect x="48" y="74" width="32" height="8" rx="3" fill="#7a4a1f"/>
+    <rect x="59" y="82" width="10" height="20" rx="4" fill="#5a3617"/>
+    <circle cx="64" cy="106" r="6" fill="#3d2410"/>
+  </g>
+</svg>
