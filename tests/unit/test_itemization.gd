@@ -293,3 +293,74 @@ func _fighter_with_unique(effect: Enums.UniqueEffect) -> Combatant:
 	weapon.unique_effect = effect
 	return CombatFixtures.make_combatant(
 			CombatFixtures.make_character(CombatFixtures.make_attributes(), weapon))
+
+
+# --- Weapon Mastery Archetype (V2 §47/§50) ---------------------------------
+
+func test_archetype_follows_the_equipped_weapon() -> void:
+	var expected: Dictionary = {
+		Enums.WeaponClass.AXE: &"archetype.breaker",
+		Enums.WeaponClass.BLUNT: &"archetype.breaker",
+		Enums.WeaponClass.SWORD: &"archetype.duelist",
+		Enums.WeaponClass.SPEAR: &"archetype.skirmisher",
+		Enums.WeaponClass.RANGED: &"archetype.marksman",
+		Enums.WeaponClass.MAGICAL: &"archetype.battlemage",
+		Enums.WeaponClass.UNARMED: &"archetype.brawler",
+	}
+	for weapon_class: int in Enums.WeaponClass.values():
+		var weapon: WeaponData = CombatFixtures.make_weapon()
+		weapon.weapon_class = weapon_class as Enums.WeaponClass
+		assert_eq(ProgressionCalculator.combat_archetype_label(weapon, 0, false),
+				expected[weapon_class],
+				"%s mapped to the wrong archetype" % Enums.WeaponClass.keys()[weapon_class])
+	assert_eq(ProgressionCalculator.combat_archetype_label(null, 0, false),
+			&"archetype.brawler", "bare fists are a Brawler")
+
+
+func test_a_shielded_heavy_reads_as_guardian_whatever_the_weapon() -> void:
+	var weapon: WeaponData = CombatFixtures.make_weapon()
+	weapon.weapon_class = Enums.WeaponClass.SWORD
+	assert_eq(ProgressionCalculator.combat_archetype_label(
+			weapon, ProgressionCalculator.GUARDIAN_ARMOUR_WEIGHT, true),
+			&"archetype.guardian")
+	# A shield alone, or plate alone, is not enough.
+	assert_eq(ProgressionCalculator.combat_archetype_label(weapon, 0, true), &"archetype.duelist")
+	assert_eq(ProgressionCalculator.combat_archetype_label(
+			weapon, ProgressionCalculator.GUARDIAN_ARMOUR_WEIGHT, false), &"archetype.duelist")
+
+
+func test_archetype_is_derived_and_never_stored() -> void:
+	# Re-equipping must change the label immediately, and nothing about it may
+	# appear in the saved profile (it is not a class).
+	var character: CharacterData = CombatFixtures.make_character()
+	character.weapon = CombatFixtures.make_weapon()
+	character.weapon.weapon_class = Enums.WeaponClass.AXE
+	assert_eq(ProgressionCalculator.archetype_of(character), &"archetype.breaker")
+	character.weapon.weapon_class = Enums.WeaponClass.RANGED
+	assert_eq(ProgressionCalculator.archetype_of(character), &"archetype.marksman",
+			"the label must follow the kit, not a stored choice")
+
+	var profile: PlayerProfile = PlayerProfile.create_default()
+	var saved: Dictionary = profile.to_dict()
+	for key: String in saved.keys():
+		assert_false(key.contains("archetype") or key.contains("class"),
+				"the archetype must never become a save field (%s)" % key)
+
+
+func test_armour_weight_scores_by_class() -> void:
+	var character: CharacterData = CombatFixtures.make_character()
+	assert_eq(character.armour_weight(), 0, "an armourless debutant weighs nothing")
+	assert_false(character.has_shield(), "no shield content exists yet")
+	var heavy: ArmourData = ArmourData.new()
+	heavy.armour_class = Enums.ArmourClass.HEAVY
+	var light: ArmourData = ArmourData.new()
+	light.armour_class = Enums.ArmourClass.LIGHT
+	character.armour_pieces = [heavy, light, heavy]
+	assert_eq(character.armour_weight(), 4, "heavy 2 + light 0 + heavy 2")
+
+
+func test_every_archetype_label_is_translated() -> void:
+	for key: String in ["archetype.breaker", "archetype.duelist", "archetype.skirmisher",
+			"archetype.marksman", "archetype.battlemage", "archetype.guardian",
+			"archetype.brawler", "sheet.archetype"]:
+		assert_true(TranslationServer.translate(key) != key, "%s has no translation" % key)

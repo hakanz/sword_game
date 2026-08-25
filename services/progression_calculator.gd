@@ -45,6 +45,52 @@ static func move_cells(agility: int, gear_mobility: int = 0) -> int:
 	return 2 if agility + gear_mobility * 2 >= 14 else 1
 
 
+## Armour weight at or above which a shield-bearer reads as a Guardian
+## (V2 §50). Roughly "most slots filled with heavy plate".
+const GUARDIAN_ARMOUR_WEIGHT: int = 6
+
+
+## Weapon Mastery Archetype (amendment V2 §47/§50): a DERIVED, display-only
+## label for the fighter's current kit — Breaker, Duelist, Skirmisher,
+## Marksman, Battlemage, Guardian, Brawler.
+##
+## It is deliberately NOT a class: it is recomputed from the equipped weapon
+## and armour every time it is asked for, it is never stored (no save field),
+## and it NEVER gates equipment or skills. Re-equip and the label changes.
+## Its jobs are flavour in the character sheet and, from phase 14, choosing an
+## AI personality that suits a generated opponent's actual kit.
+##
+## Returns a localization key, which doubles as the archetype's stable id.
+static func combat_archetype_label(
+		equipped_weapon: WeaponData, armour_weight: int, has_shield: bool) -> StringName:
+	# A shield behind heavy plate reads as Guardian whatever the weapon is.
+	if has_shield and armour_weight >= GUARDIAN_ARMOUR_WEIGHT:
+		return &"archetype.guardian"
+	if equipped_weapon == null:
+		return &"archetype.brawler"
+	match equipped_weapon.weapon_class:
+		Enums.WeaponClass.AXE, Enums.WeaponClass.BLUNT:
+			return &"archetype.breaker"
+		Enums.WeaponClass.SWORD:
+			return &"archetype.duelist"
+		Enums.WeaponClass.SPEAR:
+			return &"archetype.skirmisher"
+		Enums.WeaponClass.RANGED:
+			return &"archetype.marksman"
+		Enums.WeaponClass.MAGICAL:
+			return &"archetype.battlemage"
+		_:
+			return &"archetype.brawler"
+
+
+## Convenience for callers holding a whole fighter.
+static func archetype_of(character: CharacterData) -> StringName:
+	if character == null:
+		return &"archetype.brawler"
+	return combat_archetype_label(
+			character.weapon, character.armour_weight(), character.has_shield())
+
+
 ## XP needed to advance FROM `level` to `level + 1` (charter §14 curve).
 static func xp_required(config: ProgressionConfig, level: int) -> int:
 	return roundi(config.base_xp * pow(level, config.xp_exponent))

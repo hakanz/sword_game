@@ -126,7 +126,11 @@ func _refresh_stats(attrs: AttributeBlock) -> void:
 	for child in _stats_box.get_children():
 		child.queue_free()
 	var weapon: WeaponData = ItemDB.weapon(_profile.weapon_id)
+	# Weapon Mastery Archetype (V2 §47/§50): derived from the kit you are
+	# actually wearing, never stored, never a gate — re-equip and it changes.
+	var archetype: StringName = ProgressionCalculator.archetype_of(_profile.to_character_data())
 	var rows: Array[Array] = [
+		["sheet.archetype", tr(archetype)],
 		["stat.max_hp", ProgressionCalculator.max_hp(attrs, _profile.level)],
 		["stat.max_energy", ProgressionCalculator.max_energy(attrs, _profile.level)],
 		["stat.max_mana", ProgressionCalculator.max_mana(attrs, _profile.level)],

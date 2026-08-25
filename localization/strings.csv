@@ -324,3 +324,11 @@ rarity.rare,Rare,Nadir
 rarity.epic,Epic,Destansı
 rarity.legendary,Legendary,Efsanevi
 rarity.mythic,Mythic,Mitik
+sheet.archetype,Fighting Style,Dövüş Tarzı
+archetype.breaker,Breaker,Kırıcı
+archetype.duelist,Duelist,Düellocu
+archetype.skirmisher,Skirmisher,Akıncı
+archetype.marksman,Marksman,Nişancı
+archetype.battlemage,Battlemage,Savaş Büyücüsü
+archetype.guardian,Guardian,Muhafız
+archetype.brawler,Brawler,Yumruk Dövüşçüsü

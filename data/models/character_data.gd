@@ -54,6 +54,25 @@ func total_evasion_mod() -> int:
 	return total
 
 
+## Armour weight score for the derived combat archetype (V2 §50): light 0,
+## medium 1, heavy 2 per worn piece. A number, not a category — the archetype
+## rule owns the threshold.
+func armour_weight() -> int:
+	var total: int = 0
+	for piece in armour_pieces:
+		total += int(piece.armour_class)
+	return total
+
+
+## True when a shield occupies the shield slot. No shield content exists yet
+## (docs/items.md) — this is the hook the Guardian archetype reads.
+func has_shield() -> bool:
+	for piece in armour_pieces:
+		if piece.slot == Enums.EquipSlot.SHIELD:
+			return true
+	return false
+
+
 func total_mobility_bonus() -> int:
 	var total: int = 0
 	for piece in armour_pieces:
