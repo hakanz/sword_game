@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ArmourData" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/armour_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"armour.tidewalker_boots"
+name_key = "item.armour.tidewalker_boots.name"
+slot = 6
+armour_class = 0
+armour = 8
+evasion_mod = 2
+mobility_bonus = 2
+tier = 6
+rarity = 3
+value = 760
+required_level = 19
+required_strength = 0

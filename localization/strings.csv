@@ -415,3 +415,12 @@ common.gold_short,gold,altın
 common.fame_short,fame,şöhret
 common.attribute_point_short,attribute point,nitelik puanı
 event.item_received,item received,eşya alındı
+item.weapon.riftedge_axe.name,Riftedge Axe,Yarıkağız Balta
+item.weapon.sunscoured_falchion.name,Sunscoured Falchion,Güneşyalamış Pala
+item.weapon.saltmere_pike.name,Saltmere Pike,Tuzgöl Kargısı
+item.weapon.mountainbreaker.name,Mountainbreaker,Dağkıran
+item.weapon.tidecaller_staff.name,Tidecaller Staff,Gelgitçağıran Asa
+item.weapon.longwatch_bow.name,Longwatch Bow,Uzunnöbet Yayı
+item.armour.saltplate_cuirass.name,Saltplate Cuirass,Tuzlevha Göğüslük
+item.armour.wardens_greathelm.name,Warden's Greathelm,Muhafız Tolgası
+item.armour.tidewalker_boots.name,Tidewalker Boots,Gelgityürüyen Çizmeler

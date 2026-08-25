@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 load_steps=3]
+
+[ext_resource type="Script" path="res://data/models/weapon_data.gd" id="1"]
+[ext_resource type="Resource" path="res://data/weapons/skinning_knife.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = &"weapon.longwatch_bow"
+name_key = "item.weapon.longwatch_bow.name"
+weapon_class = 5
+damage_type = 1
+damage_min = 17
+damage_max = 24
+accuracy_bonus = 5
+crit_chance = 0.08
+armour_penetration = 0.12
+range_min = 1
+range_max = 3
+ammo = 4
+sidearm = ExtResource("2")
+energy_cost = 9
+tier = 6
+rarity = 2
+value = 1090
+required_level = 18
+required_strength = 0
+required_agility = 18
+required_arcana = 0

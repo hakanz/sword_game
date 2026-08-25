@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/weapon_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"weapon.saltmere_pike"
+name_key = "item.weapon.saltmere_pike.name"
+weapon_class = 4
+damage_type = 1
+damage_min = 21
+damage_max = 29
+accuracy_bonus = 4
+crit_chance = 0.06
+armour_penetration = 0.16
+range_min = 0
+range_max = 0
+energy_cost = 10
+tier = 6
+rarity = 2
+value = 1040
+required_level = 18
+required_strength = 14
+required_agility = 14
+required_arcana = 0
