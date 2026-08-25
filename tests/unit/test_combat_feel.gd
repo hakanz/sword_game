@@ -29,7 +29,9 @@ func test_timings_are_within_playable_bounds() -> void:
 				"windup out of range for %s" % label)
 		assert_true(CombatFeel.swing_time(wc) > 0.0 and CombatFeel.swing_time(wc) <= 0.25,
 				"swing out of range for %s" % label)
-		assert_true(CombatFeel.recovery_time(wc) >= 0.1 and CombatFeel.recovery_time(wc) <= 0.4,
+		# Recovery is the one bound the session-9 pacing pass moved: the extra
+		# read time went here on purpose. The rest still hold unchanged.
+		assert_true(CombatFeel.recovery_time(wc) >= 0.1 and CombatFeel.recovery_time(wc) <= 0.45,
 				"recovery out of range for %s" % label)
 		assert_true(CombatFeel.shake_scale(wc) > 0.0 and CombatFeel.shake_scale(wc) <= 2.0,
 				"shake scale out of range for %s" % label)
@@ -304,3 +306,38 @@ func test_settings_screen_writes_the_keys_combat_reads() -> void:
 	SaveManager.set_setting(CombatCamera.MOTION_SETTING, previous_camera)
 	SaveManager.set_setting(CombatController.SHAKE_SETTING, previous_shake)
 	SaveManager.set_setting(CombatFeel.REDUCED_FX_SETTING, previous_fx)
+
+
+## The fixed presentation beats moved into CombatFeel in the session-9 pacing
+## pass (charter rule 10: combat-feel pacing lives in ONE table). They are what
+## the player actually waits through, so they get a sanity range of their own.
+func test_presentation_beats_are_sane() -> void:
+	var beats: Dictionary = {
+		"after_action": CombatFeel.BEAT_AFTER_ACTION,
+		"skill": CombatFeel.BEAT_SKILL,
+		"move": CombatFeel.BEAT_MOVE,
+		"rest": CombatFeel.BEAT_REST,
+		"switch": CombatFeel.BEAT_SWITCH,
+		"block": CombatFeel.BEAT_BLOCK,
+		"taunt": CombatFeel.BEAT_TAUNT,
+		"status_tick": CombatFeel.BEAT_STATUS_TICK,
+		"stun_skipped": CombatFeel.BEAT_STUN_SKIPPED,
+	}
+	for name: String in beats:
+		var seconds: float = beats[name]
+		assert_true(seconds >= 0.2 and seconds <= 0.9,
+				"beat %s is %.2fs — outside what a turn can absorb" % [name, seconds])
+	# A skipped turn has nothing to look at BUT the message, so it holds the
+	# longest; a step is the cheapest thing a fighter can do, so it is short.
+	assert_true(CombatFeel.BEAT_STUN_SKIPPED > CombatFeel.BEAT_MOVE,
+			"a lost turn must read for longer than a step")
+
+
+## The slowdown has to actually reach the player: the beat AFTER a blow lands
+## is where the impact effects are read, so it may never be shorter than the
+## fastest weapon's whole stroke.
+func test_the_post_impact_beat_outlasts_the_fastest_stroke() -> void:
+	var quickest: float = CombatFeel.impact_delay(Enums.WeaponClass.UNARMED)
+	assert_true(CombatFeel.BEAT_AFTER_ACTION > quickest,
+			"the read beat (%.2fs) is shorter than a bare-fisted swing (%.2fs)"
+					% [CombatFeel.BEAT_AFTER_ACTION, quickest])

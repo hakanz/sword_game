@@ -70,6 +70,38 @@ func test_every_arena_is_dressed() -> void:
 	for arena in ItemDB.all_arenas():
 		assert_true(arena.backdrop != null, "no backdrop on %s" % arena.id)
 		assert_true(arena.ground_texture != null, "no ground on %s" % arena.id)
+		assert_true(arena.backdrop_horizon > 0.3 and arena.backdrop_horizon < 0.95,
+				"%s horizon %.2f is not a plausible wall line"
+						% [arena.id, arena.backdrop_horizon])
+
+
+## The whole point of the arena reframe: a fighter must never be read against
+## the wall or the crowd. That holds only while the backdrop hands over to open
+## ground ABOVE the tallest helmet, and it is a relationship between four
+## numbers in three different files — exactly the kind that rots silently.
+func test_the_backdrop_clears_the_fighters() -> void:
+	var fighter_height: float = PlaceholderRig.HEIGHT * Combatant.RIG_SCALE
+	var head_y: float = CombatController.GROUND_Y - fighter_height
+	assert_true(ArenaVisual.GROUND_TOP <= head_y,
+			"open ground starts at %.0f but heads reach %.0f — fighters would "
+					% [ArenaVisual.GROUND_TOP, head_y]
+					+ "be read against the wall again")
+	# ...and not so far above that the arena becomes a strip of crowd over a
+	# desert. The stands need room to say how big the place is.
+	assert_true(ArenaVisual.GROUND_TOP > head_y - 160.0,
+			"open ground starts %.0f above the heads — the stands are being "
+					% (head_y - ArenaVisual.GROUND_TOP) + "squeezed out")
+
+
+## The camera may not frame the fight so high that the radial action ring
+## hangs off the bottom of the screen.
+func test_the_camera_keeps_the_action_ring_on_screen() -> void:
+	var tightest: float = CombatCamera.ZOOM_BY_SEPARATION[1]
+	var half_view: float = CombatCamera.DESIGN.y / (2.0 * tightest)
+	var bottom: float = CombatCamera.focus_y(1.0) + half_view
+	# The ring's lowest label sits roughly 80px under the fighters' feet.
+	assert_true(bottom >= CombatController.GROUND_Y + 80.0,
+			"the frame bottom (%.0f) cuts into the action ring" % bottom)
 
 
 func test_every_status_effect_has_an_icon() -> void:
