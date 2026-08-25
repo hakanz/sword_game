@@ -14,6 +14,13 @@ var arena: ArenaData = null:
 		queue_redraw()
 
 
+func _ready() -> void:
+	# Foreground dust hanging in the arena light (session-7 polish). Its own
+	# node so the animated layer redraws WITHOUT repainting the whole crowd
+	# every frame — the backdrop below is static and expensive.
+	add_child(ArenaDust.new())
+
+
 func _draw() -> void:
 	if arena == null:
 		return
@@ -127,3 +134,45 @@ func _draw() -> void:
 	for _i in 90:
 		var pos := Vector2(speck_rng.randf_range(-100, 1380), speck_rng.randf_range(512, 700))
 		draw_circle(pos, speck_rng.randf_range(1.5, 3.5), arena.ground_color.darkened(0.15))
+
+
+class ArenaDust:
+	extends Node2D
+	## Slow motes drifting across the sand, drawn in front of the backdrop and
+	## behind nothing else. Decorative: LOCAL rng only, and it disappears
+	## entirely when the player turns effects down.
+
+	const COUNT: int = 26
+	const AREA := Rect2(-40.0, 300.0, 1360.0, 420.0)
+
+	var _time: float = 0.0
+	var _motes: Array[Vector3] = []
+
+	func _ready() -> void:
+		z_index = 1  # over the sand, under the fighters (which sit above)
+		if bool(SaveManager.get_setting(CombatFeel.REDUCED_FX_SETTING, false)):
+			set_process(false)
+			return
+		var rng := RandomNumberGenerator.new()
+		rng.seed = 606060
+		for _i in COUNT:
+			_motes.append(Vector3(
+					rng.randf_range(AREA.position.x, AREA.end.x),
+					rng.randf_range(AREA.position.y, AREA.end.y),
+					rng.randf_range(0.0, TAU)))
+
+	func _process(delta: float) -> void:
+		_time += delta
+		for i in _motes.size():
+			var mote: Vector3 = _motes[i]
+			mote.x += (6.0 + 5.0 * sin(mote.z)) * delta
+			if mote.x > AREA.end.x:
+				mote.x = AREA.position.x
+			_motes[i] = mote
+		queue_redraw()
+
+	func _draw() -> void:
+		for mote in _motes:
+			var bob: float = sin(_time * 0.7 + mote.z) * 9.0
+			draw_circle(Vector2(mote.x, mote.y + bob), 1.6 + 0.9 * sin(mote.z),
+					Color(1.0, 0.93, 0.78, 0.10))

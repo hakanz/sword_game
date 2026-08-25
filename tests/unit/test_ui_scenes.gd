@@ -13,6 +13,8 @@ const SCENES: PackedStringArray = [
 	"res://scenes/arena_select/arena_select.tscn",
 	"res://scenes/tournament/tournament.tscn",
 	"res://scenes/results/results.tscn",
+	"res://scenes/settings/settings.tscn",
+	"res://scenes/town/town.tscn",
 ]
 
 

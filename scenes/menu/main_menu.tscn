@@ -1,7 +1,8 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://ui/main_menu.gd" id="1"]
 [ext_resource type="Texture2D" path="res://icon.svg" id="2"]
+[ext_resource type="Script" path="res://ui/menu_backdrop.gd" id="3"]
 
 [sub_resource type="Gradient" id="Gradient_bg"]
 offsets = PackedFloat32Array(0, 0.55, 1)
@@ -29,6 +30,16 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 texture = SubResource("GradientTexture_bg")
+
+[node name="Backdrop" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("3")
 
 [node name="Emblem" type="TextureRect" parent="."]
 modulate = Color(1, 1, 1, 0.07)
