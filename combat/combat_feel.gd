@@ -1,0 +1,174 @@
+class_name CombatFeel
+## SINGLE source of truth for weapon-weight-driven combat PACING (charter
+## amendment V2 §51): how long a swing winds up, how it travels, how long the
+## recovery breathes, how hard the world freezes on impact, and how much the
+## impact shakes the frame. A dagger and a warhammer are already mechanically
+## different (damage/accuracy/energy) — this table is what makes them FEEL
+## different.
+##
+## Boundaries: presentation only. Nothing here touches resolution, RNG, turn
+## order or any gameplay number — hit-stop is a real-time freeze wrapped
+## AROUND already-resolved results, so `--combat-seed=N` replays are
+## bit-identical with or without it. Consumers: PlaceholderRig (animation
+## timing) and CombatController (delays, shake strength, hit-stop). Never
+## duplicate these numbers anywhere else (AI_GUIDE "Architecture Rules" #3
+## in spirit: one home per formula/table).
+##
+## Accessibility: hit-stop honours the SAME `reduced_fx` toggle CombatVfx
+## reads — deliberately not a second, parallel toggle (V2 §51).
+
+## How a fighter delivers the blow — drives the rig's arm/body choreography.
+enum Style {
+	SWING,   ## over-the-shoulder arc (swords, axes, maces, fists)
+	THRUST,  ## straight-line poke with the longest reach (spears)
+	AIM,     ## draw, hold, loose (bows)
+	CAST,    ## anticipation beat, then release (staves/wands)
+}
+
+## Time scale the world drops to during a hit-stop freeze.
+const FREEZE_TIME_SCALE: float = 0.06
+## Crits freeze noticeably longer (matches the existing bigger crit shake).
+const CRIT_HIT_STOP_MULTIPLIER: float = 1.8
+## `reduced_fx` shortens the freeze instead of removing the readability cue.
+const REDUCED_FX_HIT_STOP_SCALE: float = 0.4
+## Safety rail: a freeze may never outlast a blink.
+const MAX_HIT_STOP: float = 0.24
+
+const WINDUP := &"windup"
+const SWING := &"swing"
+const RECOVERY := &"recovery"
+const HIT_STOP := &"hit_stop"
+const SHAKE := &"shake"
+const LUNGE := &"lunge"
+const WIND_ANGLE := &"wind_angle"
+const FOLLOW_ANGLE := &"follow_angle"
+const STYLE := &"style"
+
+## Per-WeaponClass pacing. Seconds for the time keys, world pixels for
+## `lunge`, radians for the arm angles, multiplier for `shake`.
+## Light-to-heavy ordering is the design contract the tests lock down:
+## UNARMED < SWORD < SPEAR < AXE < BLUNT for windup/recovery/hit-stop.
+const TIMING: Dictionary = {
+	Enums.WeaponClass.UNARMED: {
+		WINDUP: 0.09, SWING: 0.08, RECOVERY: 0.15, HIT_STOP: 0.035,
+		SHAKE: 0.75, LUNGE: 30.0, WIND_ANGLE: -0.7, FOLLOW_ANGLE: 1.0,
+		STYLE: Style.SWING,
+	},
+	Enums.WeaponClass.SWORD: {
+		WINDUP: 0.12, SWING: 0.09, RECOVERY: 0.19, HIT_STOP: 0.055,
+		SHAKE: 0.95, LUNGE: 34.0, WIND_ANGLE: -0.85, FOLLOW_ANGLE: 1.15,
+		STYLE: Style.SWING,
+	},
+	Enums.WeaponClass.AXE: {
+		WINDUP: 0.20, SWING: 0.11, RECOVERY: 0.27, HIT_STOP: 0.095,
+		SHAKE: 1.35, LUNGE: 40.0, WIND_ANGLE: -1.15, FOLLOW_ANGLE: 1.45,
+		STYLE: Style.SWING,
+	},
+	Enums.WeaponClass.BLUNT: {
+		WINDUP: 0.23, SWING: 0.12, RECOVERY: 0.30, HIT_STOP: 0.115,
+		SHAKE: 1.5, LUNGE: 38.0, WIND_ANGLE: -1.25, FOLLOW_ANGLE: 1.5,
+		STYLE: Style.SWING,
+	},
+	Enums.WeaponClass.SPEAR: {
+		WINDUP: 0.15, SWING: 0.10, RECOVERY: 0.21, HIT_STOP: 0.06,
+		SHAKE: 1.0, LUNGE: 48.0, WIND_ANGLE: -0.35, FOLLOW_ANGLE: 0.25,
+		STYLE: Style.THRUST,
+	},
+	Enums.WeaponClass.RANGED: {
+		WINDUP: 0.19, SWING: 0.10, RECOVERY: 0.20, HIT_STOP: 0.045,
+		SHAKE: 0.8, LUNGE: 0.0, WIND_ANGLE: -0.55, FOLLOW_ANGLE: -0.45,
+		STYLE: Style.AIM,
+	},
+	Enums.WeaponClass.MAGICAL: {
+		WINDUP: 0.21, SWING: 0.10, RECOVERY: 0.24, HIT_STOP: 0.07,
+		SHAKE: 0.9, LUNGE: 12.0, WIND_ANGLE: -1.0, FOLLOW_ANGLE: 0.15,
+		STYLE: Style.CAST,
+	},
+}
+
+## Guards against overlapping freezes (a DoT kill landing inside a crit
+## freeze must not stack two time_scale writes).
+static var _freezing: bool = false
+
+
+## Anticipation beat before the blow lands — the controller waits this long
+## between starting the animation and presenting the resolved result.
+static func windup_time(weapon_class: Enums.WeaponClass) -> float:
+	return float(_profile(weapon_class)[WINDUP])
+
+
+## Travel time of the blow itself (rig-side; the arc/thrust/loose stroke).
+static func swing_time(weapon_class: Enums.WeaponClass) -> float:
+	return float(_profile(weapon_class)[SWING])
+
+
+## Breathing room after impact before the next action begins.
+static func recovery_time(weapon_class: Enums.WeaponClass) -> float:
+	return float(_profile(weapon_class)[RECOVERY])
+
+
+## How far the body steps into the blow (0 for bows — archers stand their
+## ground). Spears reach farthest.
+static func lunge_distance(weapon_class: Enums.WeaponClass) -> float:
+	return float(_profile(weapon_class)[LUNGE])
+
+
+## Multiplier on the controller's base impact shake — heavy weapons rattle
+## the frame, fists barely do.
+static func shake_scale(weapon_class: Enums.WeaponClass) -> float:
+	return float(_profile(weapon_class)[SHAKE])
+
+
+static func wind_angle(weapon_class: Enums.WeaponClass) -> float:
+	return float(_profile(weapon_class)[WIND_ANGLE])
+
+
+static func follow_angle(weapon_class: Enums.WeaponClass) -> float:
+	return float(_profile(weapon_class)[FOLLOW_ANGLE])
+
+
+static func attack_style(weapon_class: Enums.WeaponClass) -> Style:
+	return _profile(weapon_class)[STYLE] as Style
+
+
+## Freeze duration for one impact, already scaled by the crit multiplier and
+## the `reduced_fx` accessibility setting. 0 means "do not freeze".
+static func hit_stop_time(weapon_class: Enums.WeaponClass, is_crit: bool) -> float:
+	var seconds: float = float(_profile(weapon_class)[HIT_STOP])
+	if is_crit:
+		seconds *= CRIT_HIT_STOP_MULTIPLIER
+	if bool(SaveManager.get_setting("reduced_fx", false)):
+		seconds *= REDUCED_FX_HIT_STOP_SCALE
+	return clampf(seconds, 0.0, MAX_HIT_STOP)
+
+
+## Awaitable impact freeze: dips `Engine.time_scale` for a REAL-time slice
+## (the timer ignores the very time scale it sets, so the freeze can never
+## stretch itself) and always restores it. Skipped in smoke/headless runs so
+## CI never sleeps on presentation.
+static func hit_stop(tree: SceneTree, weapon_class: Enums.WeaponClass, is_crit: bool) -> void:
+	if tree == null or GameManager.smoke_test or _freezing:
+		return
+	var seconds: float = hit_stop_time(weapon_class, is_crit)
+	if seconds <= 0.0:
+		return
+	_freezing = true
+	Engine.time_scale = FREEZE_TIME_SCALE
+	# process_always=true + ignore_time_scale=true: the freeze is bounded in
+	# wall-clock time and cannot be trapped by a pause or by its own dip.
+	await tree.create_timer(seconds, true, false, true).timeout
+	release()
+
+
+## Safety net — restores normal time flow. Called on freeze end and whenever
+## the combat scene leaves the tree (a scene change mid-freeze must never
+## leave the whole game in slow motion).
+static func release() -> void:
+	_freezing = false
+	Engine.time_scale = 1.0
+
+
+static func _profile(weapon_class: Enums.WeaponClass) -> Dictionary:
+	# Unknown//future classes fall back to the sword baseline rather than
+	# crashing presentation on a data addition.
+	return TIMING.get(weapon_class, TIMING[Enums.WeaponClass.SWORD])

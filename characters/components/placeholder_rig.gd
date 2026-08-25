@@ -113,35 +113,75 @@ func set_defending(defending: bool) -> void:
 
 # --- Animations -------------------------------------------------------------
 
-## Attack: wind the weapon arm back, lunge in with a full swing, recover.
-## Ranged weapons raise to aim instead of swinging.
+## Attack: wind the weapon arm back, lunge in, deliver, recover — with the
+## PACING and the choreography taken from CombatFeel (V2 §51), so a warhammer
+## visibly loads up while a shiv flicks out. Bows draw-hold-loose, spears
+## thrust with the longest reach, staves take a cast beat.
 func play_attack_lunge(ranged: bool = false) -> void:
 	flash_expression(Face.ANGRY, 0.9)
 	if _sway_tween != null:
 		_sway_tween.kill()
-	var forward: float = -34.0 if facing_left else 34.0
-	var body: Tween = create_tween()
-	body.tween_property(self, "position:x", forward, 0.14) \
-			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT).as_relative()
-	body.tween_property(self, "position:x", -forward, 0.16) \
-			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN).as_relative()
-	var arm: Tween = create_tween()
+	var weapon_class: Enums.WeaponClass = _active_weapon_class()
 	if ranged:
-		# Draw and loose: raise to aim, hold through the shot, settle.
-		arm.tween_property(_arm, "rotation", -0.55, 0.12) \
-				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		arm.tween_interval(0.16)
-		arm.tween_property(_arm, "rotation", 0.0, 0.2) \
-				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	else:
-		# Wind-up back over the shoulder, whip through, recover.
-		arm.tween_property(_arm, "rotation", -0.85, 0.11) \
-				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-		arm.tween_property(_arm, "rotation", 1.15, 0.1) \
-				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-		arm.tween_property(_arm, "rotation", 0.0, 0.22) \
-				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		weapon_class = Enums.WeaponClass.RANGED
+	var style: CombatFeel.Style = CombatFeel.attack_style(weapon_class)
+	var windup: float = CombatFeel.windup_time(weapon_class)
+	var swing: float = CombatFeel.swing_time(weapon_class)
+	var recovery: float = CombatFeel.recovery_time(weapon_class)
+
+	var lunge: float = CombatFeel.lunge_distance(weapon_class)
+	if lunge > 0.0:
+		var forward: float = -lunge if facing_left else lunge
+		var body: Tween = create_tween()
+		# Heavy weapons settle back into their swing; light ones dart.
+		body.tween_property(self, "position:x", forward * 0.25, windup) \
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT).as_relative()
+		body.tween_property(self, "position:x", forward * 0.75, swing) \
+				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT).as_relative()
+		body.tween_property(self, "position:x", -forward, recovery) \
+				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN).as_relative()
+
+	var arm: Tween = create_tween()
+	match style:
+		CombatFeel.Style.AIM:
+			# Draw and loose: raise to aim, hold through the shot, settle.
+			arm.tween_property(_arm, "rotation", CombatFeel.wind_angle(weapon_class), windup) \
+					.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			arm.tween_property(_arm, "rotation", CombatFeel.follow_angle(weapon_class), swing) \
+					.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+			arm.tween_property(_arm, "rotation", 0.0, recovery) \
+					.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		CombatFeel.Style.THRUST:
+			# Coil the shaft back, then drive it straight out and reset.
+			arm.tween_property(_arm, "rotation", CombatFeel.wind_angle(weapon_class), windup) \
+					.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+			arm.tween_property(_arm, "rotation", CombatFeel.follow_angle(weapon_class), swing) \
+					.set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
+			arm.tween_property(_arm, "rotation", 0.0, recovery) \
+					.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		CombatFeel.Style.CAST:
+			# Anticipation: the arm rises and HOLDS before the release.
+			arm.tween_property(_arm, "rotation", CombatFeel.wind_angle(weapon_class), windup) \
+					.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+			arm.tween_property(_arm, "rotation", CombatFeel.follow_angle(weapon_class), swing) \
+					.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+			arm.tween_property(_arm, "rotation", 0.0, recovery) \
+					.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		_:
+			# Wind-up back over the shoulder, whip through, recover.
+			arm.tween_property(_arm, "rotation", CombatFeel.wind_angle(weapon_class), windup) \
+					.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			arm.tween_property(_arm, "rotation", CombatFeel.follow_angle(weapon_class), swing) \
+					.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+			arm.tween_property(_arm, "rotation", 0.0, recovery) \
+					.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	arm.tween_callback(_restart_sway)
+
+
+## The class actually being wielded: the equipped weapon wins, falling back
+## to the class-only field callers like the creation preview set.
+func _active_weapon_class() -> Enums.WeaponClass:
+	return weapon.weapon_class if weapon != null else weapon_class
 
 
 func play_hit_flash() -> void:
