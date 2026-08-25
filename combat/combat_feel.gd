@@ -91,6 +91,19 @@ const TIMING: Dictionary = {
 static var _freezing: bool = false
 
 
+## Setting key for the reduced-effects accessibility toggle. Shared with the
+## settings screen so the two sides can never drift apart.
+const REDUCED_FX_SETTING: String = "reduced_fx"
+
+
+## How long after the animation STARTS the blow actually connects: the
+## anticipation beat plus the stroke itself. The controller waits this long
+## before presenting the resolved result, so the impact VFX/freeze land on
+## the frame the weapon arrives — not while it is still cocked back.
+static func impact_delay(weapon_class: Enums.WeaponClass) -> float:
+	return windup_time(weapon_class) + swing_time(weapon_class)
+
+
 ## Anticipation beat before the blow lands — the controller waits this long
 ## between starting the animation and presenting the resolved result.
 static func windup_time(weapon_class: Enums.WeaponClass) -> float:
@@ -134,10 +147,17 @@ static func attack_style(weapon_class: Enums.WeaponClass) -> Style:
 ## Freeze duration for one impact, already scaled by the crit multiplier and
 ## the `reduced_fx` accessibility setting. 0 means "do not freeze".
 static func hit_stop_time(weapon_class: Enums.WeaponClass, is_crit: bool) -> float:
-	var seconds: float = float(_profile(weapon_class)[HIT_STOP])
+	return hit_stop_seconds(float(_profile(weapon_class)[HIT_STOP]), is_crit,
+			bool(SaveManager.get_setting(REDUCED_FX_SETTING, false)))
+
+
+## Pure scaling+clamping half of hit_stop_time, split out so the safety rail
+## itself is testable with values the table cannot currently produce.
+static func hit_stop_seconds(base: float, is_crit: bool, reduced_fx: bool) -> float:
+	var seconds: float = maxf(base, 0.0)
 	if is_crit:
 		seconds *= CRIT_HIT_STOP_MULTIPLIER
-	if bool(SaveManager.get_setting("reduced_fx", false)):
+	if reduced_fx:
 		seconds *= REDUCED_FX_HIT_STOP_SCALE
 	return clampf(seconds, 0.0, MAX_HIT_STOP)
 

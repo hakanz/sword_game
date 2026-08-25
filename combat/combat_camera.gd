@@ -30,6 +30,11 @@ const ZOOM_BY_SEPARATION: PackedFloat32Array = [
 const PUNCH_CRIT: float = 0.05
 const PUNCH_KILL: float = 0.09
 const PUNCH_RELEASE: float = 0.5
+## Setting key + default for the camera-motion accessibility slider. The
+## settings screen writes through these same constants, so a rename cannot
+## silently disconnect the slider from the camera.
+const MOTION_SETTING: String = "camera_motion"
+const MOTION_DEFAULT: int = 100
 ## Exponential smoothing rate (higher = snappier follow).
 const RESPONSE: float = 6.0
 ## Framing leans toward the midpoint but keeps a little of the design centre
@@ -40,11 +45,13 @@ var _left: Combatant = null
 var _right: Combatant = null
 var _context: CombatContext = null
 
-## 0.0 = fully static framing (accessibility), 1.0 = full motion.
-var _motion: float = 1.0
+## 0.0 = fully static framing (accessibility), 1.0 = full motion. Public so
+## the settings coupling is testable end to end.
+var motion_scale: float = 1.0
 var _zoom_level: float = 1.0
 var _focus: Vector2 = DESIGN * 0.5
-var _punch: float = 0.0
+## Extra zoom currently applied by a crit/kill push-in (tweened back to 0).
+var punch_zoom: float = 0.0
 var _punch_tween: Tween = null
 var _shake_tween: Tween = null
 
@@ -53,9 +60,10 @@ func _ready() -> void:
 	# Accessibility (charter §28): the settings screen's camera-motion slider.
 	# Read once per combat — settings changes apply from the next fight, the
 	# same way the other combat-presentation settings behave.
-	_motion = clampf(float(SaveManager.get_setting("camera_motion", 100)) / 100.0, 0.0, 1.0)
-	_zoom_level = zoom_for_separation(5, _motion)
-	_focus = Vector2(DESIGN.x * 0.5, focus_y(_motion))
+	motion_scale = clampf(
+			float(SaveManager.get_setting(MOTION_SETTING, MOTION_DEFAULT)) / 100.0, 0.0, 1.0)
+	_zoom_level = zoom_for_separation(5, motion_scale)
+	_focus = Vector2(DESIGN.x * 0.5, focus_y(motion_scale))
 	zoom = Vector2(_zoom_level, _zoom_level)
 	position = clamp_focus(_focus, _zoom_level, _view_size())
 	set_process(not GameManager.smoke_test)
@@ -72,16 +80,16 @@ func track(left: Combatant, right: Combatant, context: CombatContext) -> void:
 func _process(delta: float) -> void:
 	if _left == null or _right == null or _context == null:
 		return
-	var target_zoom: float = zoom_for_separation(_context.separation(), _motion)
+	var target_zoom: float = zoom_for_separation(_context.separation(), motion_scale)
 	var target_focus := Vector2(
-			focus_x(_left.position.x, _right.position.x, _motion), focus_y(_motion))
+			focus_x(_left.position.x, _right.position.x, motion_scale), focus_y(motion_scale))
 	# Frame-rate independent exponential smoothing. During a hit-stop the
 	# engine's delta shrinks with time_scale, so the camera freezes WITH the
 	# world — exactly the intended slam-and-hold.
 	var t: float = 1.0 - exp(-RESPONSE * delta)
 	_zoom_level = lerpf(_zoom_level, target_zoom, t)
 	_focus = _focus.lerp(target_focus, t)
-	var effective: float = _zoom_level * (1.0 + _punch)
+	var effective: float = _zoom_level * (1.0 + punch_zoom)
 	zoom = Vector2(effective, effective)
 	position = clamp_focus(_focus, effective, _view_size())
 
@@ -89,13 +97,13 @@ func _process(delta: float) -> void:
 ## Push-in accent on a crit or a kill (V2 §51). Scaled by the camera-motion
 ## accessibility setting like every other camera move.
 func punch_in(kill: bool = false) -> void:
-	if GameManager.smoke_test or _motion <= 0.0:
+	if GameManager.smoke_test or motion_scale <= 0.0:
 		return
 	if _punch_tween != null:
 		_punch_tween.kill()
-	_punch = (PUNCH_KILL if kill else PUNCH_CRIT) * _motion
+	punch_zoom = (PUNCH_KILL if kill else PUNCH_CRIT) * motion_scale
 	_punch_tween = create_tween()
-	_punch_tween.tween_property(self, "_punch", 0.0, PUNCH_RELEASE) \
+	_punch_tween.tween_property(self, "punch_zoom", 0.0, PUNCH_RELEASE) \
 			.set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
 
 

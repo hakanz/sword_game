@@ -28,21 +28,26 @@ func _ready() -> void:
 		_volume_sliders[bus] = slider
 
 	var shake := _add_slider_row(tr("settings.screen_shake"),
-			float(SaveManager.get_setting("screen_shake", 100)))
+			float(SaveManager.get_setting(CombatController.SHAKE_SETTING, 100)),
+			"ScreenShakeSlider")
 	shake.value_changed.connect(func(value: float) -> void:
-		SaveManager.set_setting("screen_shake", int(value)))
+		SaveManager.set_setting(CombatController.SHAKE_SETTING, int(value)))
 
 	# Camera motion (V2 §51): 0 pins the classic static duel frame for
 	# players sensitive to the follow/zoom/push-in. Applies from the next
 	# fight, like the other combat-presentation settings.
 	var camera := _add_slider_row(tr("settings.camera_motion"),
-			float(SaveManager.get_setting("camera_motion", 100)))
+			float(SaveManager.get_setting(
+					CombatCamera.MOTION_SETTING, CombatCamera.MOTION_DEFAULT)),
+			"CameraMotionSlider")
 	camera.value_changed.connect(func(value: float) -> void:
-		SaveManager.set_setting("camera_motion", int(value)))
+		SaveManager.set_setting(CombatCamera.MOTION_SETTING, int(value)))
 
 	_add_check_row(tr("settings.reduced_fx"),
-			bool(SaveManager.get_setting("reduced_fx", false)),
-			func(pressed: bool) -> void: SaveManager.set_setting("reduced_fx", pressed))
+			bool(SaveManager.get_setting(CombatFeel.REDUCED_FX_SETTING, false)),
+			func(pressed: bool) -> void:
+				SaveManager.set_setting(CombatFeel.REDUCED_FX_SETTING, pressed),
+			"ReducedFxCheck")
 
 	var language := Button.new()
 	language.text = tr("menu.language")
@@ -53,7 +58,9 @@ func _ready() -> void:
 	_rows.add_child(language)
 
 
-func _add_slider_row(label_text: String, initial: float) -> HSlider:
+## `node_name` makes the control findable by name — the accessibility
+## settings have end-to-end tests that drive the real widget.
+func _add_slider_row(label_text: String, initial: float, node_name: String = "") -> HSlider:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 14)
 	_rows.add_child(row)
@@ -69,15 +76,20 @@ func _add_slider_row(label_text: String, initial: float) -> HSlider:
 	slider.value = initial
 	slider.custom_minimum_size = Vector2(320, 44)
 	slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	if node_name != "":
+		slider.name = node_name
 	row.add_child(slider)
 	return slider
 
 
-func _add_check_row(label_text: String, initial: bool, on_toggled: Callable) -> void:
+func _add_check_row(label_text: String, initial: bool, on_toggled: Callable,
+		node_name: String = "") -> void:
 	var check := CheckButton.new()
 	check.text = label_text
 	check.button_pressed = initial
 	check.custom_minimum_size = Vector2(0, 44)
 	check.add_theme_font_size_override("font_size", 18)
 	check.toggled.connect(on_toggled)
+	if node_name != "":
+		check.name = node_name
 	_rows.add_child(check)

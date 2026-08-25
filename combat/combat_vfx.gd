@@ -9,7 +9,7 @@ class_name CombatVfx
 static func spawn_sparks(
 		parent: Node, pos: Vector2, color: Color,
 		amount: int = 14, soft: bool = false) -> void:
-	if bool(SaveManager.get_setting("reduced_fx", false)):
+	if bool(SaveManager.get_setting(CombatFeel.REDUCED_FX_SETTING, false)):
 		amount = maxi(4, amount / 2)
 	var particles := CPUParticles2D.new()
 	particles.position = pos
@@ -64,7 +64,7 @@ static func _spawn_shaped(
 		parent: Node, pos: Vector2, color: Color, direction: Vector2,
 		amount: int, spread: float, velocity: Vector2, gravity: Vector2,
 		lifetime: float) -> void:
-	if bool(SaveManager.get_setting("reduced_fx", false)):
+	if bool(SaveManager.get_setting(CombatFeel.REDUCED_FX_SETTING, false)):
 		amount = maxi(4, amount / 2)
 	var particles := CPUParticles2D.new()
 	particles.position = pos

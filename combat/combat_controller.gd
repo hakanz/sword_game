@@ -13,6 +13,10 @@ const GROUND_Y: float = 500.0
 const CELL_ORIGIN_X: float = 150.0
 const CELL_SPACING_X: float = 140.0
 
+## Setting key for the screen-shake accessibility slider — shared with the
+## settings screen so the reader and the writer can never drift apart.
+const SHAKE_SETTING: String = "screen_shake"
+
 const PLAYER_FALLBACK: CharacterData = preload("res://data/characters/player_default.tres")
 const ENEMY_FALLBACK: CharacterData = preload("res://data/characters/enemy_vosk.tres")
 const ARENA_FALLBACK: ArenaData = preload("res://data/arenas/gravelmaw.tres")
@@ -169,9 +173,11 @@ func _execute(actor: Combatant, decision: CombatDecision) -> void:
 		if decision.type == Enums.ActionType.SKILL:
 			AudioManager.play(&"skill")
 		actor.rig.play_attack_lunge(ranged_strike)
-		# Anticipation beat: a maul takes visibly longer to arrive than a
-		# dagger (CombatFeel is the ONE home of that table — V2 §51).
-		await _delay(CombatFeel.windup_time(weapon_class))
+		# Wait for the blow to actually ARRIVE (anticipation + stroke): a maul
+		# takes visibly longer than a dagger, and the impact feedback must
+		# land on the connecting frame, not while the arm is still cocked
+		# (CombatFeel is the ONE home of that table — V2 §51).
+		await _delay(CombatFeel.impact_delay(weapon_class))
 
 	var result: ActionResult = CombatResolver.execute(actor, foe, ctx, decision)
 
@@ -344,7 +350,7 @@ func _cell_to_x(cell: int) -> float:
 ## Speed follows Agility (session-5 owner design): nimble fighters cross the
 ## sand visibly faster; a small hop sells the footwork.
 func _animate_step(actor: Combatant) -> void:
-	var agility: int = actor.data.attributes.agility
+	var agility: int = actor.attributes.agility
 	var duration: float = clampf(0.34 - 0.012 * (agility - 8), 0.16, 0.42)
 	var tween: Tween = create_tween()
 	tween.tween_property(actor, "position:x", _cell_to_x(actor.cell), duration) \
@@ -393,7 +399,7 @@ func _shake(strength: float) -> void:
 	if GameManager.smoke_test:
 		return
 	# Accessibility: player-tunable intensity (settings screen, charter §28).
-	strength *= float(SaveManager.get_setting("screen_shake", 100)) / 100.0
+	strength *= float(SaveManager.get_setting(SHAKE_SETTING, 100)) / 100.0
 	if strength < 0.5:
 		return
 	if camera != null:
