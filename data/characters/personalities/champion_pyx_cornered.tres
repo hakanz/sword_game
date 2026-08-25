@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="AIPersonality" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/ai_personality.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"personality.champion_pyx_cornered"
+aggression = 1.4
+caution = 0.6
+resource_care = 0.45
+wounded_fury = 0.2
+killer_instinct = 1.0

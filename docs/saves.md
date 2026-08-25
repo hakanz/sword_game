@@ -38,6 +38,16 @@ confirm, after learning a skill. Never mid-combat-action.
 player's save or settings. Tests overriding `profile_path` restore it and delete their
 temp file.
 
+## v6 — weapon memory and battle fatigue (session 6)
+
+| Field | Meaning |
+|---|---|
+| `prefers_main_weapon` | a WON fight carries the end-of-fight weapon into the next one; a loss resets to the sidearm |
+| `battle_fatigue` | set by a loss; drains the next fight's opening Energy to 60%, then clears |
+
+`_migrate_v5_to_v6` defaults both to `false`, which is exactly the state of a
+gladiator who has not fought since the feature existed.
+
 ## v7 — the rivalry record (session 7 / phase 15, V2 §55)
 
 Adds two dictionaries to the profile:

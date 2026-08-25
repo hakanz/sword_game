@@ -29,9 +29,16 @@ var _locations: Array[Array] = [
 @onready var _grid: GridContainer = %LocationGrid
 @onready var _back: Button = %BackButton
 
-## The between-fights encounter panel, built in code and shown over the hub
-## when one is waiting (charter §23).
+## The between-fights encounter, built in code and shown OVER the hub when one
+## is waiting (charter §23). `_event_blocker` is a full-rect shade that makes
+## the card modal: a stray tap on a location card behind it would otherwise
+## start a duel and throw the encounter away unseen.
 var _event_panel: PanelContainer = null
+var _event_blocker: ColorRect = null
+## Always-visible XP progress, kept so an encounter that grants XP can refresh
+## it instead of leaving a stale bar on screen.
+var _xp_bar: ProgressBar = null
+var _profile: PlayerProfile = null
 
 
 func _ready() -> void:
@@ -46,16 +53,17 @@ func _ready() -> void:
 	# Always-visible XP progress under the name (session-5 owner design).
 	var xp_needed: int = ProgressionCalculator.xp_required(
 			GameManager.PROGRESSION_CONFIG, profile.level)
-	var xp_bar := ProgressBar.new()
-	xp_bar.custom_minimum_size = Vector2(0, 8)
-	xp_bar.show_percentage = false
-	xp_bar.max_value = xp_needed
-	xp_bar.value = profile.xp
-	xp_bar.tooltip_text = "%s %d / %d" % [tr("sheet.xp"), profile.xp, xp_needed]
-	xp_bar.add_theme_stylebox_override("fill", UITheme.bar_fill(Color(0.93, 0.76, 0.35)))
+	_profile = profile
+	_xp_bar = ProgressBar.new()
+	_xp_bar.custom_minimum_size = Vector2(0, 8)
+	_xp_bar.show_percentage = false
+	_xp_bar.max_value = xp_needed
+	_xp_bar.value = profile.xp
+	_xp_bar.tooltip_text = "%s %d / %d" % [tr("sheet.xp"), profile.xp, xp_needed]
+	_xp_bar.add_theme_stylebox_override("fill", UITheme.bar_fill(Color(0.93, 0.76, 0.35)))
 	var status_box: VBoxContainer = _name_label.get_parent()
-	status_box.add_child(xp_bar)
-	status_box.move_child(xp_bar, _name_label.get_index() + 1)
+	status_box.add_child(_xp_bar)
+	status_box.move_child(_xp_bar, _name_label.get_index() + 1)
 	_gold_icon.texture = preload("res://assets/icons/coin.svg")
 	_gold_label.text = str(profile.gold)
 	_back.text = tr("town.leave")
@@ -92,6 +100,14 @@ func _ready() -> void:
 ## Presents one encounter as a modal card: the scene, then the choices the
 ## purse can actually afford, then what came of it.
 func _show_event(event: EventData, profile: PlayerProfile) -> void:
+	# Modal shade first: the encounter is a decision, not a notification, and
+	# the hub behind it must not be clickable while it is up.
+	_event_blocker = ColorRect.new()
+	_event_blocker.color = Color(0.04, 0.03, 0.06, 0.55)
+	_event_blocker.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_event_blocker.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(_event_blocker)
+
 	_event_panel = PanelContainer.new()
 	_event_panel.set_anchors_preset(Control.PRESET_CENTER)
 	_event_panel.custom_minimum_size = Vector2(620, 0)
@@ -167,9 +183,27 @@ func _on_event_choice(
 	close.custom_minimum_size = Vector2(0, 52)
 	close.pressed.connect(func() -> void:
 		_event_panel.queue_free()
-		_gold_label.text = str(profile.gold))
+		if _event_blocker != null:
+			_event_blocker.queue_free()
+		_refresh_status())
 	box.add_child(close)
-	_gold_label.text = str(profile.gold)
+	_refresh_status()
+
+
+## Re-reads everything on the hub an encounter can move: purse, level, XP.
+## The level line and the bar would otherwise sit stale until the next scene.
+func _refresh_status() -> void:
+	if _profile == null:
+		return
+	_gold_label.text = str(_profile.gold)
+	_name_label.text = "%s  ·  %s" % [_profile.character_name,
+			tr("sheet.level").format({"level": _profile.level})]
+	if _xp_bar != null:
+		var needed: int = ProgressionCalculator.xp_required(
+				GameManager.PROGRESSION_CONFIG, _profile.level)
+		_xp_bar.max_value = needed
+		_xp_bar.value = _profile.xp
+		_xp_bar.tooltip_text = "%s %d / %d" % [tr("sheet.xp"), _profile.xp, needed]
 
 
 ## "+35 gold · +6 fame" — the numbers behind the sentence.

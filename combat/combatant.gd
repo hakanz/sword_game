@@ -323,6 +323,8 @@ func on_turn_started() -> void:
 	set_stance(Enums.Stance.NEUTRAL)
 	# The pit throws its weight behind its favourite (V2 §54). Small on
 	# purpose: a build that ignores Charisma must stay viable.
-	var boon: int = CrowdSystem.energy_boon(self)
+	# `spend` = true: accepting the crowd's help costs standing, so the top of
+	# the meter is a moment you keep earning, not a passive you park on.
+	var boon: int = CrowdSystem.energy_boon(self, true)
 	if boon > 0:
 		restore_energy(boon)

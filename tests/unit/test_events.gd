@@ -108,16 +108,33 @@ func test_the_same_encounter_never_lands_twice_running() -> void:
 
 
 func test_selection_respects_level_and_purse() -> void:
-	var rookie: PlayerProfile = _profile(0, 1, 9)
+	# Level 1 / no gold makes EVERY event ineligible, so a loop over pick()
+	# there asserts nothing at all. Level 3 with an empty purse is the honest
+	# case: some events qualify, the level-gated ones must still not appear.
+	var rookie: PlayerProfile = _profile(0, 3, 9)
+	var gated: Array[StringName] = []
+	for event: EventData in ItemDB.all_events():
+		if event.min_level > rookie.level:
+			gated.append(event.id)
+	assert_false(gated.is_empty(), "the catalog must actually gate something by level")
+
 	RngService.set_seed(7)
-	for _i in 25:
+	var drawn: int = 0
+	for _i in 40:
 		var event: EventData = EventService.pick(rookie, &"")
 		if event == null:
 			continue
-		assert_true(event.min_level <= rookie.level,
-				"%s should not be offered at level %d" % [event.id, rookie.level])
+		drawn += 1
+		assert_false(gated.has(event.id),
+				"%s is gated above level %d and must not be offered" % [event.id, rookie.level])
 		assert_false(event.available_choices(rookie.gold).is_empty(),
 				"%s was offered with nothing affordable in it" % event.id)
+	assert_true(drawn > 0, "this test is worthless if nothing was ever drawn")
+
+	# And a penniless level-1 gladiator meets nothing at all.
+	var debutant: PlayerProfile = _profile(0, 1, 9)
+	assert_eq(EventService.pick(debutant, &""), null,
+			"no encounter in the catalog is open to a level-1 fighter")
 
 
 func test_picking_is_seed_reproducible() -> void:
@@ -217,3 +234,34 @@ func test_encounters_are_not_persisted() -> void:
 	for key: String in PlayerProfile.create_default().to_dict().keys():
 		assert_false(key.contains("event"),
 				"an unseen encounter is forgotten on quit, by design (%s)" % key)
+
+
+# --- Regressions from the phase 13-16 adversarial review --------------------
+
+## Event XP went straight onto the profile and never levelled anyone: a
+## gladiator could sit above the threshold indefinitely.
+func test_event_xp_levels_the_gladiator_like_any_other_xp() -> void:
+	var config: ProgressionConfig = GameManager.PROGRESSION_CONFIG
+	var profile: PlayerProfile = _profile(0, 1, 5)
+	profile.xp = 0
+	var needed: int = ProgressionCalculator.xp_required(config, profile.level)
+	var choice := EventChoiceData.new()
+	choice.xp_gain = needed + 5
+
+	EventService.apply(profile, choice)
+	assert_eq(profile.level, 2, "event XP must be able to level a gladiator")
+	assert_eq(profile.xp, 5, "the remainder carries into the new level")
+	assert_true(profile.attribute_points > 0,
+			"levelling from an event must still pay its attribute points")
+
+
+## ...and it must respect the level cap like every other source.
+func test_event_xp_respects_the_level_cap() -> void:
+	var config: ProgressionConfig = GameManager.PROGRESSION_CONFIG
+	var profile: PlayerProfile = _profile(0, config.max_level, 5)
+	var choice := EventChoiceData.new()
+	choice.xp_gain = 999999
+	EventService.apply(profile, choice)
+	assert_eq(profile.level, config.max_level, "the cap holds")
+	assert_true(profile.xp < ProgressionCalculator.xp_required(config, config.max_level),
+			"surplus XP at the cap must not overflow the bar")

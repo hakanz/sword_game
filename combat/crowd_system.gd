@@ -40,6 +40,10 @@ const EXCITED_AT: int = 70
 const FRENZIED_AT: int = 90
 
 # --- What the pit pays for -------------------------------------------------
+## An honest exchange of blows is worth something. Without this a fighter who
+## owns no skills never moves the meter at all, and Charisma quietly becomes a
+## stat only skill builds can spend (measured: 92% of turns stuck at Neutral).
+const ATTACK_GAIN: int = 2
 const CRIT_GAIN: int = 12
 ## A finishing blow is the loudest moment a duel has.
 const KILL_GAIN: int = 18
@@ -55,6 +59,10 @@ const GUARD_HELD_GAIN: int = 5
 const TURTLE_LOSS: int = -8
 const TURTLE_AFTER_DEFENDS: int = 2
 const RETREAT_LOSS: int = -6
+## Retreats this many times before the pit starts calling it running away.
+## A bow build's whole loop is footwork; charging it the full stall penalty
+## from the first step parked ranged fighters in Hostile permanently.
+const RETREAT_FREE_BUDGET: int = 2
 const REST_LOSS: int = -4
 ## Every action after this round bleeds a little interest away.
 const LONG_FIGHT_ROUND: int = 12
@@ -68,6 +76,11 @@ const CHARISMA_GAIN_PER_POINT: float = 0.02
 const EXCITED_ENERGY: int = 3
 const FRENZIED_ENERGY: int = 5
 const FRENZIED_ACCURACY: int = 4
+## Taking the crowd's help SPENDS standing. Without this the top of the meter
+## was a plateau a good build simply lived on — measured at 55% of all turns —
+## which is a permanent passive, not the "small, situational" reward §54 asks
+## for. Now the pit has to be won again after every favour it grants.
+const BOON_COST: int = 8
 
 
 static func state_of(value: int) -> State:
@@ -118,15 +131,21 @@ static func shift(fighter: Combatant, delta: int) -> int:
 	return fighter.crowd
 
 
-## Energy the crowd hands their favourite at the start of their turn.
-static func energy_boon(fighter: Combatant) -> int:
+## Energy the crowd hands their favourite at the start of their turn — and
+## the standing it costs them to accept it (`spend` false answers the question
+## without charging for it, for UI and tests).
+static func energy_boon(fighter: Combatant, spend: bool = false) -> int:
+	var boon: int = 0
 	match state_of(fighter.crowd):
 		State.FRENZIED:
-			return FRENZIED_ENERGY
+			boon = FRENZIED_ENERGY
 		State.EXCITED:
-			return EXCITED_ENERGY
+			boon = EXCITED_ENERGY
 		_:
-			return 0
+			boon = 0
+	if boon > 0 and spend:
+		shift(fighter, -BOON_COST)
+	return boon
 
 
 ## Accuracy the roar is worth — only at the very top of the meter.
@@ -143,7 +162,10 @@ static func delta_for(result: ActionResult, round_number: int) -> int:
 		Enums.ActionType.REST:
 			delta += REST_LOSS
 		Enums.ActionType.RETREAT:
-			delta += RETREAT_LOSS
+			# Footwork is free up to the budget the AI's own retreat fatigue
+			# already tracks; past that it reads as running.
+			if actor.total_retreats > RETREAT_FREE_BUDGET:
+				delta += RETREAT_LOSS
 		Enums.ActionType.DEFEND:
 			# Turtling only counts once the fighter's OWN anti-stall counter
 			# says so — one stall detector for the whole game (V2 §54).
@@ -152,13 +174,20 @@ static func delta_for(result: ActionResult, round_number: int) -> int:
 		_:
 			pass
 
+	# A skill that hits, and a SELF buff (which lands by definition — it has no
+	# hit roll at all, so gating this on `hit` made every taunt's crowd_appeal
+	# dead data).
+	var skill_landed: bool = result.skill != null \
+			and (result.hit or result.skill.target == SkillData.Target.SELF)
+	if skill_landed:
+		delta += SKILL_GAIN + result.skill.crowd_appeal
+		if actor.current_hp <= roundi(actor.max_hp * DESPERATE_HP_FRACTION):
+			delta += DESPERATE_GAIN
 	if result.hit:
+		if result.skill == null:
+			delta += ATTACK_GAIN
 		if result.crit:
 			delta += CRIT_GAIN
-		if result.skill != null:
-			delta += SKILL_GAIN + result.skill.crowd_appeal
-			if actor.current_hp <= roundi(actor.max_hp * DESPERATE_HP_FRACTION):
-				delta += DESPERATE_GAIN
 		if result.killed:
 			delta += KILL_GAIN
 

@@ -11,7 +11,7 @@
 [ext_resource type="Resource" path="res://data/skills/hamstring_cut.tres" id="9"]
 [ext_resource type="Resource" path="res://data/skills/gutter_lunge.tres" id="10"]
 [ext_resource type="Resource" path="res://data/skills/second_wind.tres" id="11"]
-[ext_resource type="Resource" path="res://data/characters/personalities/aggressive.tres" id="12"]
+[ext_resource type="Resource" path="res://data/characters/personalities/champion_orzha_cornered.tres" id="12"]
 
 [sub_resource type="Resource" id="Resource_attrs"]
 script = ExtResource("2")

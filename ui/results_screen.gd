@@ -86,6 +86,9 @@ func _ready() -> void:
 	# player is told where the score stands after the fight.
 	if reward != null and reward.rival_id != &"":
 		var profile: PlayerProfile = GameManager.profile
+		# That label is hidden unless a bracket just ended — show it, or the
+		# standings are written where nobody can read them.
+		_tournament.visible = true
 		_tournament.text = tr(RivalService.standing_key(profile, reward.rival_id)).format({
 			"name": tr("%s.name" % reward.rival_id),
 			"margin": absi(RivalService.score(profile, reward.rival_id)),

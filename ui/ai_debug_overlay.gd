@@ -96,7 +96,12 @@ func _temperament_suffix(combatant_name: String) -> String:
 	if arena == null:
 		return ""
 	for fighter: Combatant in [arena.player, arena.enemy]:
-		if fighter != null and fighter.display_name() == combatant_name \
-				and fighter.data.personality != null:
-			return "  [%s]" % String(fighter.data.personality.id).replace("personality.", "")
+		if fighter == null or fighter.display_name() != combatant_name:
+			continue
+		# active_personality(), not data.personality: past a boss threshold the
+		# fighter is driven by a different head, and naming the old one is
+		# exactly the lie this overlay exists to prevent.
+		var personality: AIPersonality = fighter.active_personality()
+		if personality != null:
+			return "  [%s]" % String(personality.id).replace("personality.", "")
 	return ""

@@ -9,6 +9,9 @@ class_name OpponentGenerator
 
 const BASE: CharacterData = preload("res://data/characters/enemy_vosk.tres")
 
+## Every fighter in the game grows on the same budget the player does.
+const POINTS_PER_LEVEL: int = 3
+
 const AGGRESSIVE: AIPersonality = preload("res://data/characters/personalities/aggressive.tres")
 const DEFENSIVE: AIPersonality = preload("res://data/characters/personalities/defensive.tres")
 const CAUTIOUS: AIPersonality = preload("res://data/characters/personalities/cautious.tres")
@@ -50,31 +53,31 @@ const EPITHETS: PackedStringArray = [
 ## build and the kit agree (a mage without a staff is just a bad brute).
 const GROWTH_PROFILES: Array[Dictionary] = [
 	{
-		"id": &"brute", "weight": 3.0,
+		"id": &"brute", "weight": 3.0, "min_level": 1,
 		"growth": {"strength": 0.24, "agility": 0.14, "attack": 0.20,
 				"defence": 0.14, "vitality": 0.16, "stamina": 0.12},
 		"weapons": [Enums.WeaponClass.AXE, Enums.WeaponClass.BLUNT, Enums.WeaponClass.SWORD],
 	},
 	{
-		"id": &"duelist", "weight": 2.5,
+		"id": &"duelist", "weight": 2.5, "min_level": 1,
 		"growth": {"strength": 0.16, "agility": 0.24, "attack": 0.22,
 				"defence": 0.14, "vitality": 0.12, "stamina": 0.12},
 		"weapons": [Enums.WeaponClass.SWORD, Enums.WeaponClass.SPEAR],
 	},
 	{
-		"id": &"skirmisher", "weight": 2.0,
+		"id": &"skirmisher", "weight": 2.0, "min_level": 3,
 		"growth": {"strength": 0.16, "agility": 0.26, "attack": 0.20,
 				"defence": 0.12, "vitality": 0.12, "stamina": 0.14},
 		"weapons": [Enums.WeaponClass.SPEAR, Enums.WeaponClass.RANGED],
 	},
 	{
-		"id": &"marksman", "weight": 1.5,
+		"id": &"marksman", "weight": 1.5, "min_level": 6,
 		"growth": {"strength": 0.10, "agility": 0.30, "attack": 0.24,
 				"defence": 0.10, "vitality": 0.12, "stamina": 0.14},
 		"weapons": [Enums.WeaponClass.RANGED],
 	},
 	{
-		"id": &"mage", "weight": 1.0,
+		"id": &"mage", "weight": 1.0, "min_level": 8,
 		"growth": {"arcana": 0.34, "agility": 0.14, "attack": 0.14,
 				"defence": 0.12, "vitality": 0.14, "stamina": 0.12},
 		"weapons": [Enums.WeaponClass.MAGICAL],
@@ -106,19 +109,11 @@ static func generate_at_level(level: int, elite: bool = false) -> CharacterData:
 
 	# Which kind of fighter is this? Chosen first, because it decides both
 	# where the level-up points go and what they can hold.
-	var profile: Dictionary = _pick_profile()
+	var profile: Dictionary = _pick_profile(level)
 	var growth: Dictionary = profile["growth"]
 
 	# Distribute the same points a leveling player would earn (3 per level).
-	var points: int = (level - 1) * 3
-	for _i in points:
-		var roll: float = RngService.randf()
-		var cumulative: float = 0.0
-		for attr_name: String in growth.keys():
-			cumulative += growth[attr_name]
-			if roll <= cumulative:
-				data.attributes.set(attr_name, int(data.attributes.get(attr_name)) + 1)
-				break
+	distribute_points(data.attributes, (level - 1) * POINTS_PER_LEVEL, growth)
 
 	_assign_gear(data, level, elite, profile)
 	# Temperament comes AFTER the kit: it is chosen to suit what this fighter
@@ -141,21 +136,57 @@ static func _personality_for(data: CharacterData) -> AIPersonality:
 	return RngService.pick(pool)
 
 
-## Enemies draw from the same item catalog as the player, capped by tier so
-## gear power tracks level (T1 at 1-4, T2 at 5-8, T3 at 9+ ...).
-## Weighted archetype roll.
-static func _pick_profile() -> Dictionary:
-	var total: float = 0.0
+## Spends `points` attribute points into `attrs` along a growth profile's
+## weights. Shared so anything level-scaled — generated fighters AND the
+## handcrafted rivals `RivalService` levels up — grows on one budget rule.
+static func distribute_points(attrs: AttributeBlock, points: int, growth: Dictionary) -> void:
+	if attrs == null or points <= 0 or growth.is_empty():
+		return
+	for _i in points:
+		var roll: float = RngService.randf()
+		var cumulative: float = 0.0
+		for attr_name: String in growth.keys():
+			cumulative += growth[attr_name]
+			if roll <= cumulative:
+				attrs.set(attr_name, int(attrs.get(attr_name)) + 1)
+				break
+
+
+## The growth profile that matches a weapon class, so a handcrafted fighter
+## being levelled up grows into the build they already are.
+static func growth_for_weapon(weapon_class: Enums.WeaponClass) -> Dictionary:
 	for profile: Dictionary in GROWTH_PROFILES:
+		var classes: Array = profile.get("weapons", [])
+		if classes.has(weapon_class):
+			return profile["growth"]
+	return GROWTH_PROFILES[0]["growth"]
+
+
+## Weighted archetype roll, restricted to archetypes that can actually hold
+## their own weapon at this level. A mage cannot lift any staff in the catalog
+## before level ~8 (`required_arcana`), and rolling one anyway left a fighter
+## with mage growth carrying the fallback hatchet — a "mage" that is really a
+## worse brute, and one the temperament pairing then reads as a Breaker.
+static func _pick_profile(level: int) -> Dictionary:
+	var eligible: Array[Dictionary] = []
+	for profile: Dictionary in GROWTH_PROFILES:
+		if level >= int(profile.get("min_level", 1)):
+			eligible.append(profile)
+	if eligible.is_empty():
+		return GROWTH_PROFILES[0]
+	var total: float = 0.0
+	for profile: Dictionary in eligible:
 		total += float(profile["weight"])
 	var ticket: float = RngService.randf() * total
-	for profile: Dictionary in GROWTH_PROFILES:
+	for profile: Dictionary in eligible:
 		ticket -= float(profile["weight"])
 		if ticket <= 0.0:
 			return profile
-	return GROWTH_PROFILES[0]
+	return eligible[0]
 
 
+## Enemies draw from the same item catalog as the player, capped by tier so
+## gear power tracks level (T1 at 1-4, T2 at 5-8, T3 at 9+ ...).
 static func _assign_gear(data: CharacterData, level: int, elite: bool = false,
 		profile: Dictionary = {}) -> void:
 	var max_tier: int = 1 + (level - 1) / 4 + (1 if elite else 0)
@@ -180,6 +211,16 @@ static func _assign_gear(data: CharacterData, level: int, elite: bool = false,
 				if data.attributes.agility < w.required_agility:
 					return false
 				return data.attributes.arcana >= w.required_arcana)
+	if weapon_pool.is_empty() and not classes.is_empty():
+		# Nothing in this archetype's classes is within reach yet. Rather than
+		# silently leaving the base weapon (and a build that contradicts its
+		# own kit), fall back to anything level-appropriate.
+		weapon_pool = ItemDB.all_weapons().filter(
+				func(w: WeaponData) -> bool:
+					return w.tier <= max_tier and w.shop_available \
+							and w.rarity < Enums.Rarity.LEGENDARY \
+							and w.required_arcana == 0 and w.required_agility == 0 \
+							and data.attributes.strength >= w.required_strength)
 	if not weapon_pool.is_empty():
 		data.weapon = RngService.pick(weapon_pool)
 

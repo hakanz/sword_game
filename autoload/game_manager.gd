@@ -67,7 +67,9 @@ var _last_event_id: StringName = &""
 ## True when the CURRENT opponent is the region's recurring rival (V2 §55).
 ## Runtime only: the rivalry RECORD is saved, this flag is not.
 var opponent_is_rival: bool = false
-## A rival never turns up twice running — the region is not their pit alone.
+## A rival never turns up twice running within a session — the region is not
+## their pit alone. Deliberately NOT saved: it is a pacing nicety, not state
+## worth a save-version bump, so quitting between duels can allow a repeat.
 var _last_opponent_was_rival: bool = false
 
 ## True when launched with `--smoke-test`: the game auto-plays one full

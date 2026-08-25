@@ -251,3 +251,94 @@ func test_a_v6_save_upgrades_without_losing_anything() -> void:
 	assert_true((fields["rival_score"] as Dictionary).is_empty(),
 			"a returning gladiator simply has no history with anyone yet")
 	assert_eq(SaveManager.SAVE_VERSION, 7, "the version must be bumped with the format")
+
+
+# --- Regressions from the phase 13-16 adversarial review --------------------
+
+## A phase-three head must be MORE dangerous than the one it replaces, at every
+## foe health — comparing only at full HP hid that Orzha's swap actually LOWERED
+## her aggression once the player was wounded (her base head has killer_instinct
+## and the replacement did not).
+func test_every_phase_three_head_is_more_dangerous_than_the_one_it_replaces() -> void:
+	for path: String in [MAULHILDA, ORZHA, "res://data/characters/champions/pyx.tres"]:
+		var champion: CharacterData = load(path)
+		if champion.phase_three_personality == null:
+			continue
+		# Phase three means the CHAMPION is nearly dead; the foe can be anywhere.
+		for foe_hp: float in [1.0, 0.6, 0.25, 0.05]:
+			var before: float = champion.personality.aggression_now(0.25, foe_hp)
+			var after: float = champion.phase_three_personality.aggression_now(0.25, foe_hp)
+			assert_true(after > before,
+					"%s gets SAFER at foe hp %s (%.2f -> %.2f)" % [
+						champion.id, foe_hp, before, after])
+
+
+## A rival's gear must be a function of their CURRENT lead, not of what they
+## brought last time — compounding the two escalates past MOMENTUM_CAP forever.
+func test_rival_gear_cannot_compound_across_meetings() -> void:
+	var arena: ArenaData = _gravelmaw()
+	var profile: PlayerProfile = PlayerProfile.create_default()
+	profile.level = 8
+	profile.rival_score[arena.rival.id] = -RivalService.MOMENTUM_CAP
+	var first: CharacterData = RivalService.build(profile, arena)
+	# They win again and again; the record is capped, so the gear must be too.
+	for _i in 6:
+		RivalService.record_result(profile, arena.rival.id, false, first.weapon.id)
+		var next: CharacterData = RivalService.build(profile, arena)
+		assert_eq(next.weapon.tier, first.weapon.tier,
+				"a capped lead must mean capped gear, not another tier every time")
+		first = next
+
+
+## Every fighter's authored skills must be usable with the weapon they carry —
+## a rival whose only skill is gated to another weapon class is dead content.
+func test_handcrafted_fighters_can_actually_use_their_skills() -> void:
+	var fighters: Array[CharacterData] = []
+	for arena: ArenaData in ItemDB.all_arenas():
+		fighters.append(arena.rival)
+		fighters.append(arena.champion)
+	for fighter: CharacterData in fighters:
+		if fighter == null:
+			continue
+		var usable: Array[SkillData] = []
+		usable.append_array(fighter.skills)
+		usable.append_array(fighter.phase_two_skills)
+		for skill: SkillData in usable:
+			assert_true(skill.usable_with(fighter.weapon.weapon_class),
+					"%s carries %s but cannot use it with a %s" % [fighter.id, skill.id,
+						Enums.WeaponClass.keys()[fighter.weapon.weapon_class]])
+
+
+## A rival levelled up to meet the player must bring the ATTRIBUTES of that
+## level, not just the number. Leaving the authored block behind made the
+## region rival the easiest fight at the top of a band and an unbeatable wall
+## at the bottom (measured: 8% and 100% win rates against level-matched
+## generated opponents).
+func test_a_levelled_rival_grows_on_the_same_budget_as_everyone_else() -> void:
+	var arena: ArenaData = ItemDB.arena(&"arena.emberholt")
+	var template: CharacterData = arena.rival
+	var base_points: int = _attribute_total(template.attributes)
+
+	RngService.set_seed(21)
+	var profile: PlayerProfile = PlayerProfile.create_default()
+	profile.level = arena.max_level
+	var levelled: CharacterData = RivalService.build(profile, arena)
+	var grown: int = _attribute_total(levelled.attributes)
+	var expected: int = base_points \
+			+ (levelled.level - template.level) * OpponentGenerator.POINTS_PER_LEVEL
+	assert_eq(levelled.level, arena.max_level, "the rival meets the player at their level")
+	assert_eq(grown, expected,
+			"a rival must grow on the same 3-points-per-level budget as the player")
+	assert_eq(_attribute_total(template.attributes), base_points,
+			"the template must not accumulate the growth")
+
+	# At or below their authored level they are simply themselves.
+	profile.level = arena.min_level
+	var unlevelled: CharacterData = RivalService.build(profile, arena)
+	assert_eq(_attribute_total(unlevelled.attributes), base_points,
+			"a rival is never SHRUNK below the fighter they were written as")
+
+
+func _attribute_total(attrs: AttributeBlock) -> int:
+	return attrs.strength + attrs.agility + attrs.attack + attrs.defence \
+			+ attrs.vitality + attrs.stamina + attrs.arcana + attrs.charisma

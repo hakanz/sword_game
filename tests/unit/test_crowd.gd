@@ -82,7 +82,12 @@ func test_spectacle_raises_and_dullness_lowers() -> void:
 	assert_true(CrowdSystem.delta_for(_attack_result(fighter, false, true), 1)
 			>= CrowdSystem.KILL_GAIN, "a finish is the loudest moment")
 	var plain: ActionResult = _attack_result(fighter)
-	assert_eq(CrowdSystem.delta_for(plain, 1), 0, "an ordinary landed hit is just the job")
+	assert_eq(CrowdSystem.delta_for(plain, 1), CrowdSystem.ATTACK_GAIN,
+			"an honest exchange of blows must pay SOMETHING, or a skill-less build")
+	var missed := ActionResult.new()
+	missed.actor = fighter
+	missed.action = Enums.ActionType.ATTACK
+	assert_eq(CrowdSystem.delta_for(missed, 1), 0, "...but a swing at air pays nothing")
 
 	var rest := ActionResult.new()
 	rest.actor = fighter
@@ -92,7 +97,12 @@ func test_spectacle_raises_and_dullness_lowers() -> void:
 	var retreat := ActionResult.new()
 	retreat.actor = fighter
 	retreat.action = Enums.ActionType.RETREAT
-	assert_eq(CrowdSystem.delta_for(retreat, 1), CrowdSystem.RETREAT_LOSS)
+	fighter.total_retreats = CrowdSystem.RETREAT_FREE_BUDGET
+	assert_eq(CrowdSystem.delta_for(retreat, 1), 0,
+			"footwork inside the budget is not running away")
+	fighter.total_retreats = CrowdSystem.RETREAT_FREE_BUDGET + 1
+	assert_eq(CrowdSystem.delta_for(retreat, 1), CrowdSystem.RETREAT_LOSS,
+			"past the budget the pit calls it what it is")
 	fighter.free()
 
 
@@ -133,7 +143,10 @@ func test_a_skill_landed_near_death_is_worth_more() -> void:
 
 func test_a_dragging_fight_bleeds_interest() -> void:
 	var fighter := _fighter()
-	var result: ActionResult = _attack_result(fighter)
+	# A swing that MISSES, so the long-fight decay is the only term in play.
+	var result := ActionResult.new()
+	result.actor = fighter
+	result.action = Enums.ActionType.ATTACK
 	assert_eq(CrowdSystem.delta_for(result, CrowdSystem.LONG_FIGHT_ROUND), 0,
 			"the decay must not start early")
 	assert_eq(CrowdSystem.delta_for(result, CrowdSystem.LONG_FIGHT_ROUND + 1),
@@ -189,10 +202,13 @@ func test_the_boon_actually_reaches_the_pool_and_the_aim() -> void:
 	assert_eq(fighter.current_energy, before + CrowdSystem.FRENZIED_ENERGY,
 			"the roar must arrive as real Energy at turn start")
 
+	# Measured WITHOUT going through a turn start: accepting the boon spends
+	# standing, which would drop the fighter out of Frenzied mid-measurement.
 	var foe := _fighter()
-	var frenzied_score: int = HitCalculator.accuracy_score(fighter)
-	fighter.crowd = CrowdSystem.START
-	var calm_score: int = HitCalculator.accuracy_score(fighter)
+	foe.crowd = CrowdSystem.FRENZIED_AT
+	var frenzied_score: int = HitCalculator.accuracy_score(foe)
+	foe.crowd = CrowdSystem.START
+	var calm_score: int = HitCalculator.accuracy_score(foe)
 	assert_eq(frenzied_score - calm_score, CrowdSystem.FRENZIED_ACCURACY,
 			"the accuracy nudge must go through HitCalculator, not a second formula")
 	fighter.free()
@@ -249,3 +265,49 @@ func test_every_crowd_string_is_translated() -> void:
 		assert_true(TranslationServer.translate(key) != key, "%s has no translation" % key)
 	for key: String in ["combat.hud.crowd", "combat.float.crowd_up", "combat.float.crowd_down"]:
 		assert_true(TranslationServer.translate(key) != key, "%s has no translation" % key)
+
+
+# --- Regressions from the phase 13-16 adversarial review --------------------
+
+## A SELF buff has no hit roll at all, so gating the skill reward on `hit` made
+## every taunt's authored crowd_appeal dead data.
+func test_a_self_buff_still_works_the_crowd() -> void:
+	var fighter := _fighter()
+	var skill := SkillData.new()
+	skill.id = &"skill.bellow_probe"
+	skill.target = SkillData.Target.SELF
+	skill.crowd_appeal = 6
+	var result := ActionResult.new()
+	result.actor = fighter
+	result.action = Enums.ActionType.SKILL
+	result.skill = skill
+	result.hit = false  # SELF skills never roll to hit
+	assert_eq(CrowdSystem.delta_for(result, 1), CrowdSystem.SKILL_GAIN + 6,
+			"a war cry is a performance; it must pay like one")
+	fighter.free()
+
+
+## The boon must be a moment you keep earning, not a passive you park on: at
+## 55% of turns spent Excited-or-better it was worth ~9 points of win rate.
+func test_taking_the_crowds_help_spends_standing() -> void:
+	var fighter := _fighter()
+	fighter.crowd = CrowdSystem.FRENZIED_AT
+	assert_eq(CrowdSystem.energy_boon(fighter), CrowdSystem.FRENZIED_ENERGY,
+			"asking what the boon is must not charge for it")
+	assert_eq(fighter.crowd, CrowdSystem.FRENZIED_AT, "...and must not move the meter")
+
+	fighter.spend_energy(fighter.max_energy - 1)
+	fighter.on_turn_started()
+	assert_eq(fighter.crowd, CrowdSystem.FRENZIED_AT - CrowdSystem.BOON_COST,
+			"accepting it costs standing")
+	assert_true(CrowdSystem.state_of(fighter.crowd) < CrowdSystem.State.FRENZIED,
+			"one favour must drop a fighter out of the top state")
+
+	# A fighter the crowd does not favour pays nothing and loses nothing.
+	var plain := _fighter()
+	plain.crowd = CrowdSystem.START
+	plain.on_turn_started()
+	assert_eq(plain.crowd, CrowdSystem.START)
+	fighter.free()
+	plain.free()
+

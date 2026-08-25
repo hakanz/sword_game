@@ -53,15 +53,29 @@ static func build(profile: PlayerProfile, arena: ArenaData) -> CharacterData:
 	var data: CharacterData = arena.rival.duplicate(true)
 	var lead: int = momentum(profile, data.id)
 
-	data.level = clampi(profile.level + lead, arena.min_level, arena.max_level)
+	var levelled: int = clampi(profile.level + lead, arena.min_level, arena.max_level)
+	# A rival is levelled to the player, so their ATTRIBUTES have to come with
+	# them: leaving the authored block behind made the region rival either the
+	# easiest fight in the band (at the top) or an unbeatable wall (at the
+	# bottom). They grow on the same 3-points-per-level budget as the player
+	# and every generated fighter, along the profile matching their weapon.
+	if levelled > data.level:
+		OpponentGenerator.distribute_points(data.attributes,
+				(levelled - data.level) * OpponentGenerator.POINTS_PER_LEVEL,
+				OpponentGenerator.growth_for_weapon(data.weapon.weapon_class))
+	data.level = levelled
 
+	# Gear is computed from the TEMPLATE plus their current lead — never from
+	# what they brought last time. Upgrading the remembered weapon would
+	# compound every meeting and walk straight past MOMENTUM_CAP.
 	var remembered: WeaponData = _remembered_weapon(profile, data.id)
-	if remembered != null:
-		data.weapon = remembered
 	if lead > 0:
 		# They have been winning: same fighting style, better steel.
-		data.weapon = _upgrade_weapon(data.weapon, lead)
-	elif lead < 0 and data.armour_pieces.size() > 0:
+		data.weapon = _upgrade_weapon(arena.rival.weapon, lead)
+	elif remembered != null:
+		# Not ahead: they bring back the blade they were last seen with.
+		data.weapon = remembered
+	if lead < 0 and data.armour_pieces.size() > 0:
 		# Beaten last time: still nursing it, and short a piece of kit.
 		data.armour_pieces = data.armour_pieces.slice(0, data.armour_pieces.size() - 1)
 	return data

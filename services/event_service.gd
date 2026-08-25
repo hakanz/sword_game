@@ -95,7 +95,10 @@ static func apply(profile: PlayerProfile, choice: EventChoiceData) -> Outcome:
 	profile.fame = maxi(profile.fame + outcome.fame_delta, 0)
 	profile.attribute_points += outcome.attribute_points
 	if outcome.xp_gain > 0:
-		profile.xp += outcome.xp_gain
+		# Through the progression pipeline, never straight onto the field:
+		# event XP must be able to LEVEL a gladiator, and must respect the
+		# max-level clamp like every other source.
+		ProgressionService.grant_xp(profile, GameManager.PROGRESSION_CONFIG, outcome.xp_gain)
 	if outcome.item_id != &"":
 		_grant_item(profile, outcome.item_id)
 	return outcome

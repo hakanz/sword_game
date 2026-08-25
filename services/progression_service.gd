@@ -36,6 +36,35 @@ class RewardResult:
 	var first_victory_gold: int = 0
 
 
+## Adds XP and advances the level as far as it goes, handing back what the
+## caller owes the player. The ONLY place XP turns into levels — a between-
+## fights encounter (charter §23) grants XP through here too, so event XP can
+## never sit above the threshold un-levelled or run past `max_level`.
+static func grant_xp(
+		profile: PlayerProfile, config: ProgressionConfig, amount: int) -> Dictionary:
+	var gained: Dictionary = {"levels": 0, "attribute_points": 0, "skill_points": 0}
+	if profile == null or amount <= 0:
+		return gained
+	profile.xp += amount
+	while profile.level < config.max_level \
+			and profile.xp >= ProgressionCalculator.xp_required(config, profile.level):
+		profile.xp -= ProgressionCalculator.xp_required(config, profile.level)
+		profile.level += 1
+		gained["levels"] = int(gained["levels"]) + 1
+		gained["attribute_points"] = int(gained["attribute_points"]) \
+				+ config.attribute_points_per_level
+		if profile.level % config.skill_point_every_n_levels == 0:
+			gained["skill_points"] = int(gained["skill_points"]) + 1
+	profile.attribute_points += int(gained["attribute_points"])
+	profile.skill_points += int(gained["skill_points"])
+	if profile.level >= config.max_level:
+		# At the cap, surplus XP is capped just below the (unreachable) next
+		# level so the XP bar stays meaningful and cannot overflow.
+		profile.xp = mini(profile.xp,
+				ProgressionCalculator.xp_required(config, config.max_level) - 1)
+	return gained
+
+
 static func apply_combat_rewards(
 		profile: PlayerProfile, config: ProgressionConfig,
 		economy: EconomyConfig, result: CombatResult) -> RewardResult:
@@ -85,24 +114,10 @@ static func apply_combat_rewards(
 				result.player_won, result.rival_weapon_id)
 		reward.rival_id = result.rival_id
 
-	profile.xp += reward.xp_gained
-	while profile.level < config.max_level \
-			and profile.xp >= ProgressionCalculator.xp_required(config, profile.level):
-		profile.xp -= ProgressionCalculator.xp_required(config, profile.level)
-		profile.level += 1
-		reward.levels_gained += 1
-		reward.attribute_points_gained += config.attribute_points_per_level
-		if profile.level % config.skill_point_every_n_levels == 0:
-			reward.skill_points_gained += 1
-
-	profile.attribute_points += reward.attribute_points_gained
-	profile.skill_points += reward.skill_points_gained
-
-	if profile.level >= config.max_level:
-		# At the cap, surplus XP is capped just below the (unreachable) next
-		# level so the XP bar stays meaningful and cannot overflow.
-		profile.xp = mini(profile.xp,
-				ProgressionCalculator.xp_required(config, config.max_level) - 1)
+	var levelling: Dictionary = grant_xp(profile, config, reward.xp_gained)
+	reward.levels_gained += int(levelling["levels"])
+	reward.attribute_points_gained += int(levelling["attribute_points"])
+	reward.skill_points_gained += int(levelling["skill_points"])
 
 	reward.new_level = profile.level
 	return reward

@@ -6,7 +6,7 @@
 [ext_resource type="Script" path="res://data/models/skill_data.gd" id="4"]
 [ext_resource type="Resource" path="res://data/weapons/serpent_pike.tres" id="5"]
 [ext_resource type="Resource" path="res://data/armour/gale_greaves.tres" id="6"]
-[ext_resource type="Resource" path="res://data/skills/hamstring_cut.tres" id="7"]
+[ext_resource type="Resource" path="res://data/skills/gutter_lunge.tres" id="7"]
 [ext_resource type="Resource" path="res://data/characters/personalities/cautious.tres" id="8"]
 
 [sub_resource type="Resource" id="Resource_attrs"]

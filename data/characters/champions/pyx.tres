@@ -11,7 +11,7 @@
 [ext_resource type="Resource" path="res://data/skills/ember_bolt.tres" id="9"]
 [ext_resource type="Resource" path="res://data/skills/enfeebling_hex.tres" id="10"]
 [ext_resource type="Resource" path="res://data/skills/brace_up.tres" id="11"]
-[ext_resource type="Resource" path="res://data/characters/personalities/opportunist.tres" id="12"]
+[ext_resource type="Resource" path="res://data/characters/personalities/champion_pyx_cornered.tres" id="12"]
 
 [sub_resource type="Resource" id="Resource_attrs"]
 script = ExtResource("2")
