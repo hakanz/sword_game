@@ -83,10 +83,12 @@ static func generate_at_level(level: int, elite: bool = false) -> CharacterData:
 static func _assign_gear(data: CharacterData, level: int, elite: bool = false) -> void:
 	var max_tier: int = 1 + (level - 1) / 4 + (1 if elite else 0)
 	# shop_available filter keeps champion-unique rewards out of random hands;
-	# the arcana filter keeps staves off the brute archetype (no ARC growth).
+	# the arcana filter keeps staves off the brute archetype (no ARC growth);
+	# the rarity filter keeps LEGENDARY signature gear (V2 §52.3) a player
+	# chase item / champion reward instead of random pit-fighter loot.
 	var weapon_pool: Array[WeaponData] = ItemDB.all_weapons().filter(
 			func(w: WeaponData) -> bool:
-				return w.tier <= max_tier and w.shop_available and w.required_arcana == 0)
+				return w.tier <= max_tier and w.shop_available and w.required_arcana == 0 						and w.rarity < Enums.Rarity.LEGENDARY)
 	if not weapon_pool.is_empty():
 		data.weapon = RngService.pick(weapon_pool)
 
@@ -125,6 +127,6 @@ static func _maybe_add_piece(
 		return
 	var pool: Array[ArmourData] = ItemDB.all_armour().filter(
 			func(a: ArmourData) -> bool:
-				return a.slot == slot and a.tier <= max_tier and a.shop_available)
+				return a.slot == slot and a.tier <= max_tier and a.shop_available 						and a.rarity < Enums.Rarity.LEGENDARY)
 	if not pool.is_empty():
 		pieces.append(RngService.pick(pool))

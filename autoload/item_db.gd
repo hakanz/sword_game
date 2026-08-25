@@ -69,6 +69,19 @@ func all_skills() -> Array[SkillData]:
 	return REGISTRY.skills.duplicate()
 
 
+## Affix pool for item modifier derivation (ItemAffixes).
+func all_affixes() -> Array[AffixData]:
+	return REGISTRY.affixes.duplicate()
+
+
+func affix(id: StringName) -> AffixData:
+	for entry in REGISTRY.affixes:
+		if entry.id == id:
+			return entry
+	push_warning("ItemDB: unknown affix id '%s'" % id)
+	return null
+
+
 func arena(id: StringName) -> ArenaData:
 	for arena_data in REGISTRY.arenas:
 		if arena_data.id == id:

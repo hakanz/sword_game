@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/weapon_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"weapon.venomtooth_cleaver"
+name_key = "item.weapon.venomtooth_cleaver.name"
+weapon_class = 2
+damage_type = 0
+damage_min = 19
+damage_max = 27
+accuracy_bonus = 2
+crit_chance = 0.07
+armour_penetration = 0.06
+range_min = 0
+range_max = 0
+energy_cost = 9
+unique_effect = 1
+tier = 5
+rarity = 4
+value = 640
+required_level = 15
+required_strength = 16
+required_agility = 0
+required_arcana = 0

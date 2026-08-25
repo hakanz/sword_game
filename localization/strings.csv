@@ -291,3 +291,36 @@ skills.point_cost,"{points} SP","{points} YP"
 skills.recommended,"✦ Suits your {attr}-heavy build","✦ {attr} ağırlıklı yapına uygun"
 skills.build_hint,"Your dominant trait: {attr}","Ağırlıklı özelliğin: {attr}"
 combat.float.auto_rest,"Exhausted — resting","Bitkin — dinleniyor"
+affix.of_the_bear.name,of the Bear,Ayı Gücü
+affix.of_the_cat.name,of the Cat,Kedi Çevikliği
+affix.keen.name,Keen,Keskin
+affix.warded.name,Warded,Korunaklı
+affix.of_the_ox.name,of the Ox,Öküz Bünyesi
+affix.tireless.name,Tireless,Yorulmaz
+affix.runed.name,Runed,Rünlü
+affix.boastful.name,Boastful,Palavracı
+affix.reinforced.name,Reinforced,Takviyeli
+affix.nimble.name,Nimble,Kıvrak
+affix.balanced.name,Balanced,Dengeli
+affix.wicked.name,Wicked,Sinsi
+affix.piercing.name,Piercing,Delici
+affix.brutal.name,Brutal,Vahşi
+affix.swiftfoot.name,Swiftfoot,Tez Ayak
+stat.armour,Armour,Zırh
+stat.accuracy,Accuracy,İsabet
+stat.armour_pen,Armour Pierce,Zırh Delme
+stat.damage,Damage,Hasar
+stat.mobility,Mobility,Hareket
+item.weapon.venomtooth_cleaver.name,Venomtooth Cleaver,Zehirdiş Satır
+unique.venom_mastery,Venom Mastery,Zehir Ustalığı
+unique.venom_mastery.desc,"Poison you smear sticks one layer deeper.","Sürdüğün zehir bir kat daha derine işler."
+unique.bulwark_reserve,Bulwark Reserve,Siper Yedeği
+unique.bulwark_reserve.desc,"Guarding hands Energy back (+6).","Siper almak enerji geri kazandırır (+6)."
+unique.relentless_edge,Relentless Edge,Amansız Ağız
+unique.relentless_edge.desc,"Critical hits shave a round off every cooldown.","Kritik vuruşlar her bekleme süresini bir tur kısaltır."
+rarity.common,Common,Sıradan
+rarity.uncommon,Uncommon,Nadirce
+rarity.rare,Rare,Nadir
+rarity.epic,Epic,Destansı
+rarity.legendary,Legendary,Efsanevi
+rarity.mythic,Mythic,Mitik

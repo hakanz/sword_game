@@ -8,5 +8,8 @@ extends Resource
 @export var weapons: Array[WeaponData] = []
 @export var armour: Array[ArmourData] = []
 @export var skills: Array[SkillData] = []
+## Item modifier pool (V2 §52). Which affixes an item ends up with is derived
+## from the item itself — see ItemAffixes.
+@export var affixes: Array[AffixData] = []
 ## Arena regions, ordered by ArenaData.order.
 @export var arenas: Array[ArenaData] = []

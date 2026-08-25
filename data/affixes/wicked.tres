@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AffixData" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/affix_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"affix.wicked"
+name_key = "affix.wicked.name"
+stat = 11
+value_min = 0.01
+value_max = 0.04
+weight = 3.0
+min_rarity = 2
+applies_to = 1

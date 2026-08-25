@@ -42,6 +42,20 @@ enum Rarity {
 	MYTHIC,
 }
 
+## Legendary/Mythic signature effects (charter §16, amendment V2 §52).
+## Deliberately a small, closed set that hooks systems that ALREADY exist —
+## never a generic scripting language. An item carries at most one.
+enum UniqueEffect {
+	NONE,
+	## Statuses this fighter applies can hold one extra stack
+	## (StatusEffectSystem.apply bonus_stacks).
+	VENOM_MASTERY,
+	## Defending restores Energy (CombatResolver DEFEND branch).
+	BULWARK_RESERVE,
+	## A critical hit ticks every skill cooldown down by one round.
+	RELENTLESS_EDGE,
+}
+
 enum ArmourClass {
 	LIGHT,
 	MEDIUM,

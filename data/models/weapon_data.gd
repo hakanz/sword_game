@@ -37,6 +37,11 @@ extends Resource
 func is_ranged() -> bool:
 	return ammo > 0
 
+@export_group("Signature")
+## Legendary/Mythic signature effect (V2 §52). Read at combat start from the
+## equipped kit — never stored on the character, so no save version changes.
+@export var unique_effect: Enums.UniqueEffect = Enums.UniqueEffect.NONE
+
 @export_group("Progression")
 @export_range(1, 8) var tier: int = 1
 @export var rarity: Enums.Rarity = Enums.Rarity.COMMON
