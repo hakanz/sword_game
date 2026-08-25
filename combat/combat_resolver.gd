@@ -6,6 +6,15 @@ class_name CombatResolver
 ## (charter §6: nothing re-implements combat rules).
 
 
+## Energy paid back by Bulwark Reserve on a Defend (V2 §52.3).
+const DEFEND_ENERGY_REFUND: int = 6
+
+
+## Extra status stacks this fighter's kit grants (Venom Mastery).
+static func _bonus_stacks(actor: Combatant) -> int:
+	return 1 if actor.has_unique(Enums.UniqueEffect.VENOM_MASTERY) else 0
+
+
 ## Executes a decision, mutating actor/foe/ctx state. Returns the record the
 ## HUD/simulator read. Callers must pre-validate via CombatAction (asserted).
 static func execute(
@@ -31,6 +40,8 @@ static func execute(
 		actor.set_cooldown(decision.skill.id, decision.skill.cooldown_rounds)
 		if decision.skill.target == SkillData.Target.SELF:
 			if decision.skill.applies_status != null:
+				# Self-buffs keep their own ceiling: Venom Mastery is about
+				# what you put ON the other fighter, not your own war cry.
 				StatusEffectSystem.apply(actor, decision.skill.applies_status)
 				result.applied_status = decision.skill.applies_status
 		else:
@@ -46,6 +57,10 @@ static func execute(
 				_resolve_strike(actor, foe, result, 1.0, 0, 0.0, null)
 			Enums.ActionType.DEFEND:
 				actor.set_stance(Enums.Stance.DEFENDING)
+				# Bulwark Reserve (V2 §52.3): a guarded stance pays back
+				# Energy, making Defend a real option for a heavy build.
+				if actor.has_unique(Enums.UniqueEffect.BULWARK_RESERVE):
+					result.energy_restored = actor.restore_energy(DEFEND_ENERGY_REFUND)
 			Enums.ActionType.APPROACH:
 				# Movement is personal: ONLY the acting fighter steps.
 				ctx.approach(actor)
@@ -91,20 +106,22 @@ static func _resolve_strike(
 	# Critical step of the §15 pipeline (after the skill multiplier): a rare
 	# heavy blow for BOTH fighters — odds come from the weapon plus the
 	# wielder's class-matched attribute (HitCalculator.crit_chance_for).
-	result.crit = RngService.chance(
-			HitCalculator.crit_chance_for(actor.data.attributes, actor.get_weapon()))
+	result.crit = RngService.chance(actor.crit_chance())
 	var crit_multiplier: float = CombatTuning.CRIT_MULTIPLIER if result.crit else 1.0
+	# Relentless Edge (V2 §52.3): a crit ticks the wielder's cooldowns down.
+	if result.crit and actor.has_unique(Enums.UniqueEffect.RELENTLESS_EDGE):
+		actor.reduce_cooldowns(1)
 	var raw: int = DamageCalculator.roll_attack_damage(actor, multiplier * crit_multiplier)
 	var mitigation := DamageCalculator.compute_mitigation(
 			raw,
 			foe.get_resistance(actor.get_weapon().damage_type),
 			foe.stance == Enums.Stance.DEFENDING,
-			clampf(actor.get_weapon().armour_penetration + pen_bonus, 0.0, 1.0),
+			clampf(actor.armour_penetration() + pen_bonus, 0.0, 1.0),
 			foe.armour_current)
 	foe.take_damage(mitigation)
 	actor.damage_dealt_total += mitigation.after_stance
 	result.mitigation = mitigation
 	result.killed = not foe.is_alive()
 	if on_hit_status != null and foe.is_alive():
-		StatusEffectSystem.apply(foe, on_hit_status)
+		StatusEffectSystem.apply(foe, on_hit_status, _bonus_stacks(actor))
 		result.applied_status = on_hit_status

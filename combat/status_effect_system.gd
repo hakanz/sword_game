@@ -13,11 +13,14 @@ class TickResult:
 
 
 ## Applies (or stacks/refreshes) an effect. Re-applying refreshes duration
-## and adds a stack up to max_stacks.
-static func apply(target: Combatant, effect: StatusEffectData) -> StatusEffectInstance:
+## and adds a stack up to max_stacks. `bonus_stacks` raises that ceiling for
+## THIS application — the hook Venom Mastery (V2 §52.3) rides on; the effect
+## resource itself is never mutated.
+static func apply(target: Combatant, effect: StatusEffectData,
+		bonus_stacks: int = 0) -> StatusEffectInstance:
 	var existing: StatusEffectInstance = find(target, effect.id)
 	if existing != null:
-		existing.stacks = mini(existing.stacks + 1, effect.max_stacks)
+		existing.stacks = mini(existing.stacks + 1, effect.max_stacks + maxi(bonus_stacks, 0))
 		existing.remaining_rounds = effect.duration_rounds
 		EventBus.status_applied.emit(target, existing)
 		return existing

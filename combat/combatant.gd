@@ -13,6 +13,15 @@ signal died
 var data: CharacterData = null
 var is_player_controlled: bool = false
 
+## Effective attributes for this fight: the character's own progression block
+## PLUS the equipped kit's attribute affixes (V2 §52). Combat and the AI read
+## THIS, never `data.attributes` — equipment must never mutate progression
+## data. Computed once at setup.
+var attributes: AttributeBlock = null
+## Everything the equipped kit contributes (affix sums + signature effects).
+## Fixed at setup: switching to the sidearm mid-fight never rewrites stats.
+var kit: ItemAffixes.Bonuses = null
+
 ## Dual-wield state (owner design, session 3): ranged mains come with a
 ## melee sidearm; the fight STARTS on the sidearm and switching weapons is
 ## its own action. `arrows` is the per-combat ammo pool of the ranged main.
@@ -78,20 +87,23 @@ func setup(character: CharacterData, player_controlled: bool, facing_left: bool)
 	data = character
 	is_player_controlled = player_controlled
 
-	var attrs: AttributeBlock = data.attributes
+	kit = ItemAffixes.character_bonuses(data)
+	attributes = ItemAffixes.effective_attributes(data.attributes, kit)
+	var attrs: AttributeBlock = attributes
 	max_hp = ProgressionCalculator.max_hp(attrs, data.level)
 	current_hp = max_hp
 	max_energy = ProgressionCalculator.max_energy(attrs, data.level)
 	current_energy = max_energy
 	max_mana = ProgressionCalculator.max_mana(attrs, data.level)
 	current_mana = max_mana
-	armour_max = data.total_armour()
+	armour_max = data.total_armour() + kit.armour
 	armour_current = armour_max
-	attack_rating = ProgressionCalculator.attack_rating(attrs)
+	attack_rating = ProgressionCalculator.attack_rating(attrs) + kit.accuracy
 	defence_rating = ProgressionCalculator.defence_rating(attrs)
-	evasion_value = ProgressionCalculator.evasion(attrs, data.total_evasion_mod())
+	evasion_value = ProgressionCalculator.evasion(attrs, data.total_evasion_mod() + kit.evasion)
 	initiative_value = ProgressionCalculator.initiative(attrs)
-	move_cells = ProgressionCalculator.move_cells(attrs.agility, data.total_mobility_bonus())
+	move_cells = ProgressionCalculator.move_cells(
+			attrs.agility, data.total_mobility_bonus() + kit.mobility)
 
 	main_weapon = data.weapon
 	sidearm = data.weapon.sidearm
@@ -117,6 +129,32 @@ func setup(character: CharacterData, player_controlled: bool, facing_left: bool)
 
 func display_name() -> String:
 	return data.display_name()
+
+
+## Effective crit chance with the kit's affixes folded in (one math home:
+## HitCalculator).
+func crit_chance() -> float:
+	return HitCalculator.crit_chance_for(attributes, get_weapon(), kit.crit_chance)
+
+
+## Weapon armour penetration plus the kit's affixes, clamped by the caller.
+func armour_penetration() -> float:
+	return get_weapon().armour_penetration + kit.armour_penetration
+
+
+## True when the equipped kit carries this signature effect (V2 §52.3).
+func has_unique(effect: Enums.UniqueEffect) -> bool:
+	return kit != null and kit.has(effect)
+
+
+## Ticks every active cooldown down by `rounds` (Relentless Edge).
+func reduce_cooldowns(rounds: int = 1) -> void:
+	for id: StringName in cooldowns.keys():
+		var left: int = int(cooldowns[id]) - rounds
+		if left <= 0:
+			cooldowns.erase(id)
+		else:
+			cooldowns[id] = left
 
 
 func get_weapon() -> WeaponData:

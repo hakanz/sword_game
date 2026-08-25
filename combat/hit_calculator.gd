@@ -46,12 +46,15 @@ static func crit_attribute(weapon_class: Enums.WeaponClass) -> String:
 			return "agility"  # swords, bows
 
 
-## Effective crit chance = weapon base + class-matched attribute scaling.
-## Shared by the resolver, the AI's damage expectation, and every shop/sheet
-## display — one math home (charter §6).
-static func crit_chance_for(attrs: AttributeBlock, weapon: WeaponData) -> float:
+## Effective crit chance = weapon base + class-matched attribute scaling +
+## the equipped kit's crit affixes (`bonus`, V2 §52). Shared by the resolver,
+## the AI's damage expectation, and every shop/sheet display — one math home
+## (charter §6). The 1-25% clamp still binds: no affix stack escapes it.
+static func crit_chance_for(
+		attrs: AttributeBlock, weapon: WeaponData, bonus: float = 0.0) -> float:
 	if weapon == null:
 		return CombatTuning.MIN_CRIT_CHANCE
 	var attr_value: int = int(attrs.get(crit_attribute(weapon.weapon_class)))
-	return clampf(weapon.crit_chance + attr_value * CombatTuning.CRIT_ATTR_PER_POINT,
+	return clampf(
+			weapon.crit_chance + attr_value * CombatTuning.CRIT_ATTR_PER_POINT + bonus,
 			CombatTuning.MIN_CRIT_CHANCE, CombatTuning.MAX_CRIT_CHANCE)

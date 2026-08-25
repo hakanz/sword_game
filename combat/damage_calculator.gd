@@ -34,8 +34,9 @@ class MitigationResult:
 static func roll_attack_damage(attacker: Combatant, skill_multiplier: float = 1.0) -> int:
 	var weapon: WeaponData = attacker.get_weapon()
 	var weapon_roll: int = RngService.randi_range(weapon.damage_min, weapon.damage_max)
-	var base: int = weapon_roll + ProgressionCalculator.attribute_damage_bonus(
-			attacker.data.attributes, weapon.weapon_class)
+	# Effective attributes + the kit's flat-damage affixes (V2 §52).
+	var base: int = weapon_roll + attacker.kit.damage + ProgressionCalculator.attribute_damage_bonus(
+			attacker.attributes, weapon.weapon_class)
 	return roundi(base * skill_multiplier * StatusEffectSystem.damage_dealt_multiplier(attacker))
 
 
@@ -43,10 +44,10 @@ static func roll_attack_damage(attacker: Combatant, skill_multiplier: float = 1.
 ## Includes the crit expectation so high-crit weapons weigh what they hit.
 static func average_attack_damage(attacker: Combatant, skill_multiplier: float = 1.0) -> float:
 	var weapon: WeaponData = attacker.get_weapon()
-	var base: float = weapon.average_damage() + ProgressionCalculator.attribute_damage_bonus(
-			attacker.data.attributes, weapon.weapon_class)
-	var crit_ev: float = 1.0 + HitCalculator.crit_chance_for(attacker.data.attributes, weapon) \
-			* (CombatTuning.CRIT_MULTIPLIER - 1.0)
+	var base: float = weapon.average_damage() + attacker.kit.damage \
+			+ ProgressionCalculator.attribute_damage_bonus(
+					attacker.attributes, weapon.weapon_class)
+	var crit_ev: float = 1.0 + attacker.crit_chance() * (CombatTuning.CRIT_MULTIPLIER - 1.0)
 	return base * skill_multiplier * crit_ev * StatusEffectSystem.damage_dealt_multiplier(attacker)
 
 
