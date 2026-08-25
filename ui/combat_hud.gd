@@ -163,9 +163,16 @@ func _build_radial(actor: Combatant) -> void:
 		child.queue_free()
 	_radial.visible = true
 
-	# Screen anchor: the gladiator's chest (world root offset + fighter pos;
-	# rigs render at 1.35x since session 5).
-	var center: Vector2 = actor.get_parent().position + actor.position + Vector2(0, -95)
+	# Screen anchor: the gladiator's chest. The HUD is a CanvasLayer, so it is
+	# NOT camera-transformed — the world point must be projected through the
+	# viewport's canvas transform, which carries CombatCamera's pan and zoom
+	# (V2 §51). Anchoring on raw world coordinates would leave the ring
+	# floating between the fighters the moment the camera zooms in.
+	var to_screen: Transform2D = actor.get_global_transform_with_canvas()
+	var center: Vector2 = to_screen * Vector2(0, -95)
+	# The ring widens with the zoom so it keeps orbiting the fighter; the
+	# BUTTONS stay their tuned size (touch targets, charter Godot Rules).
+	var radius: float = RADIAL_RADIUS * maxf(to_screen.get_scale().x, 0.1)
 	var toward_foe: float = 0.0 if ctx.foe_of(actor).position.x >= actor.position.x else PI
 
 	var entries: Array[Dictionary] = []
@@ -182,7 +189,7 @@ func _build_radial(actor: Combatant) -> void:
 	var count: int = entries.size()
 	for index in count:
 		var angle: float = toward_foe + TAU * index / count
-		var pos: Vector2 = center + Vector2(cos(angle), sin(angle)) * RADIAL_RADIUS
+		var pos: Vector2 = center + Vector2(cos(angle), sin(angle)) * radius
 		_spawn_radial_button(entries[index], pos, index)
 
 
