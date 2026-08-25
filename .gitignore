@@ -22,3 +22,6 @@ desktop.ini
 # Python tooling cache (dev scripts)
 __pycache__/
 *.pyc
+
+# Raw Gemini output cache for tools/texgen (regenerable, not shipped)
+.texgen_raw/

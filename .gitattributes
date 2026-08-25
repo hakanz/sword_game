@@ -1,2 +1,10 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Generated art and audio are binary — never newline-normalise them.
+*.png binary
+*.webp binary
+*.jpg binary
+*.jpeg binary
+*.ogg binary
+*.wav binary
