@@ -184,6 +184,50 @@ how a maul feels is a one-line change in one file.
   parallel toggle); the camera has its own `camera_motion` slider (settings screen) where 0
   reproduces the classic static frame exactly. Both apply from the next fight.
 
+## The crowd (session 7 / phase 13 — charter §19, V2 §54)
+
+Every fighter carries their own standing with the audience for the duration of one
+fight: `Combatant.crowd`, 0-100, starting at 50 (Neutral), never saved.
+
+```
+Hostile (<20)  Bored (<40)  Watching  Excited (>=70)  Frenzied (>=90)
+```
+
+| Rises on | | Falls on | |
+|---|---|---|---|
+| critical hit | +12 | resting | -4 |
+| finishing blow | +18 | retreating | -6 |
+| landed skill | +6 + the skill's `crowd_appeal` | turtling (2+ consecutive defends) | -8 |
+| landed skill under 30% HP | +12 more | every action past round 12 | -2 |
+| a guard that turns a blow aside | +5 | | |
+
+**Charisma scales the CLIMB only.** Softening the fall as well would quietly make it
+a defensive stat too; being dull costs every build the same.
+
+**What the crowd pays:** +3 Energy at turn start when Excited, +5 Energy and +4
+accuracy when Frenzied. Deliberately small — a build that ignores Charisma must stay
+viable (the itemization philosophy of charter §16, applied to a stat).
+
+Judging happens inside `CombatResolver`, so the §35 simulator feels the crowd
+exactly as a played fight does. Stalling is measured with the anti-stall counters the
+AI already keeps (`consecutive_defends`) — one stall detector for the whole game.
+"Taunt-tagged" skills are `SkillData.crowd_appeal`, authored per skill, not a
+hardcoded id list.
+
+Presentation: a crowd row in each fighter's HUD panel, and a swell/groan cue played
+only when a fighter CROSSES into the top or bottom of the meter, so the feedback
+stays an event rather than a tick.
+
+## Boss phases (session 7 / phase 15 — V2 §55)
+
+Champions carry authored thresholds: phase two (60% HP) releases `phase_two_skills`
+they were holding back, phase three (30%) swaps in `phase_three_personality`.
+`Combatant.get_skills()` and `active_personality()` expose both, so the AI scores a
+boss's new options through the same loop as everything else — no boss-only code path.
+Phases never go backwards: healing out of one would flicker the banner and confiscate
+a signature move mid-fight. Each crossing is announced once on the same banner the
+champion intro lines use.
+
 ## Determinism
 All combat randomness flows through `RngService` (`--combat-seed=N` reproduces a fight).
 Decorative visuals (crowd, sand) use local fixed-seed RNGs so they never consume combat

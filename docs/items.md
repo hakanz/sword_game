@@ -101,6 +101,7 @@ language:
 | Venom Mastery | Venomtooth Cleaver (T5 axe, shop, level 15) | `StatusEffectSystem.apply` bonus-stack ceiling, on-hit statuses only |
 | Bulwark Reserve | Doorslab (Maulhilda's reward) | DEFEND branch refunds `CombatResolver.DEFEND_ENERGY_REFUND` Energy |
 | Relentless Edge | Sablefang (Orzha's reward) | a crit ticks every skill cooldown down one round |
+| Arcane Echo | Ashquill Rod (Pyx's reward) | a skill that CONNECTS refunds half its mana cost |
 
 `OpponentGenerator` filters Legendary out of generated loadouts: signature gear
 is a player chase item or a champion reward, never random pit-fighter kit.
@@ -113,4 +114,28 @@ number comes from the calculators combat uses.
 
 Prices are unchanged: the authored `value` remains the single price authority
 (EconomyCalculator), and modifiers are part of what that value buys.
+
+## T6 — the Saltmere ladder (session 7 / phase 16)
+
+Six weapons and three armour pieces gated at levels 18-19, added because
+`tools/economy_sim.gd` showed the new third region had nothing on the shelf behind
+it. Priced so a purchase costs ~4.4 fights of income at that level — the tightest
+ratio in the game (T1-T5 sit at 1.6-2.6, i.e. the shop has never really been a
+constraint). Levels 21-24 deliberately stay a "you are kitted, now win the region"
+stretch with nothing new to buy.
+
+Run the report with:
+
+```
+godot --headless --path . -s res://tools/economy_sim.gd -- --charisma=20
+```
+
+## Rivals and gear (V2 §55)
+
+`RivalService` arms a region's recurring rival from the rivalry record: ahead of the
+player they carry the next tier UP IN THE SAME WEAPON CLASS (a rival never changes
+fighting style, they just bring something nastier), behind they carry the same blade
+and one piece of armour fewer. Legendary rarity is filtered out of that upgrade path
+for the same reason it is filtered out of `OpponentGenerator`: signature gear is a
+player chase item or a champion reward, never something you meet in an ordinary duel.
 

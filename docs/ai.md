@@ -45,3 +45,47 @@ behavior. Current content: `personality.aggressive` (1.35 / 0.65 / 0.9). Player-
 ## Debugging
 Every decision emits `EventBus.ai_scores_computed(name, {ACTION: score})` — the future debug
 overlay (charter §34) renders these; smoke mode prints a per-action combat trace already.
+
+## Temperament shifts and archetype pairing (session 7 / phase 14 — V2 §53)
+
+`AIPersonality` carries two extra weights beyond aggression/caution/resource_care:
+
+| Field | Meaning | Who has it |
+|---|---|---|
+| `wounded_fury` | aggression rises as the fighter's OWN HP drops | Berserker, Maulhilda |
+| `killer_instinct` | aggression rises as the FOE nears death | Opportunist, Orzha, Pyx |
+
+`aggression_now(own_hp_fraction, foe_hp_fraction)` folds them into one number and
+`CombatAI` reads THAT everywhere it used to read the flat weight. There is still a
+single scoring function — temperaments differ by their weighted INPUTS, never by a
+per-personality branch. Both fractions are clamped, so a nonsense value cannot run
+the aggression away.
+
+**Roster:** aggressive, defensive, cautious, opportunist, berserker, plus one
+per champion (`champion_maulhilda`, `champion_orzha`, `champion_pyx`) and the
+generic `boss` profile kept for future champions.
+
+**Pairing (V2 §50/§53.2):** `OpponentGenerator` picks the temperament AFTER rolling
+the kit, from `PERSONALITY_BY_ARCHETYPE` keyed by the Weapon Mastery Archetype that
+kit derives to. A generated marksman can be cautious, defensive or opportunist —
+never a charger. Ranged pools deliberately keep one finisher head so archers are not
+all identically passive.
+
+**Boss phases (V2 §55):** `Combatant.active_personality()` returns the champion's
+phase-three personality once they fall past that threshold, and `get_skills()`
+appends `phase_two_skills`. The AI scores both through its normal loop, so a boss
+phase is data, not a code path.
+
+## AI score overlay (charter §34 / V2 §53.3)
+
+`EventBus.ai_scores_computed` fired on every decision from the AI phase onward with
+nothing listening. `ui/ai_debug_overlay.gd` is the consumer: it ranks every action
+the AI weighed, marks the winner, and names the temperament driving it.
+
+- It removes itself from the tree unless `OS.is_debug_build()` or the run carries
+  `--debug-ai` — a shipped build has no hidden panel and pays no per-decision cost.
+- On a plain dev build it starts hidden (F3 reveals it) so it never lands in a
+  screenshot uninvited; `--debug-ai` opens it immediately.
+- Its gate (`should_enable`) and formatting (`format_scores`) are pure statics with
+  unit tests; the node itself is a thin renderer.
+

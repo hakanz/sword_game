@@ -81,3 +81,52 @@ Affix value bands were kept modest on purpose (attributes +1..3, armour +1..4,
 crit +1..4%, penetration +3..10%) so a single Uncommon drop shifts a fight
 without deciding it. The 1-25% crit clamp still binds with affixes stacked.
 
+## Session 7 / phases 13-16 — crowd, temperaments, content (2026-08-25)
+
+`godot --headless --path . -s res://tools/battle_sim.gd -- --battles=150`, after the
+crowd meter (phase 13), AI temperaments + archetype pairing (phase 14) and rivals /
+boss phases (phase 15):
+
+```
+default kit vs generated L1      84.0%   avg 18.7 rounds
+default kit vs generated L5      65.3%   avg 16.9 rounds
+default kit vs generated L10     62.7%   avg 17.8 rounds
+balanced vs brawler (L1)         52.7%   avg 19.9 rounds
+balanced vs swift   (L1)         40.0%   avg 19.1 rounds
+brawler  vs swift   (L1)         44.7%   avg 17.6 rounds   (0 stalemates anywhere)
+```
+
+Reading it:
+
+- **Presets are untouched** (40-52.7%, inside the viability band) across all four
+  phases. At level 1 with equal gear and no skills the crowd meter never climbs high
+  enough to pay a boon, so the opening balance is provably undisturbed.
+- **Fights got shorter at higher levels** (21.2 -> ~17 rounds): the crowd rewards
+  pressure and punishes turtling/kiting, which is exactly what it was for.
+- **default-kit vs generated L10 moved 48.7% -> 62.7%** when temperaments started
+  matching kits. An in-character marksman kites instead of charging, which is
+  thematically right and mechanically less optimal against a naked opponent. Accepted:
+  the matchup measures a gladiator who reached level 10 and never bought anything, and
+  62% for a fighter in rags is still a real fight.
+
+### Economy pacing (`tools/economy_sim.gd`, new this session)
+
+```
+level   gold/win  gold/fight   next unlock                   price   fights
+1             12        9.0    weapon.scrap_bow                 34      3.8
+5             76       57.7    weapon.dented_maul               93      1.6
+11           189      143.7    weapon.horned_maul              265      1.8
+14           250      190.0    weapon.black_iron_greatsword    421      2.2
+17           312      237.0    weapon.venomtooth_cleaver       627      2.6
+20           376      285.7    weapon.mountainbreaker         1254      4.4
+```
+
+Two findings, both acted on:
+
+1. **Levels 20+ had nothing to buy** — the third region shipped without gear behind
+   it. Fixed by the T6 tier (docs/items.md).
+2. **The shop has never been a real constraint**: 1.6-2.6 fights per upgrade through
+   the whole T1-T5 ladder. T6 is priced at 4.4 deliberately, as a first step toward
+   gear being a decision rather than a formality. Tightening the earlier tiers would
+   be a separate, owner-visible pacing change and is NOT done here.
+

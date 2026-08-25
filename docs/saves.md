@@ -37,3 +37,24 @@ confirm, after learning a skill. Never mid-combat-action.
 `--smoke-test` sets `disk_writes_enabled = false`: headless runs never touch a real
 player's save or settings. Tests overriding `profile_path` restore it and delete their
 temp file.
+
+## v7 — the rivalry record (session 7 / phase 15, V2 §55)
+
+Adds two dictionaries to the profile:
+
+| Field | Shape | Meaning |
+|---|---|---|
+| `rival_score` | rival id -> int | the PLAYER's net wins against that rival (negative = the rival leads) |
+| `rival_weapon` | rival id -> weapon id | what that rival was last seen carrying |
+
+`_migrate_v6_to_v7` seeds both as empty dictionaries: a gladiator from a v6 save
+simply has no history with anyone yet, and nothing is lost.
+
+JSON object keys are always strings, so `PlayerProfile.from_dict` re-types both keys
+and values back to `StringName` on load — the rest of the game speaks StringName and
+a raw String key would silently miss every lookup.
+
+Deliberately NOT saved, in the same session: the crowd meter (resets every fight),
+boss phase (recomputed from HP), the pending between-fights encounter (an unseen
+event is forgotten on quit) and the Weapon Mastery Archetype (derived on demand).
+
