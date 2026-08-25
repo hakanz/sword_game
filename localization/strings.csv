@@ -332,3 +332,11 @@ archetype.marksman,Marksman,Nişancı
 archetype.battlemage,Battlemage,Savaş Büyücüsü
 archetype.guardian,Guardian,Muhafız
 archetype.brawler,Brawler,Yumruk Dövüşçüsü
+combat.hud.crowd,Crowd,Kalabalık
+crowd.hostile,Hostile,Düşman
+crowd.bored,Bored,Sıkkın
+crowd.neutral,Watching,İzliyor
+crowd.excited,Excited,Coşkulu
+crowd.frenzied,Frenzied,Çılgın
+combat.float.crowd_up,"THE PIT ROARS!","ÇUKUR KÜKRÜYOR!"
+combat.float.crowd_down,"The pit turns...","Çukur soğuyor..."

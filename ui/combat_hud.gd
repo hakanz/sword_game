@@ -30,6 +30,9 @@ var ctx: CombatContext = null
 ## Thin XP progress bar under the player's name (built in code — session-5
 ## owner design: level and XP always visible in the fight).
 var _xp_bar: ProgressBar = null
+## Crowd standing row per fighter (V2 §54), also built in code so the panel
+## scene stays the layout authority: fighter -> {bar, label}.
+var _crowd_rows: Dictionary = {}
 
 @onready var _player_name: Label = %PlayerName
 @onready var _player_hp_label: Label = %PlayerHPLabel
@@ -116,6 +119,13 @@ func setup(new_player: Combatant, new_enemy: Combatant, combat_ctx: CombatContex
 	enemy.energy_changed.connect(func(_c: int, _m: int) -> void: _refresh_stat_rows())
 	enemy.armour_changed.connect(func(_c: int, _m: int) -> void: _refresh_stat_rows())
 
+	_build_crowd_row(player, _player_armour_bar)
+	_build_crowd_row(enemy, _enemy_armour_bar)
+	player.crowd_changed.connect(
+			func(_v: int, _s: CrowdSystem.State) -> void: _refresh_crowd_row(player))
+	enemy.crowd_changed.connect(
+			func(_v: int, _s: CrowdSystem.State) -> void: _refresh_crowd_row(enemy))
+
 	_refresh_stat_rows()
 	_refresh_status_rows()
 	_refresh_distance()
@@ -141,6 +151,66 @@ func _build_xp_row() -> void:
 	var box: VBoxContainer = _player_name.get_parent()
 	box.add_child(_xp_bar)
 	box.move_child(_xp_bar, _player_name.get_index() + 1)
+
+
+## Crowd standing row (icon + bar + state word), slotted under the armour row
+## of the fighter's own panel so it reads as one more vital sign (V2 §54).
+func _build_crowd_row(fighter: Combatant, after_bar: ProgressBar) -> void:
+	var armour_row: Control = after_bar.get_parent()
+	var panel: Node = armour_row.get_parent()
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	panel.add_child(row)
+	panel.move_child(row, armour_row.get_index() + 1)
+
+	var icon := TextureRect.new()
+	icon.texture = preload("res://assets/icons/stat_crowd.svg")
+	icon.custom_minimum_size = Vector2(18, 18)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	row.add_child(icon)
+
+	var label := Label.new()
+	label.custom_minimum_size = Vector2(96, 0)
+	label.add_theme_font_size_override("font_size", 14)
+	row.add_child(label)
+
+	var bar := ProgressBar.new()
+	bar.custom_minimum_size = Vector2(0, 10)
+	bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bar.show_percentage = false
+	bar.min_value = CrowdSystem.MINIMUM
+	bar.max_value = CrowdSystem.MAXIMUM
+	row.add_child(bar)
+
+	_crowd_rows[fighter] = {"bar": bar, "label": label}
+	_refresh_crowd_row(fighter)
+
+
+func _refresh_crowd_row(fighter: Combatant) -> void:
+	if not _crowd_rows.has(fighter):
+		return
+	var state: CrowdSystem.State = CrowdSystem.state_of(fighter.crowd)
+	var bar: ProgressBar = _crowd_rows[fighter]["bar"]
+	var label: Label = _crowd_rows[fighter]["label"]
+	bar.value = fighter.crowd
+	bar.add_theme_stylebox_override("fill", UITheme.bar_fill(_crowd_color(state)))
+	label.text = tr(CrowdSystem.label_key(state))
+	label.add_theme_color_override("font_color", _crowd_color(state))
+
+
+func _crowd_color(state: CrowdSystem.State) -> Color:
+	match state:
+		CrowdSystem.State.HOSTILE:
+			return Color(0.85, 0.35, 0.35)
+		CrowdSystem.State.BORED:
+			return Color(0.62, 0.6, 0.66)
+		CrowdSystem.State.EXCITED:
+			return Color(0.95, 0.7, 0.35)
+		CrowdSystem.State.FRENZIED:
+			return Color(1.0, 0.52, 0.28)
+		_:
+			return Color(0.78, 0.76, 0.82)
 
 
 # --- Radial action menu (owner design: actions orbit the gladiator) ---------
