@@ -130,9 +130,9 @@ build-guidance recommendations, victory celebration animation.
   score overlay, not about creating the roster from nothing
 
 ## Current Test Status
-GREEN this session: 31 suites / 5161 assertions (Godot 4.7.2); §35 simulator:
-6 matchups × 150 battles, 0 stalemates, presets in the 40-52.7% band
-(default-kit-vs-generated sits at 84/65/63% at L1/5/10 - see docs/balancing.md
+GREEN this session: 31 suites / 5287 assertions (Godot 4.7.2); §35 simulator:
+6 matchups × 150 battles, 0 stalemates, presets in the 39-52% band
+(default-kit-vs-generated sits at 82/69/62% at L1/5/10 - see docs/balancing.md
 for why itemization and in-character temperaments moved it); new economy pacing
 report (tools/economy_sim.gd) shows 1.6-4.4 fights per gear unlock
 (`godot --headless --path . -s res://tests/test_runner.gd`), multi-seed AI-vs-AI smoke

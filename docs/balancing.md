@@ -130,3 +130,31 @@ Two findings, both acted on:
    gear being a decision rather than a formality. Tightening the earlier tiers would
    be a separate, owner-visible pacing change and is NOT done here.
 
+### After the phase 13-16 review fixes (same session)
+
+The adversarial review measured the crowd meter behaving as a plateau rather
+than an economy (Excited-or-better on 54.6% of turns, worth ~9 points of win
+rate; skill-less builds stuck at Neutral for 92% of turns; bow builds parked in
+Hostile for 24.9%). Four changes followed — a landed ordinary attack pays +2,
+SELF buffs count as landed skills, retreats are free up to the anti-stall
+budget, and accepting the crowd's help SPENDS 8 standing. Re-measured, 150
+battles per matchup:
+
+```
+default kit vs generated L1      82.0%   avg 17.7 rounds
+default kit vs generated L5      68.7%   avg 18.8 rounds
+default kit vs generated L10     62.0%   avg 19.8 rounds
+balanced vs brawler (L1)         52.0%   avg 19.7 rounds
+balanced vs swift   (L1)         39.3%   avg 19.0 rounds
+brawler  vs swift   (L1)         43.3%   avg 17.5 rounds   (0 stalemates anywhere)
+```
+
+The ladder did not move (all six cells within noise of the pre-fix run), which
+is the point: the meter became something you spend and re-earn instead of a
+passive, without changing who wins.
+
+Rivals also stopped being level-scaled in name only — they were arriving with
+their authored attribute block, which measured at an 8% win rate at the top of
+a band and 100% at the bottom. They now grow on the same 3-points-per-level
+budget as every other fighter.
+
