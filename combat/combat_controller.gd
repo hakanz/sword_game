@@ -25,6 +25,9 @@ var ctx := CombatContext.new()
 @onready var world_root: Node2D = $WorldRoot
 @onready var arena_visual: ArenaVisual = $WorldRoot/ArenaVisual
 @onready var hud: CombatHUD = $CombatHUD
+## Dynamic framing camera (V2 §51). Optional by construction: a scene without
+## it falls back to the classic static frame and a world-space shake.
+@onready var camera: CombatCamera = get_node_or_null("WorldRoot/CombatCamera") as CombatCamera
 
 
 func _ready() -> void:
@@ -74,8 +77,16 @@ func _ready() -> void:
 
 	turn_manager.setup([player, enemy])
 	hud.setup(player, enemy, ctx)
+	if camera != null:
+		camera.track(player, enemy, ctx)
 
 	_run_combat.call_deferred()
+
+
+func _exit_tree() -> void:
+	# A scene change during an impact freeze must never leave the whole game
+	# in slow motion (CombatFeel dips Engine.time_scale globally).
+	CombatFeel.release()
 
 
 func _run_combat() -> void:
@@ -136,6 +147,8 @@ func _run_combat() -> void:
 				if not fighter.is_alive() and not fighter.death_announced:
 					fighter.death_announced = true
 					fighter.rig.play_death()
+					if camera != null:
+						camera.punch_in(true)
 					EventBus.combatant_died.emit(fighter)
 			break
 	await _finish()
@@ -150,19 +163,22 @@ func _execute(actor: Combatant, decision: CombatDecision) -> void:
 			or (decision.type == Enums.ActionType.SKILL
 					and decision.skill.target == SkillData.Target.FOE)
 
+	var weapon_class: Enums.WeaponClass = actor.get_weapon().weapon_class
 	var ranged_strike: bool = is_strike and actor.get_weapon().is_ranged()
 	if is_strike:
 		if decision.type == Enums.ActionType.SKILL:
 			AudioManager.play(&"skill")
 		actor.rig.play_attack_lunge(ranged_strike)
-		await _delay(0.16)
+		# Anticipation beat: a maul takes visibly longer to arrive than a
+		# dagger (CombatFeel is the ONE home of that table — V2 §51).
+		await _delay(CombatFeel.windup_time(weapon_class))
 
 	var result: ActionResult = CombatResolver.execute(actor, foe, ctx, decision)
 
 	if is_strike:
 		if ranged_strike:
 			await _animate_arrow(actor, foe, result.hit)
-		await _present_strike(result, foe)
+		await _present_strike(result, foe, weapon_class)
 	else:
 		match result.action:
 			Enums.ActionType.SKILL:
@@ -236,8 +252,11 @@ func _animate_arrow(from: Combatant, to: Combatant, hit: bool) -> void:
 
 
 ## Impact feedback for an already-resolved strike (charter §25): sound +
-## sparks + shake + floating number, tinted by armour-vs-flesh.
-func _present_strike(result: ActionResult, foe: Combatant) -> void:
+## sparks + hit-stop + shake + floating number, tinted by armour-vs-flesh.
+## Weight comes from CombatFeel: the freeze, the shake and the recovery beat
+## all scale with the weapon class that threw the blow (V2 §51).
+func _present_strike(
+		result: ActionResult, foe: Combatant, weapon_class: Enums.WeaponClass) -> void:
 	if result.hit:
 		foe.rig.play_hit_flash()
 		var armour_only: bool = result.mitigation.hp_damage == 0
@@ -253,7 +272,13 @@ func _present_strike(result: ActionResult, foe: Combatant) -> void:
 		if result.applied_status != null:
 			CombatVfx.spawn_status_burst(world_root,
 					foe.position + Vector2(0, -95), result.applied_status)
-		_shake(13.0 if result.crit else (5.0 if armour_only else 8.0))
+		# Slam order: push the frame in, freeze the world on the impact
+		# frame, then let the shake ring out as time resumes.
+		if camera != null and (result.crit or result.killed):
+			camera.punch_in(result.killed)
+		await CombatFeel.hit_stop(get_tree(), weapon_class, result.crit)
+		_shake((13.0 if result.crit else (5.0 if armour_only else 8.0))
+				* CombatFeel.shake_scale(weapon_class))
 		if result.crit:
 			_spawn_float_text(foe, tr("combat.float.crit").format(
 					{"damage": result.mitigation.after_stance}),
@@ -269,10 +294,13 @@ func _present_strike(result: ActionResult, foe: Combatant) -> void:
 		CombatVfx.spawn_sparks(world_root, foe.position + Vector2(-18, -50),
 				Color(0.75, 0.7, 0.6, 0.6), 6, true)
 		_spawn_float_text(foe, tr("combat.float.miss"), Color(0.8, 0.8, 0.85))
-	await _delay(0.35)
+	# Recovery beat: heavy weapons take their time coming back to guard.
+	await _delay(CombatFeel.recovery_time(weapon_class))
 
 
 func _finish() -> void:
+	# Never carry an impact freeze into the celebration/results flow.
+	CombatFeel.release()
 	var player_won: bool
 	if player.is_alive() != enemy.is_alive():
 		player_won = player.is_alive()
@@ -355,15 +383,21 @@ func _world_offset() -> Vector2:
 	return ((size - Vector2(1280.0, 720.0)) / 2.0).floor()
 
 
-## Brief impact shake around the centered world offset. Fixed (non-random)
-## pattern: visuals never consume gameplay RNG. Kept small pending the
-## accessibility screen-shake slider (charter §28).
+## Brief impact shake. Fixed (non-random) pattern: visuals never consume
+## gameplay RNG. Strength arrives already weighted by the weapon's weight
+## (CombatFeel.shake_scale) and is scaled here by the player's screen-shake
+## setting (charter §28) — the one place that decides shake intensity.
+## The camera performs it when present; the world-offset fallback keeps a
+## camera-less scene working.
 func _shake(strength: float) -> void:
 	if GameManager.smoke_test:
 		return
 	# Accessibility: player-tunable intensity (settings screen, charter §28).
 	strength *= float(SaveManager.get_setting("screen_shake", 100)) / 100.0
 	if strength < 0.5:
+		return
+	if camera != null:
+		camera.shake(strength)
 		return
 	var base: Vector2 = _world_offset()
 	var tween: Tween = create_tween()

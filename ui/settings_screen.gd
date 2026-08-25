@@ -32,6 +32,14 @@ func _ready() -> void:
 	shake.value_changed.connect(func(value: float) -> void:
 		SaveManager.set_setting("screen_shake", int(value)))
 
+	# Camera motion (V2 §51): 0 pins the classic static duel frame for
+	# players sensitive to the follow/zoom/push-in. Applies from the next
+	# fight, like the other combat-presentation settings.
+	var camera := _add_slider_row(tr("settings.camera_motion"),
+			float(SaveManager.get_setting("camera_motion", 100)))
+	camera.value_changed.connect(func(value: float) -> void:
+		SaveManager.set_setting("camera_motion", int(value)))
+
 	_add_check_row(tr("settings.reduced_fx"),
 			bool(SaveManager.get_setting("reduced_fx", false)),
 			func(pressed: bool) -> void: SaveManager.set_setting("reduced_fx", pressed))

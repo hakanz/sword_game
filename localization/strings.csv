@@ -178,6 +178,7 @@ settings.volume_music,Music,Müzik
 settings.volume_sfx,Effects,Efektler
 settings.screen_shake,Screen Shake,Ekran Sarsıntısı
 settings.reduced_fx,Reduced hit effects,Azaltılmış vuruş efektleri
+settings.camera_motion,Camera Motion,Kamera Hareketi
 pause.title,Paused,Duraklatıldı
 pause.resume,Resume,Devam Et
 pause.leave,Leave the Fight,Dövüşten Ayrıl
