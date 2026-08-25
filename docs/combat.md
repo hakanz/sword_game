@@ -126,6 +126,64 @@ hits/actions, 0.65, 1.25)` — real fighting earns more, stalling less.
 - **Debut:** the first-ever victory pays `first_victory_gold_bonus` and
   tops XP to a guaranteed level-up.
 
+## Equipment modifiers in the pipeline (session 7 / phase 12 — V2 §52)
+
+Combat reads **`Combatant.attributes`** — the character's progression block plus
+the equipped kit's attribute modifiers, computed once in `Combatant.setup` — and
+never `data.attributes`. Equipment must never write into progression data.
+The rest of the kit folds into the existing calculators without moving a
+formula: armour pool, evasion, attack rating, `HitCalculator.crit_chance_for`'s
+`bonus` argument, `Combatant.armour_penetration()`, the damage roll, move tier.
+Derivation is deterministic and uses a local RNG (see docs/items.md), so seeded
+replays are unaffected.
+
+Three Legendary signature effects hook the pipeline at points that already
+existed: an on-hit status may exceed its `max_stacks` by one (Venom Mastery),
+DEFEND may refund Energy (Bulwark Reserve), and a crit may tick every skill
+cooldown down a round (Relentless Edge). Each is a data flag on the item, read
+through `Combatant.has_unique()` — never a per-item branch.
+
+## Combat feel & camera (session 7 / phase 11 — V2 §51)
+
+Presentation layer only: **nothing here can change a combat result.** Hit-stop wraps
+already-resolved results, the camera reads positions it never writes, and neither touches
+`RngService` — `--combat-seed=N` replays identically with the effects on or off.
+
+**`CombatFeel` is the ONE home of weapon-weight pacing** (`combat/combat_feel.gd`). A single
+table keyed by `WeaponClass` gives windup, swing, recovery, lunge reach, shake multiplier,
+hit-stop duration and attack *style*; the rig and the controller both read it, so a change to
+how a maul feels is a one-line change in one file.
+
+| Class | Windup | Recovery | Hit-stop | Shake | Style |
+|---|---|---|---|---|---|
+| UNARMED | 0.09 | 0.15 | 0.035 | 0.75x | swing |
+| SWORD | 0.12 | 0.19 | 0.055 | 0.95x | swing |
+| SPEAR | 0.15 | 0.21 | 0.06 | 1.0x | thrust (longest reach: 48px lunge) |
+| AXE | 0.20 | 0.27 | 0.095 | 1.35x | swing |
+| BLUNT | 0.23 | 0.30 | 0.115 | 1.5x | swing |
+| RANGED | 0.19 | 0.20 | 0.045 | 0.8x | draw-hold-loose (no lunge) |
+| MAGICAL | 0.21 | 0.24 | 0.07 | 0.9x | cast anticipation |
+
+- **Hit-stop:** `Engine.time_scale` dips to 0.06 for the class's duration, x1.8 on a crit,
+  capped at `MAX_HIT_STOP` (0.24s). The freeze timer runs with `ignore_time_scale` so it can
+  never stretch itself, `release()` restores time flow on freeze end / combat end /
+  `_exit_tree`, and the whole thing is skipped when `GameManager.smoke_test` is set (CI never
+  sleeps on presentation).
+- **Camera** (`combat/combat_camera.gd`, a `Camera2D` under `WorldRoot`): frames the midpoint
+  of the two fighters, zoom 1.26 at ADJACENT easing to 1.0 by separation 5+ (a bow duel reads
+  as distant for free), push-in on a crit (+0.05) and a killing blow (+0.09). It never zooms
+  BELOW 1.0 and clamps its visible rect to the 1280x720 design box, so no framing can reveal
+  the edge of the drawn arena; a viewport wider/taller than the box centres on that axis,
+  exactly like the old world-offset behaviour. The framing math is pure statics
+  (`zoom_for_separation` / `focus_x` / `focus_y` / `clamp_focus`) and unit-tested headlessly.
+- **Shake moved to the camera.** A world-offset shake would be cancelled by a camera that
+  re-frames from world positions every frame. `CombatController._shake()` still decides
+  strength (base x `CombatFeel.shake_scale` x the `screen_shake` setting) and falls back to
+  the old world-offset shake if a scene has no camera.
+- **Accessibility:** hit-stop honours the existing `reduced_fx` toggle (x0.4, never a second
+  parallel toggle); the camera has its own `camera_motion` slider (settings screen) where 0
+  reproduces the classic static frame exactly. Both apply from the next fight.
+
 ## Determinism
 All combat randomness flows through `RngService` (`--combat-seed=N` reproduces a fight).
 Decorative visuals (crowd, sand) use local fixed-seed RNGs so they never consume combat

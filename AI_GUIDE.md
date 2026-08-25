@@ -76,6 +76,17 @@ audio/ vfx/ assets/ tools/  as they gain content
    networking beyond the future `PlatformService` interface.
 9. Do not redesign working systems without a concrete technical reason (what breaks, what
    depends on it, what tests protect it, does it affect save compatibility).
+10. **Combat-feel pacing lives in ONE table** (`CombatFeel`): windup/swing/recovery/hit-stop/
+    shake/lunge per `WeaponClass`. Rig animation and controller timing both read it; nothing
+    hardcodes a second copy. Presentation may never change a resolved result — hit-stop wraps
+    already-resolved outcomes and camera work only reads positions.
+11. **Equipment modifiers are DERIVED, never stored.** `ItemAffixes` computes an item's
+    affixes from the item's own identity with a LOCAL rng (docs/items.md decision block), so
+    itemization needs no save version. Combat reads `Combatant.attributes` (progression +
+    kit) — equipment never writes into a character's own `AttributeBlock`.
+12. **A setting key belongs to the system that READS it** (`CombatFeel.REDUCED_FX_SETTING`,
+    `CombatController.SHAKE_SETTING`, `CombatCamera.MOTION_SETTING`); the settings screen
+    writes through those constants so the two sides cannot drift apart.
 
 ## Coding Standards
 - Typed GDScript everywhere (`var x: int`, typed signals, typed arrays). Fix warnings.
@@ -151,6 +162,12 @@ sign-off). Gambling events wager in-game gold only. Any future store SDK goes be
   Run: `godot --headless --path . -s res://tests/test_runner.gd` (exit 0 = green).
 - Unit tests required for all mathematical systems (damage, hit, progression, prices, XP,
   save migration) incl. edge cases (0 armour, 100% resistance, negative values, max level).
+- Assertions must be able to FAIL: a bound the data can never reach, or a value that is
+  identical on both sides of the behaviour under test, is not coverage (session-7 review
+  found three such). Prefer driving the real widget/helper over asserting a constant.
+- `test_script_integrity.gd` compiles every `.gd` in the project — a screen whose script
+  fails to parse still instantiates as a bare node, so scene smoke alone can go green while
+  a menu is dead.
 - End-to-end smoke: `godot --headless --path . -- --smoke-test --combat-seed=N` plays a full
   AI-vs-AI duel and exits 0/1. Keep it green.
 - Balance simulation (charter §35): `godot --headless --path . -s res://tools/battle_sim.gd

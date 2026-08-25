@@ -368,3 +368,94 @@ Unchanged from session 6 (see PROJECT_STATE.md).
 ### Next Recommended Task
 Phase 11 (MASTER_BUILD_PROMPT_V2.md §51): hit-stop helper + CombatCamera + weapon-weight
 timing table.
+
+---
+
+## Session 7 (part 2) — 2026-08-25 — V2 phases 11-12: combat feel + itemization depth (Claude)
+
+### Phase 11 — Combat feel (V2 §51, gaps G1-G3)
+- **`CombatFeel`** (new): the ONE table of weapon-weight pacing — windup, swing,
+  recovery, lunge reach, shake multiplier, hit-stop duration and attack STYLE per
+  `WeaponClass`. The rig and the controller both read it, so a maul now loads up
+  visibly while a shiv flicks out, spears thrust with the longest reach, bows
+  draw-hold-loose without lunging, and staves take a cast beat.
+- **Hit-stop:** a bounded `Engine.time_scale` dip on impact (x1.8 on crits, capped at
+  0.24s). The freeze timer runs with `ignore_time_scale` so it can never stretch
+  itself; `release()` runs on freeze end, combat end and `_exit_tree` so a scene
+  change can never strand the game in slow motion; skipped entirely in smoke runs.
+  Honours the EXISTING `reduced_fx` toggle rather than adding a parallel one.
+- **`CombatCamera`** (new `Camera2D` under the arena's WorldRoot): frames the
+  midpoint of the two fighters, tightens to 1.26x at ADJACENT and eases to 1.0 by
+  separation 5+ (a bow duel reads as distant for free), push-in on crits and the
+  killing blow. It clamps its visible rect to the 1280x720 design box so no framing
+  can reveal the edge of the drawn arena, and it took over the impact shake — a
+  world-offset shake would be cancelled by a camera that re-frames from world
+  positions every frame. Framing math is pure statics, unit-tested headlessly.
+- Accessibility gained a **Camera Motion** slider (0 = the exact classic static
+  frame) next to the existing shake/reduced-fx settings.
+
+### Phase 12 — Itemization depth (V2 §52, charter §16, gaps G4-G5)
+- **`AffixData` + a 15-affix pool** (`data/affixes/`): attributes, armour, evasion,
+  accuracy, crit chance, armour penetration, flat damage, mobility — each with a
+  value band, weight, `min_rarity` gate and weapon/armour gate.
+- **Rarity finally means something:** Common 0 / Uncommon 1 / Rare 2 / Epic 3 /
+  Legendary 3+signature / Mythic 4+signature modifiers.
+- **Decision — modifiers are DERIVED, not rolled per drop.** An item's affixes are a
+  pure function of its own `id` (local RNG seed) and rarity. Reason: the satchel is
+  a list of item IDs, so per-drop rolls would need a per-instance item model, a save
+  version with a lossy migration and duplicate-aware inventory UI — and V2 §52
+  scopes this phase to "no save-version change". Consequence: the catalog is
+  learnable and a shop row can promise what it shows; two copies of an item are
+  identical. Full block in `docs/items.md`.
+- **Three signature effects** hooking systems that already existed: Venom Mastery
+  (on-hit statuses may exceed `max_stacks` by one), Bulwark Reserve (DEFEND refunds
+  Energy), Relentless Edge (a crit ticks every cooldown down a round). Homes: the
+  two champion weapons became Legendary, plus one new Legendary chase purchase
+  (Venomtooth Cleaver, T5 axe, level 15). `OpponentGenerator` now filters Legendary
+  out of generated loadouts.
+- **Combat reads `Combatant.attributes`** (progression + kit) instead of
+  `data.attributes`, so equipment can grant attributes without ever writing into
+  progression data. Everything else folds into the existing calculators; the 1-25%
+  crit clamp still binds.
+- **Equipment comparison** in shop and inventory rows: rarity beside the name, the
+  item's modifiers, its signature text, and colour-coded gains/losses against
+  whatever occupies that slot right now.
+
+### Fixed (adversarial review, 5-lens + refute/repro workflow — 6 findings, all real)
+- MAJOR: the new camera broke the **radial action menu's anchor**. The HUD is a
+  CanvasLayer (deliberately not camera-transformed) but positioned the ring with raw
+  world coordinates, so at 1.26x zoom the ring drifted ~44px off the fighter (~85px
+  near an arena wall) — the ATTACK button could sit on the opponent's head. Now
+  projected through `get_global_transform_with_canvas()`, with a zoom-scaled radius
+  and unscaled buttons (touch targets).
+- MAJOR: the controller presented impacts after only `windup_time`, i.e. while the
+  arm was still cocked. It now waits `CombatFeel.impact_delay` (windup + swing).
+- MAJOR: the `camera_motion` setting had no end-to-end coverage — a typo on either
+  side of the wire, or a flipped default, stayed green. Setting keys are now
+  constants owned by the system that READS them, the settings widgets are named, and
+  tests drive the real slider/toggle.
+- MINOR x2: two assertions could not fail (a cap the data can never reach; a
+  fighter pair symmetric about the arena centre). Both replaced with real coverage.
+- Also found and closed by a new suite: a script that fails to PARSE still
+  instantiates as a bare node, so the scene-smoke suite went green this session
+  while two menus were dead. `test_script_integrity.gd` now compiles every `.gd`.
+
+### Tests / balance
+27 suites / 3910 assertions green (new: test_combat_feel 240+, test_itemization 644,
+test_script_integrity). Smoke seeds 7/99/424242/31337 green with IDENTICAL round and
+damage counts to before the change — presentation and itemization are provably
+outside the seeded resolution path. §35 sim (150 battles x 6 matchups): presets
+40-52.7%, 0 stalemates; default-kit-vs-generated moved 89/78/76% -> 81/63/50% at
+L1/5/10 now that generated opponents carry modifier-bearing gear — accepted and
+explained in docs/balancing.md (a fighter in rags at level 10 SHOULD struggle).
+
+### Known Problems
+- Web export not re-verified in a browser since rendering changed (Camera2D +
+  time_scale) — flagged in PROJECT_STATE Platform Status.
+- The derived Weapon Mastery Archetype label (V2 §47/§50) is still unbuilt; Phase 14
+  needs it for personality pairing.
+
+### Next Recommended Task
+Phase 13 (V2 §54): the crowd / audience meter — the last big promise Charisma is
+still waiting on.
+
