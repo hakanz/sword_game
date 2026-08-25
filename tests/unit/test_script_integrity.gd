@@ -29,6 +29,12 @@ func _check_dir(dir_path: String) -> int:
 		var path: String = dir_path.path_join(file)
 		var script: Resource = load(path)
 		assert_true(script != null and script is GDScript, "%s failed to compile" % path)
+		# load() can hand back a GDScript object for a file with a PARSE ERROR;
+		# only can_instantiate() tells the truth about it (a stray broken
+		# scratch file in tests/unit crashed the whole runner this session).
+		if script is GDScript:
+			assert_true((script as GDScript).can_instantiate(),
+					"%s parsed but cannot be instantiated" % path)
 		checked += 1
 	for sub in dir.get_directories():
 		checked += _check_dir(dir_path.path_join(sub))

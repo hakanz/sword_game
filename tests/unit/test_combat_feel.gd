@@ -233,7 +233,8 @@ func test_oversized_viewports_fall_back_to_centring() -> void:
 ## The slider and the camera must read/write the SAME key with the SAME
 ## meaning. Mutating either side used to leave the whole suite green.
 func test_camera_motion_setting_drives_the_real_camera() -> void:
-	var previous: Variant = SaveManager.get_setting(CombatCamera.MOTION_SETTING, null)
+	var previous: Variant = SaveManager.get_setting(
+			CombatCamera.MOTION_SETTING, CombatCamera.MOTION_DEFAULT)
 	var tree := Engine.get_main_loop() as SceneTree
 
 	SaveManager.set_setting(CombatCamera.MOTION_SETTING, 0)
@@ -264,10 +265,7 @@ func test_camera_motion_setting_drives_the_real_camera() -> void:
 	tree.root.remove_child(default_camera)
 	default_camera.free()
 
-	if previous == null:
-		SaveManager.set_setting(CombatCamera.MOTION_SETTING, CombatCamera.MOTION_DEFAULT)
-	else:
-		SaveManager.set_setting(CombatCamera.MOTION_SETTING, previous)
+	SaveManager.set_setting(CombatCamera.MOTION_SETTING, previous)
 
 
 ## Driving the actual widgets in the settings scene — a renamed key on one
