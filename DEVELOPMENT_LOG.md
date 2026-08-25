@@ -308,3 +308,63 @@ presets 39.5-54%, 0 stalemates (swift's agility-crit identity noted).
   Memory now forms only in fights where switching was a real choice
   (CombatResult.player_could_switch) AND equipping a new main weapon
   clears it. Regression tests added.
+
+---
+
+## Session 7 — 2026-08-25 — Charter amendment: class-system audit + V2 expansion plan (Claude, no gameplay code changed)
+
+### Context
+Owner brought a large, class-based (Warrior/Assassin/Archer/Mage, Knight-Online-inspired)
+redesign prompt and asked to (1) improve/complete that prompt and (2) audit the repo for
+precise next steps. Read AI_GUIDE.md, PROJECT_STATE.md, MASTER_BUILD_PROMPT.md, and
+docs/{combat,ai,items,architecture}.md, then verified specific claims against source
+(`grep` for Camera2D/hit_stop/debug_menu/rarity usage; read enums.gd, a weapon .tres,
+combat_vfx.gd, combat_controller.gd) before writing anything, to avoid re-proposing systems
+that already exist (rarity enum, screen shake, status-flavored VFX, crit system, etc.).
+
+### Decision (owner-confirmed, asked via AskUserQuestion)
+The pasted prompt's hard 4-class structure conflicts with the existing, deliberate
+"no hard classes — builds emerge from attributes+skills+equipment" pillar (6 sessions of
+skills/items/AI/saves depend on it). Owner chose to **keep the classless system**. Class
+fantasy is instead delivered through a derived, non-gating "Weapon Mastery Archetype" label
+(Breaker/Duelist/Skirmisher/Marksman/Battlemage/Guardian) computed from equipped weapon
+class + armour weight + shield — used for animation timing, VFX, and AI-personality pairing
+only, never for equipment/skill gating. Full rationale logged in `MASTER_BUILD_PROMPT_V2.md`
+§47 (Decision/Reason/Alternatives/Consequences format).
+
+### Added
+- `MASTER_BUILD_PROMPT_V2.md` — new charter amendment (v1 stays unedited, per the Forbidden
+  Practices rule). Contents: role/expertise framing, which v1 pillars are load-bearing and
+  not to be reopened (§46), the classless-vs-class decision (§47), a condensed audit of
+  already-working systems so they aren't re-proposed (§48), 9 verified code-level gaps (G1-G9,
+  §49), the Weapon Mastery Archetype table (§50), and concrete specs for combat feel/camera
+  (§51), itemization affixes/uniques (§52), AI personality depth + debug overlay (§53),
+  the crowd/Charisma system (§54), and rivals/boss phases (§55), plus a re-sequenced Phase
+  11-16 plan (§56).
+- Verified gaps worth calling out: no hit-stop/time-scale system anywhere in the repo; no
+  dynamic Camera2D in combat (only a world-offset shake); no weapon-weight-differentiated
+  attack timing despite WeaponClass already driving damage/accuracy; `Rarity` enum
+  (Common..Mythic) already exists on every item but drives no affix/modifier generation yet
+  (docs/items.md already flagged this as deferred); only one AIPersonality
+  (`aggressive`) ships despite the resource type and docs/ai.md both anticipating more;
+  `EventBus.ai_scores_computed` already fires every AI decision but nothing consumes it
+  (no debug menu exists); Charisma still only affects shop prices (charter §19 crowd meter
+  never built - already PROJECT_STATE's own "Recommended Next Task" independent of this
+  audit); no rival NPCs or champion HP-phase transitions.
+
+### Changed
+- `AI_GUIDE.md`: added a pointer to `MASTER_BUILD_PROMPT_V2.md` alongside the v1 charter
+  reference.
+- `PROJECT_STATE.md`: re-sequenced "Recommended Next Task" / "Next 5 Tasks" to the V2 §56
+  phase order (combat feel + itemization depth before more raw content, per the charter's
+  own priority order); added the classless-builds decision under Important Recent Decisions.
+
+### Tests
+None run - no gameplay code touched this session (documentation/planning only).
+
+### Known Problems
+Unchanged from session 6 (see PROJECT_STATE.md).
+
+### Next Recommended Task
+Phase 11 (MASTER_BUILD_PROMPT_V2.md §51): hit-stop helper + CombatCamera + weapon-weight
+timing table.

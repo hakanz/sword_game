@@ -1,6 +1,6 @@
 # PROJECT STATE
-Last Updated: 2026-08-24
-Updated By: Claude (autonomous session 6)
+Last Updated: 2026-08-25
+Updated By: Claude (session 7 - charter amendment / audit, no gameplay code changed)
 
 ## Current Milestone
 MVP core loop COMPLETE and playable end to end: character creation -> arena duels vs
@@ -129,12 +129,26 @@ Session 4: rig v3, arena_visual crowd/wall v2 (see DEVELOPMENT_LOG.md).
 - Trademark check for the title requires a human
 
 ## Recommended Next Task
-Crowd/audience meter (§19) wiring Charisma into combat — the last big MVP-vision
-system without a first implementation.
+Phase 11 (MASTER_BUILD_PROMPT_V2.md §51): combat-feel pass - hit-stop helper, dynamic
+CombatCamera, weapon-weight timing table. Cheapest, highest perceived-quality win available
+right now; no save-version change.
 
 ## Next 5 Tasks
-1. Crowd/audience meter (§19): excitement states, Charisma/taunt hooks, small rewards
-2. Random events between fights (§23, data-driven)
-3. Difficulty tiers + defeat consequences + Iron Gladiator flag (§24)
-4. Third arena region + champion; more enemy archetypes (mage/skirmisher growth weights)
-5. Economy simulation (§35 second half): gold-per-level vs gear costs, grind check
+(Re-sequenced this session per MASTER_BUILD_PROMPT_V2.md §56, content ordered after
+combat-feel/build-diversity work per the charter's own priority order.)
+1. Phase 11 - Combat feel: hit-stop, CombatCamera, weapon-weight timing (V2 §51)
+2. Phase 12 - Itemization depth: AffixData, rarity-driven affixes, 3 unique effects,
+   equipment comparison tooltip (V2 §52, executes long-deferred charter §16)
+3. Phase 13 - Crowd/audience meter (§19 / V2 §54): excitement states, Charisma/taunt
+   hooks, situational reward
+4. Phase 14 - AI depth: personality roster beyond `aggressive`, archetype-personality
+   pairing, AI debug/score overlay (V2 §53)
+5. Phase 15/16 - Rivals + champion boss phases (V2 §55), then third arena region +
+   random events (§23) + difficulty tiers/NG+ (§24) + economy simulation
+
+## Important Recent Decisions (session 7 addition)
+- Classless builds stay; no hard Warrior/Assassin/Archer/Mage classes - confirmed by the
+  owner 2026-08-25 after an audit against a class-based redesign prompt. Class-fantasy value
+  is delivered via a derived, non-gating "Weapon Mastery Archetype" label instead (see
+  MASTER_BUILD_PROMPT_V2.md §47/§50). Full rationale, gap analysis, and phase plan live in
+  the new MASTER_BUILD_PROMPT_V2.md charter amendment.

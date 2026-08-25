@@ -3,6 +3,11 @@
 Every agent (AI or human) reads this file **before touching code**. It contains only durable
 rules. Progress notes belong in `PROJECT_STATE.md`; history belongs in `DEVELOPMENT_LOG.md`.
 The original full task charter is `MASTER_BUILD_PROMPT.md` (never edit it).
+`MASTER_BUILD_PROMPT_V2.md` (session 7) is a dated amendment on top of it — read it too; it
+reaffirms the no-hard-classes decision (§47), audits what already exists so it isn't
+re-proposed, and gives the current precision-targeted expansion plan (combat feel/camera,
+itemization affixes, AI depth, crowd/Charisma, rivals+boss phases). Future amendments append
+new dated §-sections there rather than editing v1.
 
 ## Project Overview
 Original 2D turn-based gladiator RPG. Working title **"Arena Legends"** (placeholder — a human
