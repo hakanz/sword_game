@@ -479,3 +479,99 @@ explained in docs/balancing.md (a fighter in rags at level 10 SHOULD struggle).
 ### Next Recommended Task
 Phase 13 (V2 §54): the crowd / audience meter — the last big promise Charisma is
 still waiting on.
+
+---
+
+## Session 7 (part 3) — 2026-08-25 — V2 phases 13-16: crowd, AI depth, rivals, content (Claude)
+
+The amendment's whole phase plan (11-16) is now complete.
+
+### Phase 13 — The crowd (charter §19, V2 §54)
+Charisma has been a shop discount for six sessions. It now fights. Every gladiator
+carries their own standing with the pit for the duration of one fight
+(Hostile / Bored / Watching / Excited / Frenzied): it climbs on crits, landed skills,
+a guard that turns a blow aside, a finishing blow and taunt-ish moves; it falls on
+turtling, running, resting and a fight that drags past round 12. Excited pays Energy
+at turn start, Frenzied also steadies the aim. Deliberately small — a build that
+ignores Charisma stays viable.
+
+Design points worth keeping: **Charisma scales the CLIMB only** (softening the fall
+too would quietly make it a defensive stat as well); stalling is judged with the
+anti-stall counters combat already keeps, never a second detector; the judging lives
+inside `CombatResolver` so the §35 simulator feels the crowd exactly as a played
+fight does; and "taunt-tagged" is `SkillData.crowd_appeal`, authored per skill, not a
+hardcoded id list. Runtime state only — no save change.
+
+### Phase 14 — AI depth (V2 §53)
+`AIPersonality` gained `wounded_fury` and `killer_instinct`, folded into
+`aggression_now()`, which CombatAI reads everywhere it used to read the flat weight:
+one scoring formula with personality-weighted inputs, never a per-personality fork.
+Berserker and Opportunist joined the roster. `OpponentGenerator` now picks the
+temperament AFTER rolling the kit, from a pool keyed by the Weapon Mastery Archetype
+that kit derives to — a generated marksman never rolls a charger. The champions
+stopped sharing a "boss" profile.
+
+`AiDebugOverlay` finally consumes `EventBus.ai_scores_computed`, which had been
+firing since the AI phase with nothing listening. It removes itself unless this is a
+debug build or the run carries `--debug-ai`, and starts hidden (F3) so it never lands
+in a screenshot uninvited.
+
+### Phase 15 — Rivals and boss phases (V2 §55)
+Champions change SHAPE as they fall: signature moves released at 60% HP, temperament
+swapped at 30%, both authored as data on the champion resource and consumed by the
+existing utility loop — the AI grew no boss-only code path. Phases never go backwards.
+
+Each region fields one recurring rival (Grissa Two-Coin, Vurm the Kindler, and later
+Ilsa Hollowreed) who turns up in ordinary duels and REMEMBERS. The rivalry is one
+number — the player's net wins. Ahead, the rival arrives a level meaner with better
+steel of the same class; behind, same blade and one piece of armour short. They carry
+their own weapon memory, the mirror of the player's session-6 one. Save version 7
+with a v6→v7 migration.
+
+### Phase 16 — Content and modes (V2 §56, charter §21/§23/§24)
+- **Saltmere Bowl** (levels 16-24), its champion **Pyx the Unblinking** (a staff
+  duellist who hoards mana and stops conserving anything below 30%), its rival Ilsa,
+  and Pyx's unique reward the **Ashquill Rod** — carrying a fourth signature effect,
+  Arcane Echo, hooked into the mana pool that already existed.
+- **Five opponent build archetypes** (brute, duelist, skirmisher, marksman, mage)
+  replacing the single brute growth profile. Each declares where its points go AND
+  what it will pick up, and gear now qualifies on the attributes the fighter actually
+  grew — so the blanket "no arcana weapons" filter is gone and staves finally reach an
+  opponent's hands.
+- **Six between-fights encounters** (§23): merchant, injured gladiator, trainer, dice,
+  fan, corrupt official. EventService is the only place outcomes apply, wagers stake
+  in-game gold only (charter §5) and are capped by the purse, a cost can never leave
+  the player in debt, and every encounter always offers a free way out.
+- **`tools/economy_sim.gd`** — a new pacing report. It immediately found that the
+  third region shipped with nothing on the shelf behind it, which produced the **T6
+  gear ladder** (levels 18-19, priced at ~4.4 fights of income — the tightest ratio in
+  the game; T1-T5 sit at 1.6-2.6, i.e. the shop has never really been a constraint).
+- **§24 evaluated, not built** (docs/decisions/difficulty_and_new_game_plus.md):
+  defeat consequences are already shipped under another name; difficulty tiers need no
+  new systems and are the best value in §24; NG+ is blocked on the game having no
+  ENDING; Iron Gladiator is an owner decision because it fights the autosave design.
+
+### Tests / balance
+31 suites / 5161 assertions green (new: test_crowd 82, test_ai_depth 177,
+test_rivals_and_bosses 85, test_events 251). §35 sim (150 battles × 6 matchups):
+presets 40-52.7%, 0 stalemates — provably undisturbed, because at level 1 with equal
+gear the crowd never climbs high enough to pay a boon. Fights got shorter at higher
+levels (21 → ~17 rounds): the crowd rewards pressure. default-kit vs generated L10
+moved 48.7% → 62.7% when temperaments started matching kits — accepted and explained
+in docs/balancing.md.
+
+The suite caught a real content bug within a minute of authoring it: the new Saltmere
+Pike shipped with `range_max = CLOSE`, and melee lands ONLY at ADJACENT.
+
+### Known problems
+- No ENDING (charter §30): the game stops after the third region's champion. This is
+  now the largest structural gap and it blocks NG+.
+- Web still unverified visually since rendering changed (Camera2D + Engine.time_scale)
+  — this environment cannot composite a browser frame.
+- Levels 21-24 have nothing new to buy. Deliberate for now (a "you are kitted, win the
+  region" stretch), but it is a thin end to the ladder.
+
+### Next recommended task
+The ending + credits flow (§30), then difficulty tiers as data over everything phases
+11-16 built.
+

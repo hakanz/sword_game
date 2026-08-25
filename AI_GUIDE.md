@@ -87,6 +87,16 @@ audio/ vfx/ assets/ tools/  as they gain content
 12. **A setting key belongs to the system that READS it** (`CombatFeel.REDUCED_FX_SETTING`,
     `CombatController.SHAKE_SETTING`, `CombatCamera.MOTION_SETTING`); the settings screen
     writes through those constants so the two sides cannot drift apart.
+13. **Gameplay judgement lives in CombatResolver, not the controller.** The crowd meter,
+    signature effects and anti-stall counters are all applied there, because the §35
+    simulator drives the resolver directly — anything that changes a fight must be felt by
+    a simulated fight too. The controller only PRESENTS.
+14. **Personalities and boss phases are weighted DATA, never branches.** One AI scoring
+    formula reads `AIPersonality.aggression_now()`; a champion's phase releases skills and
+    swaps a personality resource. Adding a temperament or a boss is a content task.
+15. **Dev-only tools must remove themselves in release builds** (`AiDebugOverlay`), and
+    dev entry points that need autoload singletons must load their implementation at
+    RUNTIME — a `-s` main script compiles before autoloads register (docs/build.md).
 
 ## Coding Standards
 - Typed GDScript everywhere (`var x: int`, typed signals, typed arrays). Fix warnings.
@@ -168,6 +178,9 @@ sign-off). Gambling events wager in-game gold only. Any future store SDK goes be
 - `test_script_integrity.gd` compiles every `.gd` in the project — a screen whose script
   fails to parse still instantiates as a bare node, so scene smoke alone can go green while
   a menu is dead.
+- Content is testable too: suites assert catalog-wide invariants (every region has a rival,
+  every Legendary carries a signature, every event string is translated in both languages,
+  melee weapons never reach past ADJACENT). A content bug should fail CI, not playtesting.
 - End-to-end smoke: `godot --headless --path . -- --smoke-test --combat-seed=N` plays a full
   AI-vs-AI duel and exits 0/1. Keep it green.
 - Balance simulation (charter §35): `godot --headless --path . -s res://tools/battle_sim.gd

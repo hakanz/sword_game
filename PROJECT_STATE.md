@@ -1,6 +1,7 @@
 # PROJECT STATE
 Last Updated: 2026-08-25
-Updated By: Claude (session 7 - phases 11-12: combat feel/camera + itemization depth)
+Updated By: Claude (session 7 - phases 11-16 complete: combat feel, itemization,
+crowd, AI depth, rivals/boss phases, third region + events)
 
 ## Current Milestone
 MVP core loop COMPLETE and playable end to end: character creation -> arena duels vs
@@ -26,9 +27,15 @@ XP (landed/actions in [0.65,1.25], champion x1.5); the arena's call (forced tour
 at band midpoint, elite brackets, house gold bonus); rig v4 living animations +
 expressions + 1.35x; elemental skill VFX; shop fitting booth + sealed level-locks;
 level/XP bars in HUD + town;
-session 7 (V2 phases 11-12): weapon-weight combat pacing + impact hit-stop +
-dynamic framing camera; rarity now grants item modifiers, three Legendary
-signature effects, and an equipped-vs-candidate comparison in shop/inventory;
+session 7 (V2 phases 11-16, the whole amendment plan): weapon-weight combat
+pacing + impact hit-stop + dynamic framing camera; rarity grants item modifiers
+and four Legendary signature effects, with equipped-vs-candidate comparison in
+shop/inventory; the CROWD meter finally makes Charisma a combat stat; AI
+temperaments that shift mid-fight and match the kit they were rolled with, plus
+a dev AI-score overlay; recurring regional rivals who remember, and champions
+that change shape at 60%/30% HP; a third region (Saltmere Bowl, 16-24) with its
+own champion and rival, five opponent build archetypes, six between-fights
+encounters, and a T6 gear ladder;
 session 6: town-first debut (armourless, Worn Shiv, LONG opening distance, level-1
 foes equally bare), first-victory debut purse + guaranteed level-up, weapon-based
 crits (per-weapon base + class-matched attribute, x2, shown in shop/sheet), weapon
@@ -73,15 +80,32 @@ build-guidance recommendations, victory celebration animation.
   settings / arena select / tournament; the arena itself gained a light
   foreground dust layer
 - Itemization depth (V2 §52): rarity grants 0-4 derived modifiers per item from
-  a 15-affix pool (deterministic per item id — no save-version change), three
+  a 15-affix pool (deterministic per item id — no save-version change), FOUR
   Legendary signature effects hooked into existing systems, and shop/inventory
   rows showing rarity, modifiers and colour-coded deltas vs the equipped piece
+- Crowd (§19 / V2 §54): per-fighter audience standing (Hostile..Frenzied) judged
+  inside CombatResolver, Charisma scaling the climb, Energy/accuracy boons at the
+  top, HUD rows and a crowd swell/groan on state crossings
+- AI depth (V2 §53): temperaments that shift with the state of the fight
+  (wounded_fury / killer_instinct) through ONE scoring formula; generated
+  opponents paired with a temperament that suits their kit; per-champion
+  temperaments; dev-only AI-score overlay (F3 / --debug-ai, removes itself in
+  release builds)
+- Rivals + boss phases (V2 §55): one recurring named rival per region who
+  remembers the record and arrives better or worse armed for it (save v7);
+  champions release signature moves at 60% HP and change temperament at 30%
+- Between-fights encounters (§23): six data-driven events with real choices;
+  wagers stake in-game gold only and never exceed the purse
 
 ## Partially Implemented Systems
-- Crowd system (§19 / V2 §54): only "crowd impatience" pressure inside the AI;
-  no audience meter yet - THE next task
-- Random events (§23), death/difficulty modes + NG+ (§24), achievements (§33),
-  debug menu overlay (§34): not started
+- Death/difficulty modes + NG+ (§24): EVALUATED this session, not built - see
+  docs/decisions/difficulty_and_new_game_plus.md. Defeat consequences are already
+  shipped (reduced purse, forfeited bracket, battle fatigue); difficulty tiers are
+  cheap and need no new systems; NG+ is blocked on the game having no ENDING yet;
+  Iron Gladiator needs an owner decision
+- Achievements (§33): not started
+- Debug menu (§34): the AI-score overlay exists (F3 / --debug-ai); the broader
+  debug menu does not
 - Presentation (§40 P7): placeholder art polished; sparks/shake/synth-SFX exist.
   Still missing: real animation library, music tracks, final foley
 - Accessibility (§28): settings has volumes/shake/reduced-fx/language; still missing:
@@ -106,10 +130,11 @@ build-guidance recommendations, victory celebration animation.
   score overlay, not about creating the roster from nothing
 
 ## Current Test Status
-GREEN this session: 27 suites / 3982 assertions (Godot 4.7.2); §35 simulator:
-6 matchups × 150 battles, 0 stalemates, presets in the 40-53% band
-(default-kit-vs-generated dropped to 81/63/50% at L1/5/10 now that generated
-opponents carry modifier-bearing gear - accepted, see docs/balancing.md)
+GREEN this session: 31 suites / 5161 assertions (Godot 4.7.2); §35 simulator:
+6 matchups × 150 battles, 0 stalemates, presets in the 40-52.7% band
+(default-kit-vs-generated sits at 84/65/63% at L1/5/10 - see docs/balancing.md
+for why itemization and in-character temperaments moved it); new economy pacing
+report (tools/economy_sim.gd) shows 1.6-4.4 fights per gear unlock
 (`godot --headless --path . -s res://tests/test_runner.gd`), multi-seed AI-vs-AI smoke
 (`--smoke-test --combat-seed=N`) resolves in 9-29 rounds, both sides can win.
 
@@ -128,12 +153,14 @@ re-verify in a browser before any release build.
 NOT SET UP — no SDK/keystore in this environment. Do not claim until exported and run.
 
 ## Current Content
-### Arenas: 2 (Gravelmaw 1-8, Emberholt 8-16) · Enemies: procedural generator (+elite
-bracket variant; level-1 foes armourless) · Champions: 2 (Maulhilda, Orzha) ·
-Weapons: 31 (6 classes; 4 bows + knife + starter shiv, T1-T5, per-weapon crit;
-2 champion Legendaries + 1 Legendary chase purchase) ·
-Armour: 26 (7 slots, T1-T5; 3 mobility pieces) · Skills: 14 (point costs 1-3, incl.
-2 mana spells) · Status Effects: 9 · Affixes: 15 · Signature effects: 3
+### Arenas: 3 (Gravelmaw 1-8, Emberholt 8-16, Saltmere 16-24) · Enemies: procedural generator (+elite
+bracket variant; level-1 foes armourless) · Champions: 3 (Maulhilda, Orzha, Pyx - all with 60%/30% phase transitions) ·
+Rivals: 3 (Grissa, Vurm, Ilsa - one per region) ·
+Weapons: 38 (6 classes; 5 bows + knife + starter shiv, T1-T6, per-weapon crit;
+3 champion Legendaries + 1 Legendary chase purchase) ·
+Armour: 29 (7 slots, T1-T6; 4 mobility pieces) · Skills: 14 (point costs 1-3, incl.
+2 mana spells) · Status Effects: 9 · Affixes: 15 · Signature effects: 4 ·
+Events: 6 · AI personalities: 9 (5 generic + 3 champion + boss)
 
 ## Open Asset Requests
 See docs/ASSET_MANIFEST.md — all art/audio is placeholder (primitives, original SVG
@@ -175,28 +202,27 @@ Session 4: rig v3, arena_visual crowd/wall v2 (see DEVELOPMENT_LOG.md).
 - Trademark check for the title requires a human
 
 ## Recommended Next Task
-Phase 13 (MASTER_BUILD_PROMPT_V2.md §54): the crowd / audience meter -
-Hostile→Bored→Neutral→Excited→Frenzied, fed by crits, guarded blows under
-pressure and taunt-tagged skills, decayed by the EXISTING anti-stall counters;
-small situational reward at Excited/Frenzied and Charisma driving the climb
-rate. This is what finally makes Charisma a combat stat (charter §13/§19). The
-meter resets per fight, so no save-version change unless cross-fight state is
-added.
+MASTER_BUILD_PROMPT_V2.md's phase plan (11-16) is COMPLETE. The highest-value
+work now sits outside it:
+1. **The ENDING (charter §30).** GameState.ENDING exists and nothing routes to
+   it - the game stops after the third region's champion. This blocks NG+ and is
+   the last structural gap in the core arc.
+2. **Difficulty tiers (§24)** - evaluated as cheap and system-free this session
+   (docs/decisions/difficulty_and_new_game_plus.md); needs an owner nod on the
+   four-tier naming and whether Iron Gladiator is in scope.
+3. **Real audio/art passes** - every asset is still a placeholder
+   (docs/ASSET_MANIFEST.md); this is now the biggest gap between the game and a
+   commercial impression, and most of it is human-driven work.
 
 ## Next 5 Tasks
 (Re-sequenced this session per MASTER_BUILD_PROMPT_V2.md §56, content ordered after
 combat-feel/build-diversity work per the charter's own priority order.)
-1. Phase 13 - Crowd/audience meter (§19 / V2 §54): excitement states, Charisma/taunt
-   hooks, situational reward, HUD element
-2. Phase 14 - AI depth: pair the EXISTING personalities with generated builds via the
-   Weapon Mastery Archetype table (V2 §50), per-champion personalities, and the
-   AI-score debug overlay (the EventBus feed already exists) (V2 §53)
-3. Phase 15 - Rivals + champion boss phases (V2 §55); new save version for rival state
-4. Phase 16 - Third arena region + champion, random events (§23), difficulty tiers/NG+
-   (§24), economy simulation pass
-5. Deferred/known: the derived Weapon Mastery Archetype label itself (V2 §47/§50) is
-   still unbuilt - `ProgressionCalculator.combat_archetype_label()` plus its character-
-   sheet display; it is the input Phase 14's personality pairing needs
+1. The ending + credits flow (§30) - unblocks NG+
+2. Difficulty tiers (§24) as data over the phase 11-16 systems (owner decision first)
+3. Achievements (§33) - never started; cheap now that fame/victories/champions are tracked
+4. Audio: real foley to replace the synthesized cues, one music loop per state
+5. Web re-verification in a real browser: rendering changed twice this session
+   (Camera2D + Engine.time_scale) and this environment cannot composite a frame
 
 ## Important Recent Decisions (session 7 addition)
 - Classless builds stay; no hard Warrior/Assassin/Archer/Mage classes - confirmed by the
