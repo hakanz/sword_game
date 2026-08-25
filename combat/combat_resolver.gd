@@ -114,6 +114,10 @@ static func _resolve_strike(
 		on_hit_status: StatusEffectData) -> void:
 	result.hit_chance = HitCalculator.hit_chance(actor, foe, accuracy_mod)
 	result.hit = RngService.chance(result.hit_chance)
+	# Recorded before the blow lands: a guarded target that is MISSED reads as
+	# a parry, and a guarded target that is HIT reads as a block.
+	result.target_was_defending = foe.stance == Enums.Stance.DEFENDING
+	var armour_before: int = foe.armour_current
 	# A loosed arrow is spent whether it lands or not.
 	if actor.get_weapon().is_ranged():
 		actor.arrows = maxi(actor.arrows - 1, 0)
@@ -137,6 +141,9 @@ static func _resolve_strike(
 	foe.take_damage(mitigation)
 	actor.damage_dealt_total += mitigation.after_stance
 	result.mitigation = mitigation
+	# Armour break: this strike was the one that finished off a pool that had
+	# something left in it (charter §25 calls for its own reaction).
+	result.armour_broken = armour_before > 0 and mitigation.armour_remaining == 0
 	result.killed = not foe.is_alive()
 	if on_hit_status != null and foe.is_alive():
 		StatusEffectSystem.apply(foe, on_hit_status, _bonus_stacks(actor))

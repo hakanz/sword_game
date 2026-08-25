@@ -107,6 +107,11 @@ func _run_combat() -> void:
 		actor.on_turn_started()
 		actor.tick_cooldowns()
 		EventBus.turn_started.emit(actor)
+		# Charter §25 "Stunned": both rigs re-assert the reaction every turn,
+		# so the stars appear the moment the status lands and clear the moment
+		# it expires — including on the fighter who is not acting.
+		for fighter: Combatant in [player, enemy]:
+			fighter.rig.set_stunned(StatusEffectSystem.is_stunned(fighter))
 
 		if StatusEffectSystem.is_stunned(actor):
 			# Stunned: the action is lost, but end-of-turn resolution still runs.
@@ -164,6 +169,7 @@ func _run_combat() -> void:
 ## the resolver (shared with the battle simulator).
 func _execute(actor: Combatant, decision: CombatDecision) -> void:
 	var foe: Combatant = _foe_of(actor)
+	var cell_before: int = actor.cell
 	var is_strike: bool = decision.type == Enums.ActionType.ATTACK \
 			or (decision.type == Enums.ActionType.SKILL
 					and decision.skill.target == SkillData.Target.FOE)
@@ -186,19 +192,28 @@ func _execute(actor: Combatant, decision: CombatDecision) -> void:
 		if ranged_strike:
 			await _animate_arrow(actor, foe, result.hit)
 		await _present_strike(result, foe, weapon_class)
+		if decision.type == Enums.ActionType.SKILL and decision.skill.taunts:
+			actor.rig.play_taunt()
+			await _delay(0.35)
 	else:
 		match result.action:
 			Enums.ActionType.SKILL:
 				AudioManager.play(&"buff")
+				if decision.skill.taunts:
+					actor.rig.play_taunt()
 				if result.applied_status != null:
 					_spawn_float_text(actor, tr(result.applied_status.name_key),
 							result.applied_status.tint)
 					CombatVfx.spawn_status_burst(world_root,
 							actor.position + Vector2(0, -100), result.applied_status)
 				await _delay(0.4)
+			Enums.ActionType.DEFEND:
+				# Charter §25 "Block": the guard coming up is its own beat.
+				actor.rig.play_block()
+				await _delay(0.3)
 			Enums.ActionType.APPROACH, Enums.ActionType.RETREAT:
 				AudioManager.play(&"step")
-				_animate_step(actor)
+				_animate_step(actor, absi(actor.cell - cell_before))
 				await _delay(0.3)
 			Enums.ActionType.REST:
 				actor.rig.play_rest()
@@ -264,21 +279,41 @@ func _animate_arrow(from: Combatant, to: Combatant, hit: bool) -> void:
 ## all scale with the weapon class that threw the blow (V2 §51).
 func _present_strike(
 		result: ActionResult, foe: Combatant, weapon_class: Enums.WeaponClass) -> void:
+	var from_the_right: bool = foe.position.x < result.actor.position.x
+	var chest: Vector2 = foe.position + Vector2(0, -95)
 	if result.hit:
-		foe.rig.play_hit_flash()
 		var armour_only: bool = result.mitigation.hp_damage == 0
+		# Charter §25: a crit rocks the fighter, an ordinary blow flinches them.
+		if result.crit:
+			foe.rig.play_critical_reaction()
+		else:
+			foe.rig.play_hit_flash()
 		AudioManager.play(&"crit" if result.crit else
 				(&"armour_hit" if armour_only else &"hit"))
 		# Melee blows carve a visible arc; the element burst rides on-hit
 		# statuses (flame skill -> flame at the target).
 		if not result.actor.get_weapon().is_ranged():
-			CombatVfx.spawn_slash(world_root, foe.position + Vector2(0, -95),
-					foe.position.x < result.actor.position.x)
-		CombatVfx.spawn_sparks(world_root, foe.position + Vector2(0, -95),
+			CombatVfx.spawn_slash(world_root, chest, from_the_right)
+		CombatVfx.spawn_sparks(world_root, chest,
 				Color(0.72, 0.8, 0.95) if armour_only else Color(1.0, 0.55, 0.25))
+		if result.crit:
+			CombatVfx.spawn_crit_burst(world_root, chest)
+		# Blocked on the guard (charter §25 "shield impact") vs carried through
+		# to flesh (charter §25 "blood particles", separately toggleable).
+		if result.target_was_defending:
+			CombatVfx.spawn_block_impact(world_root, chest)
+		if result.mitigation.hp_damage > 0:
+			CombatVfx.spawn_blood(world_root, chest, from_the_right,
+					20 if result.crit else 14)
+		if result.armour_broken:
+			AudioManager.play(&"armour_hit")
+			CombatVfx.spawn_armour_break(world_root, chest)
+			_spawn_float_text(foe, tr("combat.float.armour_break"),
+					Color(0.82, 0.86, 0.95), 26)
+		CombatVfx.spawn_element_hit(world_root, chest,
+				result.actor.get_weapon().damage_type)
 		if result.applied_status != null:
-			CombatVfx.spawn_status_burst(world_root,
-					foe.position + Vector2(0, -95), result.applied_status)
+			CombatVfx.spawn_status_burst(world_root, chest, result.applied_status)
 		# Slam order: push the frame in, freeze the world on the impact
 		# frame, then let the shake ring out as time resumes.
 		if camera != null and (result.crit or result.killed):
@@ -295,6 +330,13 @@ func _present_strike(
 					Color(1.0, 0.85, 0.3) if armour_only else Color(1.0, 0.35, 0.3))
 		if result.killed:
 			foe.rig.play_death()
+	elif result.target_was_defending:
+		# Charter §25 "Parry": a guarded fighter turning the blow aside is a
+		# different beat from simply not being there.
+		AudioManager.play(&"armour_hit")
+		foe.rig.play_parry()
+		CombatVfx.spawn_block_impact(world_root, chest)
+		_spawn_float_text(foe, tr("combat.float.parry"), Color(0.78, 0.86, 1.0))
 	else:
 		AudioManager.play(&"miss")
 		foe.rig.play_miss_dodge()
@@ -350,9 +392,15 @@ func _on_crowd_state_changed(fighter: Combatant, state: int, rising: bool) -> vo
 	if rising and state >= CrowdSystem.State.EXCITED:
 		AudioManager.play(&"crowd_roar", "Ambience")
 		_spawn_float_text(fighter, tr("combat.float.crowd_up"), Color(1.0, 0.72, 0.32), 26)
+		CombatVfx.spawn_crowd_flare(world_root, fighter.position + Vector2(0, -110), true)
+		# Charter §25 "Taunt": a fighter the stands have taken to plays up to
+		# them. Only at the top of the meter, so it stays an event.
+		if state >= CrowdSystem.State.FRENZIED and fighter.is_alive():
+			fighter.rig.play_taunt()
 	elif not rising and state <= CrowdSystem.State.BORED:
 		AudioManager.play(&"crowd_groan", "Ambience")
 		_spawn_float_text(fighter, tr("combat.float.crowd_down"), Color(0.72, 0.7, 0.78), 22)
+		CombatVfx.spawn_crowd_flare(world_root, fighter.position + Vector2(0, -110), false)
 
 
 func _foe_of(actor: Combatant) -> Combatant:
@@ -366,17 +414,15 @@ func _cell_to_x(cell: int) -> float:
 ## Animates ONLY the fighter who moved (movement is a personal action).
 ## Speed follows Agility (session-5 owner design): nimble fighters cross the
 ## sand visibly faster; a small hop sells the footwork.
-func _animate_step(actor: Combatant) -> void:
+func _animate_step(actor: Combatant, cells: int) -> void:
 	var agility: int = actor.attributes.agility
 	var duration: float = clampf(0.34 - 0.012 * (agility - 8), 0.16, 0.42)
 	var tween: Tween = create_tween()
 	tween.tween_property(actor, "position:x", _cell_to_x(actor.cell), duration) \
 			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	var hop: Tween = create_tween()
-	hop.tween_property(actor, "position:y", GROUND_Y - 7.0, duration * 0.45) \
-			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	hop.tween_property(actor, "position:y", GROUND_Y, duration * 0.55) \
-			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	# Charter §25 Walk/Run: the gait itself belongs to the rig, and the number
+	# of cells being crossed is what decides between the two.
+	actor.rig.play_move(maxi(cells, 1), duration)
 
 
 func _spawn_float_text(

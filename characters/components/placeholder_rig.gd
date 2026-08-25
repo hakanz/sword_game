@@ -1,14 +1,21 @@
 class_name PlaceholderRig
 extends Node2D
-## Procedural gladiator rig v4 (charter §12/§25/§27): muscular cartoon
+## Gladiator rig v5 (charter §12/§25/§27): muscular cartoon
 ## anatomy with 3-tone shading, EQUIPPED ARMOUR drawn on the body per slot,
 ## detailed per-class weapons tinted by tier — and now a LIVING rig
 ## (session-5 owner design): the weapon arm is its own pivoting node with an
 ## idle sway, real swing/aim animations, and the face carries expressions
 ## (fierce on the attack, pained on a hit, worried when the fight turns).
-## All shapes are original — the genre look is matched in quality, never in
-## specific designs. Gameplay talks only to the animation methods; final art
-## swaps in behind the same API (docs/ASSET_MANIFEST.md).
+## v5 adds TEXTURE slots on top of that: an equipped weapon with a painted
+## `sprite` is drawn in the fist instead of the primitive weapon, and an
+## armour piece with a `material_texture` fills its shapes with real leather /
+## mail / plate rather than a flat tone. Both are optional — every drawing
+## path still works with no art installed at all, which is what keeps the
+## generated set a drop-in replacement (docs/ASSET_MANIFEST.md).
+##
+## All shapes and designs are original. Gameplay talks only to the animation
+## methods; the §25 set (Block, Parry, CriticalHit, Stunned, Taunt, Walk/Run)
+## lives here beside the older ones.
 
 enum Face { NEUTRAL, ANGRY, WORRIED, PAIN, HAPPY }
 
@@ -26,6 +33,7 @@ var weapon: WeaponData = null:
 		queue_redraw()
 		if _arm != null:
 			_arm.queue_redraw()
+		_refresh_aura()
 ## Worn armour, drawn per slot over the body (charter §12).
 var equipment: Array[ArmourData] = []:
 	set(value):
@@ -44,18 +52,51 @@ var _expression: Face = Face.NEUTRAL
 ## Baseline the face returns to after a flash (WORRIED when HP runs low).
 var _baseline: Face = Face.NEUTRAL
 
+## Rig-unit size one tile of an armour material patch covers. Small enough
+## that a cuirass shows several rivets, large enough not to look like noise.
+const MATERIAL_TILE: float = 42.0
+
+## Upright length, in rig units, a painted weapon sprite is scaled to.
+const SPRITE_LENGTH: Dictionary = {
+	Enums.WeaponClass.SWORD: 76.0,
+	Enums.WeaponClass.AXE: 66.0,
+	Enums.WeaponClass.BLUNT: 62.0,
+	Enums.WeaponClass.SPEAR: 96.0,
+	Enums.WeaponClass.RANGED: 74.0,
+	Enums.WeaponClass.MAGICAL: 88.0,
+}
+
+## Forward lean of a painted sprite about its grip, in radians. A bow is held
+## upright; everything else angles its business end into the fight.
+const SPRITE_TILT: Dictionary = {
+	Enums.WeaponClass.SWORD: 0.20,
+	Enums.WeaponClass.AXE: 0.16,
+	Enums.WeaponClass.BLUNT: 0.16,
+	Enums.WeaponClass.SPEAR: 0.13,
+	Enums.WeaponClass.RANGED: 0.0,
+	Enums.WeaponClass.MAGICAL: 0.10,
+}
+
 var _arm: ArmRig = null
 var _sway_tween: Tween = null
 var _expression_tween: Tween = null
+var _stunned: bool = false
+var _stun_node: StunStars = null
+var _aura: Sprite2D = null
 
 
 func _ready() -> void:
 	if facing_left:
 		scale.x = -absf(scale.x)  # keep any caller-set zoom, just mirror it
+	# Armour material patches are UV-tiled across the body shapes, which only
+	# works if this canvas item lets its textures repeat.
+	texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	_arm = ArmRig.new()
 	_arm.position = SHOULDER
+	_arm.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	add_child(_arm)
 	_start_idle()
+	_refresh_aura()
 
 
 ## Weapon-arm idle sway: the fighter is never a statue. Deliberately touches
@@ -184,6 +225,134 @@ func _active_weapon_class() -> Enums.WeaponClass:
 	return weapon.weapon_class if weapon != null else weapon_class
 
 
+## Block (charter §25): the guard comes up and the fighter sets their feet.
+## Called when a DEFEND resolves, so the stance is something you SEE, not just
+## a shield that pops into existence.
+func play_block() -> void:
+	if _dead:
+		return
+	if _sway_tween != null:
+		_sway_tween.kill()
+	var brace: float = 8.0 if facing_left else -8.0
+	var tween: Tween = create_tween()
+	tween.tween_property(self, "position:x", brace, 0.12) 			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT).as_relative()
+	tween.parallel().tween_property(_arm, "rotation", -0.55, 0.14) 			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(self, "position:x", -brace, 0.18) 			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT).as_relative()
+	tween.parallel().tween_property(_arm, "rotation", -0.2, 0.18) 			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+
+## Parry (charter §25): a guarded fighter turning a blow aside — a sharp
+## deflecting flick of the weapon arm rather than the dodge-step of a plain
+## miss. The spark that sells it is spawned by the controller.
+func play_parry() -> void:
+	if _dead:
+		return
+	flash_expression(Face.ANGRY, 0.5)
+	if _sway_tween != null:
+		_sway_tween.kill()
+	var tween: Tween = create_tween()
+	tween.tween_property(_arm, "rotation", -0.95, 0.07) 			.set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
+	tween.tween_property(_arm, "rotation", 0.15, 0.16) 			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_callback(_restart_sway)
+	var shove: float = 5.0 if facing_left else -5.0
+	var body: Tween = create_tween()
+	body.tween_property(self, "position:x", shove, 0.07).as_relative()
+	body.tween_property(self, "position:x", -shove, 0.16).as_relative()
+
+
+## CriticalHit reaction (charter §25): the same beat as a hit, but the blow
+## visibly rocks the fighter — deeper knockback, a spin off the vertical, and
+## the pain face held long enough to register.
+func play_critical_reaction() -> void:
+	flash_expression(Face.PAIN, 1.1)
+	var tween: Tween = create_tween()
+	modulate = Color(1.0, 0.28, 0.28)
+	tween.tween_property(self, "modulate", Color.WHITE, 0.35)
+	var back: float = 22.0 if facing_left else -22.0
+	var flinch: Tween = create_tween()
+	flinch.tween_property(self, "position:x", back, 0.08) 			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT).as_relative()
+	flinch.tween_property(self, "position:x", -back, 0.3) 			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT).as_relative()
+	if _dead:
+		return  # a killing crit hands over to play_death; do not fight it
+	var spin: float = 13.0 if facing_left else -13.0
+	var rock: Tween = create_tween()
+	rock.tween_property(self, "rotation_degrees", spin, 0.09) 			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	rock.tween_property(self, "rotation_degrees", 0.0, 0.34) 			.set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+
+
+## Stunned (charter §25): a looping woozy sway plus circling stars, held for as
+## long as the status is on the fighter. Idempotent — the status system
+## re-asserts it every round.
+func set_stunned(stunned: bool) -> void:
+	if stunned == _stunned:
+		return
+	_stunned = stunned
+	if not stunned:
+		if _stun_node != null:
+			_stun_node.queue_free()
+			_stun_node = null
+		rotation_degrees = 0.0
+		if not _dead:
+			_restart_sway()
+		return
+	if _dead:
+		return
+	if _sway_tween != null:
+		_sway_tween.kill()
+	_stun_node = StunStars.new()
+	_stun_node.position = Vector2(0, -122)
+	add_child(_stun_node)
+	var wobble: Tween = create_tween()
+	wobble.set_loops()
+	wobble.tween_property(self, "rotation_degrees", 5.0, 0.42) 			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	wobble.tween_property(self, "rotation_degrees", -5.0, 0.42) 			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_stun_node.tree_exiting.connect(wobble.kill)
+
+
+## Taunt (charter §25): playing to the crowd — chest out, weapon arm thrown
+## wide, a grin. Used by the mocking skills and when the stands turn.
+func play_taunt() -> void:
+	if _dead:
+		return
+	flash_expression(Face.HAPPY, 1.2)
+	if _sway_tween != null:
+		_sway_tween.kill()
+	var arm: Tween = create_tween()
+	arm.tween_property(_arm, "rotation", 0.9, 0.16) 			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	arm.tween_property(_arm, "rotation", 0.45, 0.22) 			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	arm.tween_property(_arm, "rotation", 0.0, 0.2) 			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	arm.tween_callback(_restart_sway)
+	var lean: float = -10.0 if facing_left else 10.0
+	var body: Tween = create_tween()
+	body.tween_property(self, "position:x", lean, 0.18) 			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT).as_relative()
+	body.tween_property(self, "position:y", -6.0, 0.14) 			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT).as_relative()
+	body.tween_property(self, "position:y", 6.0, 0.16) 			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN).as_relative()
+	body.tween_property(self, "position:x", -lean, 0.22) 			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT).as_relative()
+
+
+## Walk / Run (charter §25) for a cell step. A turn-based fighter never free-
+## roams, so the whole gait is this: a bob whose height and cadence rise with
+## how far the fighter is covering. `cells` is the distance being crossed and
+## `seconds` the travel time the controller is tweening the body over.
+func play_move(cells: int, seconds: float) -> void:
+	if _dead:
+		return
+	var running: bool = cells > 1
+	var steps: int = maxi(2, cells * 2)
+	var lift: float = 9.0 if running else 5.0
+	var beat: float = maxf(seconds / (steps * 2.0), 0.04)
+	var tween: Tween = create_tween()
+	for _step in steps:
+		tween.tween_property(self, "position:y", -lift, beat) 				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT).as_relative()
+		tween.tween_property(self, "position:y", lift, beat) 				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN).as_relative()
+	if running:
+		# A run leans into the direction of travel.
+		var tilt: float = 6.0 if facing_left else -6.0
+		var lean: Tween = create_tween()
+		lean.tween_property(self, "rotation_degrees", tilt, seconds * 0.3) 				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		lean.tween_property(self, "rotation_degrees", 0.0, seconds * 0.7) 				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+
 func play_hit_flash() -> void:
 	flash_expression(Face.PAIN, 0.7)
 	var tween: Tween = create_tween()
@@ -256,6 +425,7 @@ func play_victory() -> void:
 
 func play_death() -> void:
 	_dead = true
+	set_stunned(false)
 	_stop_idle()
 	var tween: Tween = create_tween()
 	tween.set_parallel(true)
@@ -318,29 +488,30 @@ func _draw_legs(skin: Color, skin_sh: Color) -> void:
 		back_thigh = _armour_tone(legs).darkened(0.2)
 		front_thigh = _armour_tone(legs)
 
+	var leg_material: Texture2D = _material_of(legs)
 	# Back leg: thigh + calf + foot
-	_limb(Vector2(-8, -46), Vector2(-11, -26), 14.0, back_thigh)
-	_limb(Vector2(-11, -26), Vector2(-14, -7), 11.0, back_thigh)
+	_fill_limb(Vector2(-8, -46), Vector2(-11, -26), 14.0, back_thigh, leg_material)
+	_fill_limb(Vector2(-11, -26), Vector2(-14, -7), 11.0, back_thigh, leg_material)
 	_foot(Vector2(-15, -4), boots, true)
 	# Front leg
-	_limb(Vector2(8, -46), Vector2(11, -26), 14.0, front_thigh)
-	_limb(Vector2(11, -26), Vector2(14, -7), 11.0, front_thigh)
+	_fill_limb(Vector2(8, -46), Vector2(11, -26), 14.0, front_thigh, leg_material)
+	_fill_limb(Vector2(11, -26), Vector2(14, -7), 11.0, front_thigh, leg_material)
 	_foot(Vector2(15, -4), boots, false)
 	# Calf highlight on the front leg (subtle — big/bright reads as a patch)
 	draw_circle(Vector2(12, -24), 3.0, front_thigh.lightened(0.07))
 
 	# Battle skirt / loincloth over the hips (classic arena garb, original cut)
 	var cloth: Color = accent_color
-	draw_colored_polygon(PackedVector2Array([
+	_fill_polygon(PackedVector2Array([
 		Vector2(-17, -52), Vector2(17, -52), Vector2(13, -34), Vector2(-13, -34),
-	]), cloth)
+	]), cloth, ArtLibrary.material(&"cloth_linen"))
 	for i in 3:
 		var x: float = -9.0 + i * 9.0
 		draw_line(Vector2(x, -50), Vector2(x - 1, -35), cloth.darkened(0.25), 3.0)
 	# Belt (studded when a belt piece is worn)
 	var belt: ArmourData = _worn(Enums.EquipSlot.BELT)
 	var belt_color: Color = _armour_tone(belt) if belt != null else accent_color.darkened(0.3)
-	_limb(Vector2(-17, -52), Vector2(17, -52), 8.0, belt_color)
+	_fill_limb(Vector2(-17, -52), Vector2(17, -52), 8.0, belt_color, _material_of(belt))
 	draw_circle(Vector2(0, -52), 4.5, Color(0.9, 0.76, 0.4))
 	if belt != null:
 		for x in [-11.0, 11.0]:
@@ -351,10 +522,11 @@ func _foot(pos: Vector2, boots: ArmourData, back: bool) -> void:
 	var color: Color = BOOT_LEATHER if boots == null else _armour_tone(boots)
 	if back:
 		color = color.darkened(0.2)
-	_limb(pos, pos + Vector2(7, 0), 9.0, color)
+	var material: Texture2D = _material_of(boots)
+	_fill_limb(pos, pos + Vector2(7, 0), 9.0, color, material)
 	if boots != null:
 		# Boot shaft
-		_limb(pos + Vector2(-1, -2), pos + Vector2(-2, -12), 10.0, color)
+		_fill_limb(pos + Vector2(-1, -2), pos + Vector2(-2, -12), 10.0, color, material)
 
 
 func _draw_torso(skin: Color, skin_hi: Color, skin_sh: Color) -> void:
@@ -373,7 +545,7 @@ func _draw_torso(skin: Color, skin_hi: Color, skin_sh: Color) -> void:
 		var cuirass := PackedVector2Array([
 			Vector2(-15, -52), Vector2(15, -52), Vector2(20, -81), Vector2(-20, -81),
 		])
-		draw_colored_polygon(cuirass, tone)
+		_fill_polygon(cuirass, tone, _material_of(chest))
 		# Trim + centre ridge + rivets
 		draw_line(Vector2(-19, -80), Vector2(19, -80), tone.lightened(0.3), 3.0)
 		draw_line(Vector2(0, -79), Vector2(0, -54), tone.darkened(0.25), 2.5)
@@ -401,7 +573,7 @@ func _draw_torso(skin: Color, skin_hi: Color, skin_sh: Color) -> void:
 		if shoulders != null:
 			var tone: Color = _armour_tone(shoulders)
 			draw_circle(at, 11.0, OUTLINE)
-			draw_circle(at, 9.5, tone)
+			_fill_circle(at, 9.5, tone, _material_of(shoulders))
 			draw_arc(at, 6.5, PI, TAU, 10, tone.lightened(0.3), 2.5)
 		else:
 			draw_circle(at, 9.0, skin if side > 0 else skin_sh)
@@ -413,7 +585,8 @@ func _draw_back_arm(skin_sh: Color) -> void:
 	_limb(Vector2(-19, -77), Vector2(-27, -63), 9.5, skin_sh)
 	_limb(Vector2(-27, -63), Vector2(-29, -50), 8.0, skin_sh)
 	if gloves != null:
-		_limb(Vector2(-28, -58), Vector2(-29, -51), 9.0, _armour_tone(gloves).darkened(0.15))
+		_fill_limb(Vector2(-28, -58), Vector2(-29, -51), 9.0,
+				_armour_tone(gloves).darkened(0.15), _material_of(gloves))
 	draw_circle(Vector2(-29, -49), 5.5, skin_sh)
 
 
@@ -430,6 +603,14 @@ func _draw_head(skin: Color, skin_hi: Color, skin_sh: Color) -> void:
 	if helmet != null:
 		var tone: Color = _armour_tone(helmet)
 		# Original dome helm with brow rim; heavy versions add a crest fin
+		var helmet_material: Texture2D = _material_of(helmet)
+		if helmet_material != null:
+			var dome := PackedVector2Array()
+			for i in 13:
+				var sweep: float = PI + PI * i / 12.0
+				dome.append(Vector2(0, -102) + Vector2(cos(sweep), sin(sweep)) * 18.5)
+			dome.append(Vector2(0, -102))
+			_fill_polygon(dome, tone, helmet_material)
 		draw_arc(Vector2(0, -102), 15.5, PI, TAU, 16, tone, 11.0)
 		draw_line(Vector2(-15, -105), Vector2(15, -105), tone.darkened(0.25), 4.0)
 		if helmet.armour_class == Enums.ArmourClass.HEAVY:
@@ -512,6 +693,90 @@ func _draw_shield() -> void:
 				Color(0.72, 0.75, 0.82))
 
 
+# --- Texture helpers --------------------------------------------------------
+
+## Legendary glow (charter §25 VFX list): a wielded Legendary or Mythic weapon
+## haloes its owner. Rebuilt whenever the weapon changes; silently does nothing
+## when the art is not installed.
+func _refresh_aura() -> void:
+	if not is_inside_tree():
+		return
+	var wants: bool = weapon != null and weapon.rarity >= Enums.Rarity.LEGENDARY
+	if not wants:
+		if _aura != null:
+			_aura.queue_free()
+			_aura = null
+		return
+	if _aura != null:
+		return
+	var glow: Texture2D = ArtLibrary.vfx(&"legendary_glow")
+	if glow == null:
+		return
+	_aura = Sprite2D.new()
+	_aura.texture = glow
+	_aura.position = Vector2(0, -68)
+	_aura.scale = Vector2(190.0, 250.0) / glow.get_size()
+	_aura.modulate = Color(1.0, 0.84, 0.45, 0.26)
+	_aura.z_index = -1
+	add_child(_aura)
+	if bool(SaveManager.get_setting(CombatFeel.REDUCED_FX_SETTING, false)):
+		return
+	var pulse: Tween = create_tween()
+	pulse.set_loops()
+	pulse.tween_property(_aura, "modulate:a", 0.38, 1.1) 			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	pulse.tween_property(_aura, "modulate:a", 0.20, 1.1) 			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+
+## UVs that tile a material patch across rig space at a fixed world scale, so
+## the same leather reads at the same grain on a helm and on a cuirass.
+static func _tile_uvs(points: PackedVector2Array) -> PackedVector2Array:
+	var uvs := PackedVector2Array()
+	for point in points:
+		uvs.append(point / MATERIAL_TILE)
+	return uvs
+
+
+## Polygon fill that uses an armour material when the piece carries one and
+## falls straight back to the flat tone when it does not.
+func _fill_polygon(points: PackedVector2Array, tone: Color, texture: Texture2D) -> void:
+	if texture == null:
+		draw_colored_polygon(points, tone)
+	else:
+		draw_colored_polygon(points, tone, _tile_uvs(points), texture)
+
+
+func _fill_circle(center: Vector2, radius: float, tone: Color,
+		texture: Texture2D) -> void:
+	if texture == null:
+		draw_circle(center, radius, tone)
+		return
+	var points := PackedVector2Array()
+	for i in 16:
+		var angle: float = TAU * i / 16.0
+		points.append(center + Vector2(cos(angle), sin(angle)) * radius)
+	_fill_polygon(points, tone, texture)
+
+
+## Textured counterpart of `_limb` — a capsule built from a quad plus two end
+## discs, so a greave or a manica carries its material down the limb.
+func _fill_limb(from: Vector2, to: Vector2, width: float, tone: Color,
+		texture: Texture2D) -> void:
+	if texture == null:
+		_limb(from, to, width, tone)
+		return
+	var normal: Vector2 = (to - from).orthogonal().normalized() * (width / 2.0)
+	_fill_polygon(PackedVector2Array([
+		from + normal, to + normal, to - normal, from - normal,
+	]), tone, texture)
+	_fill_circle(from, width / 2.0, tone, texture)
+	_fill_circle(to, width / 2.0, tone, texture)
+
+
+## The material patch a worn piece paints itself with (null = flat tone).
+static func _material_of(piece: ArmourData) -> Texture2D:
+	return piece.material_texture if piece != null else null
+
+
 ## Round-capped thick stroke — the rig's building block.
 func _limb(from: Vector2, to: Vector2, width: float, color: Color) -> void:
 	draw_line(from, to, color, width)
@@ -556,7 +821,8 @@ class ArmRig:
 		draw_circle(Vector2(4, 5), 4.5, skin_hi)
 		_stroke(Vector2(8, 13), HAND, 8.5, skin)
 		if gloves != null:
-			_stroke(Vector2(9, 18), HAND, 9.5, rig._armour_tone(gloves))
+			_fill_stroke(Vector2(9, 18), HAND, 9.5, rig._armour_tone(gloves),
+					PlaceholderRig._material_of(gloves))
 		draw_circle(HAND, 6.0, skin)
 
 		_draw_weapon(rig)
@@ -570,9 +836,33 @@ class ArmRig:
 					fist.darkened(0.2), 1.6)
 			draw_circle(HAND + Vector2(-2.5, -1), 2.0, fist.lightened(0.12))
 
+	## Painted sprite in the fist: scaled to the class's reach, pivoted on the
+	## grip (bottom edge for everything held by a handle, dead centre for a
+	## bow) and leaned into the fight. No tier tint — the art already carries
+	## the metal.
+	func _draw_weapon_sprite(sprite: Texture2D, wc: Enums.WeaponClass) -> void:
+		var texture_size: Vector2 = sprite.get_size()
+		if texture_size.y <= 0.0:
+			return
+		var length: float = PlaceholderRig.SPRITE_LENGTH.get(wc, 72.0)
+		var width: float = length * (texture_size.x / texture_size.y)
+		var centred: bool = wc == Enums.WeaponClass.RANGED
+		# Nudged forward of the fist so a broad head clears the chest instead
+		# of hanging over it; the wider the weapon, the further it steps out.
+		var clearance := Vector2(minf(width * 0.18, 12.0), 0.0)
+		draw_set_transform(HAND + clearance,
+				PlaceholderRig.SPRITE_TILT.get(wc, 0.18), Vector2.ONE)
+		draw_texture_rect(sprite, Rect2(
+				-width * 0.5, -length * (0.5 if centred else 0.88), width, length),
+				false)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
 	func _draw_weapon(rig: PlaceholderRig) -> void:
 		var wc: Enums.WeaponClass = rig.weapon.weapon_class if rig.weapon != null \
 				else rig.weapon_class
+		if rig.weapon != null and rig.weapon.sprite != null:
+			_draw_weapon_sprite(rig.weapon.sprite, wc)
+			return
 		var metal: Color = rig._metal()
 		var metal_hi: Color = metal.lightened(0.25)
 		var wood := Color(0.42, 0.28, 0.15)
@@ -656,3 +946,54 @@ class ArmRig:
 		draw_line(from, to, color, width)
 		draw_circle(from, width / 2.0, color)
 		draw_circle(to, width / 2.0, color)
+
+	## Material-filled stroke drawn on THIS node. Shoulder-local points are
+	## shifted into rig space for the UVs so the grain lines up with the body.
+	func _fill_stroke(from: Vector2, to: Vector2, width: float, color: Color,
+			texture: Texture2D) -> void:
+		if texture == null:
+			_stroke(from, to, width, color)
+			return
+		var normal: Vector2 = (to - from).orthogonal().normalized() * (width / 2.0)
+		var quad := PackedVector2Array([
+			from + normal, to + normal, to - normal, from - normal,
+		])
+		var uvs := PackedVector2Array()
+		for point in quad:
+			uvs.append((point + PlaceholderRig.SHOULDER) / PlaceholderRig.MATERIAL_TILE)
+		draw_colored_polygon(quad, color, uvs, texture)
+		draw_circle(from, width / 2.0, color)
+		draw_circle(to, width / 2.0, color)
+
+
+class StunStars:
+	extends Node2D
+	## Three stars circling a stunned fighter's head (charter §25 "Stunned").
+	## Uses the painted star when the art is installed and a drawn one when it
+	## is not, so the reaction is never invisible.
+
+	const COUNT: int = 3
+	const RADIUS := Vector2(26.0, 9.0)
+
+	var _time: float = 0.0
+	var _star: Texture2D = null
+
+	func _ready() -> void:
+		_star = ArtLibrary.vfx(&"stun_star")
+
+	func _process(delta: float) -> void:
+		_time += delta
+		queue_redraw()
+
+	func _draw() -> void:
+		for i in COUNT:
+			var angle: float = _time * 3.2 + TAU * i / COUNT
+			var at := Vector2(cos(angle) * RADIUS.x, sin(angle) * RADIUS.y)
+			# Stars swinging behind the head read smaller.
+			var depth: float = 0.7 + 0.3 * (0.5 + 0.5 * sin(angle))
+			if _star != null:
+				var side: float = 15.0 * depth
+				draw_texture_rect(_star,
+						Rect2(at - Vector2(side, side) / 2.0, Vector2(side, side)), false)
+			else:
+				draw_circle(at, 4.0 * depth, Color(1.0, 0.87, 0.3))

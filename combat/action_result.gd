@@ -15,6 +15,11 @@ var hit_chance: float = 0.0
 var crit: bool = false
 var mitigation: DamageCalculator.MitigationResult = null
 var killed: bool = false
+## The target was in a guarded stance when the blow arrived — the difference
+## between a blocked hit and a clean one, and between a miss and a parry.
+var target_was_defending: bool = false
+## This blow emptied the target's armour pool (charter §25 "armour break").
+var armour_broken: bool = false
 
 # Rest fields
 var energy_restored: int = 0

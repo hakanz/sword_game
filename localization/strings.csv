@@ -424,3 +424,6 @@ item.weapon.longwatch_bow.name,Longwatch Bow,Uzunnöbet Yayı
 item.armour.saltplate_cuirass.name,Saltplate Cuirass,Tuzlevha Göğüslük
 item.armour.wardens_greathelm.name,Warden's Greathelm,Muhafız Tolgası
 item.armour.tidewalker_boots.name,Tidewalker Boots,Gelgityürüyen Çizmeler
+combat.float.parry,Parried!,Savuşturdu!
+combat.float.armour_break,"ARMOUR BREAKS!","ZIRH PARÇALANDI!"
+settings.blood,Blood effects,Kan efektleri
