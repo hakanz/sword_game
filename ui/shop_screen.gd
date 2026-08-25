@@ -185,7 +185,8 @@ func _add_buy_row(profile: PlayerProfile, item: Resource, is_weapon: bool) -> vo
 			else EquipmentService.armour_block_reason(profile, item)
 	var row: HBoxContainer = _make_row(item, is_weapon,
 			_requirement_text(reason, item as WeaponData if is_weapon else null,
-					null if is_weapon else item as ArmourData))
+					null if is_weapon else item as ArmourData),
+			not owned)
 	if owned:
 		var owned_label := Label.new()
 		owned_label.text = tr("shop.owned")
@@ -254,7 +255,11 @@ func _add_sealed_row(item: Resource, is_weapon: bool) -> void:
 	info.add_child(hint)
 
 
-func _make_row(item: Resource, is_weapon: bool, requirement: String) -> HBoxContainer:
+## Builds one stock row. `show_delta` adds the "what changes if I take this"
+## comparison against the currently equipped piece (V2 §52.4) — shown while
+## BUYING, where the decision actually happens.
+func _make_row(item: Resource, is_weapon: bool, requirement: String,
+		show_delta: bool = false) -> HBoxContainer:
 	var panel := PanelContainer.new()
 	# Hovering any readable row previews the item on the fitting doll;
 	# leaving the row re-dresses the doll in the ACTUAL kit.
@@ -278,16 +283,35 @@ func _make_row(item: Resource, is_weapon: bool, requirement: String) -> HBoxCont
 	var info := VBoxContainer.new()
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(info)
+	var rarity: Enums.Rarity = item.get("rarity")
+	var name_row := HBoxContainer.new()
+	name_row.add_theme_constant_override("separation", 8)
+	info.add_child(name_row)
 	var name_label := Label.new()
 	name_label.text = tr(item.get("name_key"))
 	name_label.add_theme_font_size_override("font_size", 19)
 	name_label.add_theme_color_override("font_color", ItemIcons.tier_tint(tier).lightened(0.25))
-	info.add_child(name_label)
+	name_row.add_child(name_label)
+	# Rarity is what promises the modifier budget, so it is stated plainly
+	# next to the name instead of hiding in a colour (V2 §52.2).
+	if rarity > Enums.Rarity.COMMON:
+		var rarity_label := Label.new()
+		rarity_label.text = tr(ItemCompare.rarity_key(rarity))
+		rarity_label.add_theme_font_size_override("font_size", 14)
+		rarity_label.add_theme_color_override("font_color", ItemCompare.rarity_color(rarity))
+		rarity_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		name_row.add_child(rarity_label)
 	var stats_label := Label.new()
 	stats_label.text = _weapon_stats(item) if is_weapon else _armour_stats(item)
 	stats_label.add_theme_font_size_override("font_size", 14)
 	stats_label.add_theme_color_override("font_color", Color(0.75, 0.72, 0.8))
 	info.add_child(stats_label)
+	_add_detail(info, ItemCompare.affix_summary(item, is_weapon), ItemCompare.AFFIX_COLOR)
+	_add_detail(info, ItemCompare.signature_text(item), ItemCompare.SIGNATURE_COLOR)
+	if show_delta:
+		var deltas: Dictionary = ItemCompare.deltas(GameManager.profile, item, is_weapon)
+		_add_detail(info, ItemCompare.gains_text(deltas), ItemCompare.GAIN_COLOR)
+		_add_detail(info, ItemCompare.losses_text(deltas), ItemCompare.LOSS_COLOR)
 	if requirement != "":
 		var req_label := Label.new()
 		req_label.text = requirement
@@ -295,6 +319,18 @@ func _make_row(item: Resource, is_weapon: bool, requirement: String) -> HBoxCont
 		req_label.add_theme_color_override("font_color", Color(0.95, 0.75, 0.4))
 		info.add_child(req_label)
 	return row
+
+
+## Adds one small detail line, skipping empty text.
+func _add_detail(info: VBoxContainer, text: String, color: Color) -> void:
+	if text == "":
+		return
+	var label := Label.new()
+	label.text = text
+	label.add_theme_font_size_override("font_size", 13)
+	label.add_theme_color_override("font_color", color)
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info.add_child(label)
 
 
 func _buy(profile: PlayerProfile, is_weapon: bool, item: Resource) -> void:

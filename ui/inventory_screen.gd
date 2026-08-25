@@ -35,26 +35,26 @@ func _refresh() -> void:
 
 	# Equipped weapon first, then satchel.
 	var equipped_weapon: WeaponData = ItemDB.weapon(profile.weapon_id)
-	_add_row(_weapons_list, equipped_weapon.name_key, _weapon_stats(equipped_weapon), "", true, Callable())
+	_add_row(_weapons_list, equipped_weapon, true, "", true, Callable())
 	for id in profile.inventory_weapon_ids:
 		var weapon: WeaponData = ItemDB.weapon(id)
 		if weapon == null or weapon.id != id:
 			continue
 		var reason: String = EquipmentService.weapon_block_reason(profile, weapon)
-		_add_row(_weapons_list, weapon.name_key, _weapon_stats(weapon),
+		_add_row(_weapons_list, weapon, true,
 				_requirement_text(reason, weapon, null), false,
 				func() -> void: _equip_weapon(profile, id))
 
 	for id in profile.armour_ids:
 		var piece: ArmourData = ItemDB.armour_piece(id)
 		if piece != null:
-			_add_row(_armour_list, piece.name_key, _armour_stats(piece), "", true, Callable())
+			_add_row(_armour_list, piece, false, "", true, Callable())
 	for id in profile.inventory_armour_ids:
 		var piece: ArmourData = ItemDB.armour_piece(id)
 		if piece == null:
 			continue
 		var reason: String = EquipmentService.armour_block_reason(profile, piece)
-		_add_row(_armour_list, piece.name_key, _armour_stats(piece),
+		_add_row(_armour_list, piece, false,
 				_requirement_text(reason, null, piece), false,
 				func() -> void: _equip_armour(profile, id))
 
@@ -78,8 +78,11 @@ func _equip_armour(profile: PlayerProfile, id: StringName) -> void:
 	_refresh()
 
 
+## One satchel/equipped row. Unequipped rows carry the same modifier and
+## "what changes if I swap" lines the shop shows (V2 §52.4) — the decision is
+## identical, so the information should be too.
 func _add_row(
-		list: VBoxContainer, name_key: String, stats: String, requirement: String,
+		list: VBoxContainer, item: Resource, is_weapon: bool, requirement: String,
 		equipped: bool, on_equip: Callable) -> void:
 	var panel := PanelContainer.new()
 	list.add_child(panel)
@@ -96,15 +99,32 @@ func _add_row(
 	var info := VBoxContainer.new()
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(info)
+	var rarity: Enums.Rarity = item.get("rarity")
+	var name_row := HBoxContainer.new()
+	name_row.add_theme_constant_override("separation", 8)
+	info.add_child(name_row)
 	var name_label := Label.new()
-	name_label.text = tr(name_key)
+	name_label.text = tr(item.get("name_key"))
 	name_label.add_theme_font_size_override("font_size", 19)
-	info.add_child(name_label)
+	name_row.add_child(name_label)
+	if rarity > Enums.Rarity.COMMON:
+		var rarity_label := Label.new()
+		rarity_label.text = tr(ItemCompare.rarity_key(rarity))
+		rarity_label.add_theme_font_size_override("font_size", 14)
+		rarity_label.add_theme_color_override("font_color", ItemCompare.rarity_color(rarity))
+		rarity_label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		name_row.add_child(rarity_label)
 	var stats_label := Label.new()
-	stats_label.text = stats
+	stats_label.text = _weapon_stats(item) if is_weapon else _armour_stats(item)
 	stats_label.add_theme_font_size_override("font_size", 14)
 	stats_label.add_theme_color_override("font_color", Color(0.75, 0.72, 0.8))
 	info.add_child(stats_label)
+	_add_detail(info, ItemCompare.affix_summary(item, is_weapon), ItemCompare.AFFIX_COLOR)
+	_add_detail(info, ItemCompare.signature_text(item), ItemCompare.SIGNATURE_COLOR)
+	if not equipped:
+		var deltas: Dictionary = ItemCompare.deltas(GameManager.profile, item, is_weapon)
+		_add_detail(info, ItemCompare.gains_text(deltas), ItemCompare.GAIN_COLOR)
+		_add_detail(info, ItemCompare.losses_text(deltas), ItemCompare.LOSS_COLOR)
 	if requirement != "":
 		var req_label := Label.new()
 		req_label.text = requirement
@@ -155,3 +175,15 @@ func _requirement_text(reason: String, weapon: WeaponData, piece: ArmourData) ->
 		"equip.requires_arcana":
 			value = weapon.required_arcana
 	return tr(reason).format({"value": value})
+
+
+## Adds one small detail line, skipping empty text.
+func _add_detail(info: VBoxContainer, text: String, color: Color) -> void:
+	if text == "":
+		return
+	var label := Label.new()
+	label.text = text
+	label.add_theme_font_size_override("font_size", 13)
+	label.add_theme_color_override("font_color", color)
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info.add_child(label)
