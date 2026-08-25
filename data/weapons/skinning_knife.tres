@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="WeaponData" format=3 load_steps=2]
+[gd_resource type="Resource" script_class="WeaponData" format=3 load_steps=3]
 
 [ext_resource type="Script" path="res://data/models/weapon_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/generated/items/weapons/skinning_knife.png" id="tex1"]
 
 [resource]
 script = ExtResource("1")
@@ -24,3 +25,4 @@ required_level = 1
 required_strength = 0
 required_agility = 0
 required_arcana = 0
+sprite = ExtResource("tex1")

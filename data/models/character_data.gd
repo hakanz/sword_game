@@ -45,6 +45,12 @@ extends Resource
 @export var phase_two_key: String = ""
 @export var phase_three_key: String = ""
 
+@export_group("Visuals")
+## Painted head-and-shoulders portrait for named fighters (champions and
+## regional rivals). Null simply means no portrait is shown — generated
+## opponents never have one (charter §27).
+@export var portrait: Texture2D
+
 @export_group("Placeholder Visuals")
 ## Placeholder-rig tint colors until real art exists (charter §27).
 @export var body_color: Color = Color(0.82, 0.62, 0.45)

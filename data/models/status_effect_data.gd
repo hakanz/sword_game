@@ -26,5 +26,8 @@ extends Resource
 @export var skips_turn: bool = false
 
 @export_group("Presentation")
-## Placeholder icon/tint color until real icons exist (charter §27).
+## Tint used for floating text, particle colour and the icon-less fallback
+## chip (charter §27).
 @export var tint: Color = Color(0.6, 0.9, 0.4)
+## Painted emblem for the HUD status chip. Null falls back to a tinted dot.
+@export var icon: Texture2D

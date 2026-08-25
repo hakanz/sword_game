@@ -7,6 +7,12 @@ extends Resource
 @export var name_key: String = ""
 @export var slot: Enums.EquipSlot = Enums.EquipSlot.CHEST
 @export var armour_class: Enums.ArmourClass = Enums.ArmourClass.MEDIUM
+## Painted icon of the piece on its own, for shop and inventory rows. Null
+## falls back to the shared per-slot glyph (charter §27).
+@export var icon: Texture2D
+## Tiling material patch the rig fills this piece's shapes with (leather,
+## mail, plate, cloth...). Null leaves the rig's flat tone alone.
+@export var material_texture: Texture2D
 ## Contribution to the combat armour pool (absorbs damage before HP).
 @export_range(0, 999) var armour: int = 5
 ## Evasion modifier — heavy armour typically negative, light positive/zero.

@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="CharacterData" format=3 load_steps=13]
+[gd_resource type="Resource" script_class="CharacterData" format=3 load_steps=14]
 
 [ext_resource type="Script" path="res://data/models/character_data.gd" id="1"]
 [ext_resource type="Script" path="res://data/models/attribute_block.gd" id="2"]
@@ -11,6 +11,7 @@
 [ext_resource type="Resource" path="res://data/characters/personalities/berserker.tres" id="12"]
 [ext_resource type="Resource" path="res://data/skills/skull_ringer.tres" id="9"]
 [ext_resource type="Resource" path="res://data/skills/war_bellow.tres" id="10"]
+[ext_resource type="Texture2D" path="res://assets/generated/portraits/maulhilda.png" id="tex1"]
 
 [sub_resource type="Resource" id="Resource_attrs"]
 script = ExtResource("2")
@@ -45,3 +46,4 @@ intro_key = "champion.maulhilda.intro"
 defeat_key = "champion.maulhilda.defeat"
 body_color = Color(0.62, 0.5, 0.44, 1)
 accent_color = Color(0.35, 0.12, 0.14, 1)
+portrait = ExtResource("tex1")

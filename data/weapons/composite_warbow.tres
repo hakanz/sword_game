@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="WeaponData" format=3 load_steps=3]
+[gd_resource type="Resource" script_class="WeaponData" format=3 load_steps=4]
 
 [ext_resource type="Script" path="res://data/models/weapon_data.gd" id="1"]
 [ext_resource type="Resource" path="res://data/weapons/skinning_knife.tres" id="2"]
+[ext_resource type="Texture2D" path="res://assets/generated/items/weapons/composite_warbow.png" id="tex1"]
 
 [resource]
 script = ExtResource("1")
@@ -26,3 +27,4 @@ required_level = 11
 required_strength = 0
 required_agility = 14
 required_arcana = 0
+sprite = ExtResource("tex1")

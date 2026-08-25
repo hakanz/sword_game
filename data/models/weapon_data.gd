@@ -9,6 +9,12 @@ extends Resource
 ## Localization key for the display name.
 @export var name_key: String = ""
 @export var weapon_class: Enums.WeaponClass = Enums.WeaponClass.SWORD
+## Painted side view of this weapon, drawn standing upright with the grip at
+## the BOTTOM EDGE of the image (bows are gripped at their centre instead).
+## One texture serves both jobs: the rig draws it in the fist, and shop and
+## inventory rows draw it as the item icon. Null falls back to the rig's
+## primitive drawing and the shared per-class glyph (charter §27).
+@export var sprite: Texture2D
 @export var damage_type: Enums.DamageType = Enums.DamageType.SLASH
 @export_range(0, 999) var damage_min: int = 1
 @export_range(0, 999) var damage_max: int = 3

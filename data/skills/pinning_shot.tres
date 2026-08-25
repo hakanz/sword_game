@@ -1,15 +1,15 @@
 [gd_resource type="Resource" script_class="SkillData" format=3 load_steps=4]
 
 [ext_resource type="Script" path="res://data/models/skill_data.gd" id="1"]
-[ext_resource type="Texture2D" path="res://assets/icons/skill_pinning_shot.svg" id="9"]
 [ext_resource type="Resource" path="res://data/status_effects/slow.tres" id="2"]
+[ext_resource type="Texture2D" path="res://assets/generated/icons/skills/pinning_shot.png" id="tex1"]
 
 [resource]
 script = ExtResource("1")
 id = &"skill.pinning_shot"
 name_key = "skill.pinning_shot.name"
 description_key = "skill.pinning_shot.desc"
-icon = ExtResource("9")
+icon = ExtResource("tex1")
 target = 0
 energy_cost = 12
 mana_cost = 0

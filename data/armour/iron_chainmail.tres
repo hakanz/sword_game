@@ -1,6 +1,8 @@
-[gd_resource type="Resource" script_class="ArmourData" format=3 load_steps=2]
+[gd_resource type="Resource" script_class="ArmourData" format=3 load_steps=4]
 
 [ext_resource type="Script" path="res://data/models/armour_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/generated/items/armour/iron_chainmail.png" id="tex1"]
+[ext_resource type="Texture2D" path="res://assets/generated/materials/iron_mail.webp" id="tex2"]
 
 [resource]
 script = ExtResource("1")
@@ -15,3 +17,5 @@ rarity = 1
 value = 120
 required_level = 8
 required_strength = 12
+icon = ExtResource("tex1")
+material_texture = ExtResource("tex2")

@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="CharacterData" format=3 load_steps=14]
+[gd_resource type="Resource" script_class="CharacterData" format=3 load_steps=15]
 
 [ext_resource type="Script" path="res://data/models/character_data.gd" id="1"]
 [ext_resource type="Script" path="res://data/models/attribute_block.gd" id="2"]
@@ -12,6 +12,7 @@
 [ext_resource type="Resource" path="res://data/skills/gutter_lunge.tres" id="10"]
 [ext_resource type="Resource" path="res://data/skills/second_wind.tres" id="11"]
 [ext_resource type="Resource" path="res://data/characters/personalities/champion_orzha_cornered.tres" id="12"]
+[ext_resource type="Texture2D" path="res://assets/generated/portraits/orzha.png" id="tex1"]
 
 [sub_resource type="Resource" id="Resource_attrs"]
 script = ExtResource("2")
@@ -46,3 +47,4 @@ intro_key = "champion.orzha.intro"
 defeat_key = "champion.orzha.defeat"
 body_color = Color(0.55, 0.42, 0.35, 1)
 accent_color = Color(0.16, 0.35, 0.35, 1)
+portrait = ExtResource("tex1")

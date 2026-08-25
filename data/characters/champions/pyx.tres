@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="CharacterData" format=3 load_steps=13]
+[gd_resource type="Resource" script_class="CharacterData" format=3 load_steps=15]
 
 [ext_resource type="Script" path="res://data/models/character_data.gd" id="1"]
 [ext_resource type="Script" path="res://data/models/attribute_block.gd" id="2"]
@@ -12,6 +12,7 @@
 [ext_resource type="Resource" path="res://data/skills/enfeebling_hex.tres" id="10"]
 [ext_resource type="Resource" path="res://data/skills/brace_up.tres" id="11"]
 [ext_resource type="Resource" path="res://data/characters/personalities/champion_pyx_cornered.tres" id="12"]
+[ext_resource type="Texture2D" path="res://assets/generated/portraits/pyx.png" id="tex1"]
 
 [sub_resource type="Resource" id="Resource_attrs"]
 script = ExtResource("2")
@@ -46,3 +47,4 @@ intro_key = "champion.pyx.intro"
 defeat_key = "champion.pyx.defeat"
 body_color = Color(0.8, 0.66, 0.52, 1)
 accent_color = Color(0.28, 0.3, 0.52, 1)
+portrait = ExtResource("tex1")

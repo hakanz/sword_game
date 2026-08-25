@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="StatusEffectData" format=3 load_steps=2]
+[gd_resource type="Resource" script_class="StatusEffectData" format=3 load_steps=3]
 
 [ext_resource type="Script" path="res://data/models/status_effect_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/generated/icons/status/stoneguard.png" id="tex1"]
 
 [resource]
 script = ExtResource("1")
@@ -17,3 +18,4 @@ evasion_mod = 0
 damage_dealt_mult = 1.0
 skips_turn = false
 tint = Color(0.62, 0.62, 0.58, 1)
+icon = ExtResource("tex1")

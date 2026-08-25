@@ -1,8 +1,10 @@
-[gd_resource type="Resource" script_class="ArenaData" format=3 load_steps=4]
+[gd_resource type="Resource" script_class="ArenaData" format=3 load_steps=6]
 
 [ext_resource type="Script" path="res://data/models/arena_data.gd" id="1"]
 [ext_resource type="Resource" path="res://data/characters/rivals/vurm.tres" id="3"]
 [ext_resource type="Resource" path="res://data/characters/champions/orzha.tres" id="2"]
+[ext_resource type="Texture2D" path="res://assets/generated/arenas/emberholt_backdrop.webp" id="tex1"]
+[ext_resource type="Texture2D" path="res://assets/generated/arenas/emberholt_ground.webp" id="tex2"]
 
 [resource]
 script = ExtResource("1")
@@ -16,3 +18,5 @@ rival = ExtResource("3")
 sky_color = Color(0.45, 0.24, 0.22, 1)
 ground_color = Color(0.42, 0.36, 0.35, 1)
 wall_color = Color(0.24, 0.16, 0.16, 1)
+backdrop = ExtResource("tex1")
+ground_texture = ExtResource("tex2")

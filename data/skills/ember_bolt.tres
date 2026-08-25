@@ -1,15 +1,15 @@
 [gd_resource type="Resource" script_class="SkillData" format=3 load_steps=4]
 
 [ext_resource type="Script" path="res://data/models/skill_data.gd" id="1"]
-[ext_resource type="Texture2D" path="res://assets/icons/skill_ember_bolt.svg" id="9"]
 [ext_resource type="Resource" path="res://data/status_effects/burn.tres" id="2"]
+[ext_resource type="Texture2D" path="res://assets/generated/icons/skills/ember_bolt.png" id="tex1"]
 
 [resource]
 script = ExtResource("1")
 id = &"skill.ember_bolt"
 name_key = "skill.ember_bolt.name"
 description_key = "skill.ember_bolt.desc"
-icon = ExtResource("9")
+icon = ExtResource("tex1")
 target = 0
 energy_cost = 0
 mana_cost = 15

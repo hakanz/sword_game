@@ -34,6 +34,11 @@ enum Target {
 ## (V2 §54's "taunt-tagged skill", as data instead of a hardcoded id list).
 @export_range(0, 20) var crowd_appeal: int = 0
 
+## Plays the rig's Taunt animation when this skill resolves (charter §25).
+## A flag rather than an id check, so adding a showboating move stays a
+## content task.
+@export var taunts: bool = false
+
 @export_group("Status")
 ## Applied to the target on hit (FOE) or to self (SELF buffs).
 @export var applies_status: StatusEffectData

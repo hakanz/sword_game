@@ -18,6 +18,13 @@ extends Resource
 ## meeting went. Optional — a region without one simply never fields a rival.
 @export var rival: CharacterData
 
+@export_group("Visuals")
+## Painted backdrop for this arena, drawn behind the fighters. Null falls
+## back to ArenaVisual's primitive sky/stands/wall drawing (charter §27).
+@export var backdrop: Texture2D
+## Tiling texture for the fighting ground. Null falls back to flat sand.
+@export var ground_texture: Texture2D
+
 @export_group("Placeholder Visuals")
 ## Placeholder palette until real backgrounds exist (charter §27).
 @export var sky_color: Color = Color(0.55, 0.42, 0.35)

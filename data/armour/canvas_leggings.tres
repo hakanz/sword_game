@@ -1,6 +1,8 @@
-[gd_resource type="Resource" script_class="ArmourData" format=3 load_steps=2]
+[gd_resource type="Resource" script_class="ArmourData" format=3 load_steps=4]
 
 [ext_resource type="Script" path="res://data/models/armour_data.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/generated/items/armour/canvas_leggings.png" id="tex1"]
+[ext_resource type="Texture2D" path="res://assets/generated/materials/cloth_linen.webp" id="tex2"]
 
 [resource]
 script = ExtResource("1")
@@ -15,3 +17,5 @@ rarity = 0
 value = 10
 required_level = 1
 required_strength = 0
+icon = ExtResource("tex1")
+material_texture = ExtResource("tex2")
