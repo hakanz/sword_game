@@ -12,6 +12,12 @@ signal stance_changed(new_stance: Enums.Stance)
 signal crowd_changed(value: int, state: CrowdSystem.State)
 signal died
 
+## Arena zoom applied to the rig. Named because the arena framing depends on
+## it: ArenaVisual puts the backdrop's wall base above the fighters, and how
+## tall a fighter actually is on the sand is RIG_SCALE x the rig's own height
+## (asserted in test_art.gd).
+const RIG_SCALE: float = 1.35
+
 var data: CharacterData = null
 var is_player_controlled: bool = false
 
@@ -129,7 +135,7 @@ func setup(character: CharacterData, player_controlled: bool, facing_left: bool)
 	rig.equipment = data.armour_pieces
 	rig.facing_left = facing_left
 	# Arena zoom (session-5 owner design: fighters must dominate the sand).
-	rig.scale = Vector2(1.35, 1.35)
+	rig.scale = Vector2(RIG_SCALE, RIG_SCALE)
 	add_child(rig)
 	# Low HP turns the resting face worried (rig expression baseline).
 	hp_changed.connect(func(current: int, max_value: int) -> void:

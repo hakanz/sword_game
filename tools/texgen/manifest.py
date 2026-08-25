@@ -213,27 +213,43 @@ def status_assets():
 
 
 # --- Arena backdrops + ground ------------------------------------------------
+# The fighters stand across the middle of the frame, so the backdrop must keep
+# its detail ABOVE them: architecture and crowd in the upper band, and nothing
+# but open ground below the wall line. The engine tiles the fighting sand over
+# that lower half itself, which is what makes it read as boundless at any
+# aspect ratio (scenes/arena/arena_visual.gd).
+HORIZON = (
+    "Composition is strict and must be followed exactly. Reading the image top "
+    "to bottom: the top fifth is a narrow strip of sky only. From 20 percent "
+    "down to 62 percent of the image height, tall tiered stands PACKED SOLID "
+    "with a huge dense crowd of tiny spectators fill the ENTIRE width, curving "
+    "away to both sides so the arena reads as enormous. From 62 to 72 percent "
+    "is the plain perimeter wall, running level straight across with no gates, "
+    "no doors and no torches on it. Below 72 percent is completely flat open "
+    "empty ground stretching toward the viewer with absolutely nothing on it: "
+    "no objects, no people, no creatures, no cast shadows. Deep atmospheric "
+    "haze on the stands so they sit well BEHIND the empty ground"
+)
+
 ARENAS = [
     ("gravelmaw",
-     "a small, poor, sun-blasted gravel pit arena carved into a dry canyon: "
-     "rough grey drystone walls, crooked wooden scaffolding stands packed with "
-     "a rowdy peasant crowd, two dark barred holding gates in the lower wall, "
-     "tattered brown pennants, a hazy pale-gold noon sky over the canyon rim",
-     "coarse grey-brown gravel and dry cracked dirt with scattered small stones"),
+     "a poor sun-blasted gravel pit arena cut into a dry canyon: rough grey "
+     "drystone perimeter wall, crooked wooden scaffolding stands packed with a "
+     "rowdy peasant crowd, tattered brown pennants on poles, canyon cliffs and "
+     "a hazy pale-gold noon sky beyond the rim",
+     "fine dry grey-brown arena sand with a light dusting of tiny grit"),
     ("emberholt",
-     "a volcanic ring arena at dusk: black basalt tiered stands packed with a "
-     "roaring crowd lit orange from below, iron braziers of open flame along "
-     "the parapet, glowing lava seams in the far cliff wall, drifting ash, a "
-     "deep smoky red-purple sky",
-     "dark volcanic ash and scorched black sand shot through with faint dull "
-     "orange embers"),
+     "a volcanic ring arena at dusk: black basalt perimeter wall, steep basalt "
+     "tiers packed with a roaring crowd lit orange from below, iron braziers "
+     "burning along the top parapet, glowing lava seams in the far cliffs, "
+     "drifting ash and a deep smoky red-purple sky",
+     "fine dark volcanic ash, warm charcoal grey-brown, barely speckled"),
     ("saltmere",
-     "a grand coastal amphitheatre built on a salt flat at low tide: bleached "
-     "white-and-turquoise stone tiers crowded with spectators, salt-crusted "
-     "pillars strung with fishing nets and blue banners, a flat shining sea and "
-     "a wide pale cyan sky beyond the far wall",
-     "pale cracked salt flat crust, bone-white with faint turquoise mineral "
-     "staining and shallow dried tide ripples"),
+     "a grand coastal amphitheatre at low tide: bleached white-and-turquoise "
+     "stone perimeter wall, tall tiers crowded with spectators, salt-crusted "
+     "pillars strung with fishing nets and blue banners along the top, a flat "
+     "shining sea and a wide pale cyan sky beyond the far rim",
+     "fine pale salt-dusted sand, warm bone-beige with the faintest cool tint"),
 ]
 
 
@@ -243,16 +259,20 @@ def arena_assets():
         out.append(_asset(
             f"arenas/{stem}_backdrop",
             f"A wide 2D game battle backdrop painted as a stage seen straight "
-            f"on: {backdrop}. The packed crowd in the stands is clearly visible and fills the upper half. The lower third of the image is EMPTY open "
-            f"fighting ground with nothing standing on it. No characters, no "
-            f"fighters, no creatures on the arena floor. {STYLE}. {NEGATIVE}.",
+            f"on, eye level, no perspective tilt: {backdrop}. {HORIZON}. "
+            f"{STYLE}. {NEGATIVE}.",
             aspect="16:9", mode="opaque", size=(1600, 900), fmt="webp",
             square=False))
         out.append(_asset(
             f"arenas/{stem}_ground",
             f"A seamless tiling ground texture, top-down, evenly lit, no "
-            f"shadows, no objects: {ground}. Flat even coverage across the "
-            f"whole square with no focal point. {STYLE}. {NEGATIVE}.",
+            f"shadows, no objects: {ground}. VERY low contrast and very fine "
+            f"grained, almost uniform in value, so that it does not fight the "
+            f"characters standing on it and shows no seams when repeated: no "
+            f"large blotches, no dark patches, no bright patches, no cracks, "
+            f"no ripples, no stripes and no directional pattern of any kind. "
+            f"Perfectly even coverage across the whole square with no focal "
+            f"point. {STYLE}. {NEGATIVE}.",
             aspect="1:1", mode="tile", size=(512, 512), fmt="webp",
             square=False))
     return out

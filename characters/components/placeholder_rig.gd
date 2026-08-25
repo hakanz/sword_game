@@ -23,6 +23,10 @@ const OUTLINE := Color(0.14, 0.09, 0.09, 0.95)
 const BOOT_LEATHER := Color(0.33, 0.21, 0.12)
 ## Front-arm shoulder anchor in rig space — the arm node pivots here.
 const SHOULDER := Vector2(19, -77)
+## How far above its feet the rig reaches, in rig units: the tip of the tallest
+## helmet crest. The arena framing is built on this — the backdrop's wall base
+## has to clear it (test_art.gd asserts the clearance).
+const HEIGHT: float = 130.0
 
 var body_color: Color = Color(0.85, 0.64, 0.47)
 var accent_color: Color = Color(0.35, 0.28, 0.5)

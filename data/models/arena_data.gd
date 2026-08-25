@@ -24,6 +24,11 @@ extends Resource
 @export var backdrop: Texture2D
 ## Tiling texture for the fighting ground. Null falls back to flat sand.
 @export var ground_texture: Texture2D
+## Where the open fighting ground begins in `backdrop`, as a fraction of the
+## image height. ArenaVisual anchors the painting on this line so the wall base
+## always lands just above the fighters' heads, whatever the art's composition
+## — the backdrop is placed by its HORIZON, never by its edges.
+@export_range(0.1, 0.95) var backdrop_horizon: float = 0.72
 
 @export_group("Placeholder Visuals")
 ## Placeholder palette until real backgrounds exist (charter §27).

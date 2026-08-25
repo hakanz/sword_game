@@ -13,14 +13,28 @@ extends Node2D
 ## The 1280x720 design frame the whole scene is composed in, over-extended
 ## sideways so an expanded aspect ratio never shows void at the edges.
 const FRAME := Rect2(-360, 0, 2000, 720)
-## Sand starts here in design space — everything below is fighting ground.
-const GROUND_TOP: float = 503.0
-## Rig-space size of one tile of the ground texture. Big: a small tile turns
-## into visible repetition the moment the camera pulls back.
+## Design width the backdrop is scaled to fill; the gaps out to FRAME are
+## covered by stretching the painting's own edge columns.
+const DESIGN_WIDTH: float = 1280.0
+
+## Where the open ground starts on the PAINTED path. Fighters stand at y=500
+## and stand about 175px tall, so this clears the tallest helmet — the whole
+## point of the session-9 reframe was that a fighter must never be read against
+## the wall, the gates or the crowd (owner directive: only the arena's upper
+## band and its spectators behind them, boundless sand in front).
+const GROUND_TOP: float = 318.0
+## Where the sand starts on the PRIMITIVE fallback path, whose wall is drawn
+## much lower down.
+const PRIMITIVE_GROUND_TOP: float = 503.0
+
+## Rig-space size of one ground tile. Big: a small tile turns into visible
+## repetition the moment the camera pulls back. The generated ground textures
+## are deliberately near-uniform, which is what lets one flat scale read as
+## boundless sand instead of a rug.
 const GROUND_TILE: float = 430.0
-## Height of the fade that blends the tiled ground into the backdrop's own
-## painted floor, so the two never meet on a hard line.
-const GROUND_FADE: float = 96.0
+## Height of the haze that fades the sand into the far wall, so the ground
+## does not meet the arena on a hard line.
+const GROUND_FADE: float = 130.0
 
 
 var arena: ArenaData = null:
@@ -47,55 +61,97 @@ func _draw() -> void:
 	_draw_primitives()
 
 
-## Painted path: the backdrop is fitted to the design frame by HEIGHT, so the
-## horizon and the wall line land where the fighters stand no matter how wide
-## the viewport gets, and the sides are covered by stretching the same art out
-## to the frame edges.
+## Painted path.
+##
+## The backdrop is placed by its HORIZON, not by its edges: the arena's wall
+## base is anchored to `GROUND_TOP` so it always lands above the fighters,
+## whatever the painting's composition (`ArenaData.backdrop_horizon`). Scale
+## comes from width, so the wall spans the screen; whatever that pushes off the
+## top is sky, which costs nothing.
 func _draw_painted() -> void:
-	var size: Vector2 = arena.backdrop.get_size()
-	if size.x <= 0.0 or size.y <= 0.0:
+	var source: Vector2 = arena.backdrop.get_size()
+	if source.x <= 0.0 or source.y <= 0.0:
 		return
-	var height: float = FRAME.size.y
-	var width: float = height * size.x / size.y
-	var left: float = 640.0 - width / 2.0
-	# Side fill first: a wide viewport must not reveal the void beside the art.
-	draw_rect(Rect2(FRAME.position.x, 0, FRAME.size.x, height),
-			arena.sky_color.darkened(0.35))
-	draw_texture_rect(arena.backdrop, Rect2(left, 0, width, height), false)
+	var drawn_height: float = DESIGN_WIDTH * source.y / source.x
+	var top: float = GROUND_TOP - arena.backdrop_horizon * drawn_height
+	var left: float = 640.0 - DESIGN_WIDTH / 2.0
+	draw_texture_rect(arena.backdrop,
+			Rect2(left, top, DESIGN_WIDTH, drawn_height), false)
+	_stretch_edges(source, Rect2(left, top, DESIGN_WIDTH, drawn_height))
+	# Atmospheric distance: the whole backdrop sits behind a cool wash so the
+	# fighters in front of it read as nearer and warmer. This is the other half
+	# of the separation fix — geometry alone still leaves two brown fighters on
+	# a brown wall.
+	_draw_distance_haze()
 
 	if arena.ground_texture != null:
-		_draw_ground(0.3)
+		_draw_ground(GROUND_TOP, 1.0)
+	else:
+		draw_rect(Rect2(FRAME.position.x, GROUND_TOP, FRAME.size.x,
+				FRAME.size.y - GROUND_TOP + 200.0), arena.ground_color)
 	# Warm pool of light on the duelling oval, tying fighters to the ground.
-	draw_set_transform(Vector2(640, 630), 0.0, Vector2(1.0, 0.17))
-	draw_circle(Vector2.ZERO, 540.0, Color(1.0, 0.92, 0.72, 0.10))
+	draw_set_transform(Vector2(640, 560), 0.0, Vector2(1.0, 0.22))
+	draw_circle(Vector2.ZERO, 620.0, Color(1.0, 0.92, 0.72, 0.10))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
-## Ground grain over the fighting sand.
+## Fills the gaps beside the painting at wide aspect ratios by stretching its
+## own outermost columns outward — a stone wall extends convincingly, a flat
+## colour band does not.
+func _stretch_edges(source: Vector2, placed: Rect2) -> void:
+	const SAMPLE: float = 12.0
+	var gap_left: float = placed.position.x - FRAME.position.x
+	if gap_left > 0.0:
+		draw_texture_rect_region(arena.backdrop,
+				Rect2(FRAME.position.x, placed.position.y, gap_left, placed.size.y),
+				Rect2(0.0, 0.0, SAMPLE, source.y))
+	var gap_right: float = FRAME.end.x - placed.end.x
+	if gap_right > 0.0:
+		draw_texture_rect_region(arena.backdrop,
+				Rect2(placed.end.x, placed.position.y, gap_right, placed.size.y),
+				Rect2(source.x - SAMPLE, 0.0, SAMPLE, source.y))
+
+
+## Cool, slightly darkening wash over everything behind the fighting ground,
+## strongest at the horizon where the arena is farthest away.
+func _draw_distance_haze() -> void:
+	var haze: Color = arena.sky_color.lerp(Color(0.35, 0.33, 0.45), 0.55)
+	for band in 10:
+		var t: float = band / 10.0
+		draw_rect(Rect2(FRAME.position.x, t * GROUND_TOP,
+				FRAME.size.x, GROUND_TOP / 10.0 + 1.0),
+				Color(haze, 0.10 + 0.16 * t))
+
+
+## The fighting ground: one flat tiled pass, then a haze that fades it into the
+## far wall. Drawn across the FULL frame and well past the bottom edge, which
+## is what makes the sand read as boundless at any aspect ratio.
 ##
-## On the painted path the backdrop ALREADY contains its own floor, so the
-## tile goes on as a low-alpha grain that adds texture underfoot instead of a
-## second surface arguing with the painting — anything heavier reads as a rug
-## thrown over the arena. On the primitive path there is no painted floor to
-## respect, so the same tile is laid down at full strength.
-func _draw_ground(opacity: float) -> void:
+## `top` differs per path — the painted backdrop hands over above the fighters,
+## the primitive one at its own wall line. `strength` is the tile's opacity
+## over whatever is already there.
+##
+## Deliberately NOT drawn in depth-scaled strips: that was tried and the seams
+## between strips read as horizontal banding, which is worse than the flat
+## texture it was trying to disguise.
+func _draw_ground(top: float, strength: float) -> void:
 	var tile: Vector2 = arena.ground_texture.get_size()
 	if tile.x <= 0.0 or tile.y <= 0.0:
 		return
-	var height: float = FRAME.size.y - GROUND_TOP + 240.0
-	draw_set_transform(Vector2(FRAME.position.x, GROUND_TOP), 0.0,
+	var height: float = FRAME.size.y - top + 260.0
+	draw_set_transform(Vector2(FRAME.position.x, top), 0.0,
 			Vector2(GROUND_TILE, GROUND_TILE) / tile)
 	draw_texture_rect(arena.ground_texture,
 			Rect2(Vector2.ZERO, Vector2(FRAME.size.x, height) * tile / GROUND_TILE),
-			true, Color(1, 1, 1, opacity))
+			true, Color(1, 1, 1, strength))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	# Feathered seam: a few darkening bands standing in for a gradient, which
-	# the Compatibility renderer gets for free as flat rects.
-	for band in 8:
-		var t: float = band / 8.0
-		draw_rect(Rect2(FRAME.position.x, GROUND_TOP + t * GROUND_FADE,
-				FRAME.size.x, GROUND_FADE / 8.0 + 1.0),
-				Color(arena.ground_color.darkened(0.4), 0.3 * (1.0 - t) * opacity))
+	# Distance haze: the far sand washes toward the wall's tone and clears by
+	# the time it reaches the fighters' feet.
+	for band in 12:
+		var t: float = band / 12.0
+		draw_rect(Rect2(FRAME.position.x, top + t * GROUND_FADE,
+				FRAME.size.x, GROUND_FADE / 12.0 + 1.0),
+				Color(arena.wall_color.lightened(0.25), 0.30 * (1.0 - t) * strength))
 
 
 func _draw_primitives() -> void:
@@ -202,7 +258,7 @@ func _draw_primitives() -> void:
 	# glow never paints over the gates/brickwork)
 	draw_rect(Rect2(-2000, 503, 5280, 1500), arena.ground_color)
 	if arena.ground_texture != null:
-		_draw_ground(1.0)
+		_draw_ground(PRIMITIVE_GROUND_TOP, 1.0)
 	draw_set_transform(Vector2(640, 640), 0.0, Vector2(1.0, 0.18))
 	draw_circle(Vector2.ZERO, 560.0, arena.ground_color.lightened(0.1))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

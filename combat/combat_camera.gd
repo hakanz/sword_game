@@ -17,9 +17,14 @@ extends Camera2D
 ## The design-space box the arena backdrop is drawn for. The camera never
 ## frames outside it, so no zoom/pan can reveal the edge of the crowd.
 const DESIGN := Vector2(1280.0, 720.0)
-## Vertical focus: fighters stand on GROUND_Y=500 and are ~240px tall, so
-## their torsos sit here. Only used when there is room to move vertically.
-const FOCUS_Y: float = 400.0
+## Vertical focus. Fighters stand on GROUND_Y=500; framing them dead-centre
+## would crop the stands off the top, and the stands are the whole reason the
+## arena reads as big. Sits ABOVE the torso line on purpose: the ground below
+## the fighters is boundless sand and costs nothing to lose, while every pixel
+## of crowd above them is worth keeping (session-9 reframe, docs/art.md).
+## Floor on how far up this can go: the radial action ring hangs BELOW the
+## player, and pushing the frame further would clip its bottom buttons.
+const FOCUS_Y: float = 332.0
 
 ## Zoom per cell separation (index = separation, clamped). Never below 1.0:
 ## zooming OUT past the design box would expose the drawn arena's edges.

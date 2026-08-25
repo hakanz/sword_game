@@ -20,3 +20,4 @@ ground_color = Color(0.42, 0.36, 0.35, 1)
 wall_color = Color(0.24, 0.16, 0.16, 1)
 backdrop = ExtResource("tex1")
 ground_texture = ExtResource("tex2")
+backdrop_horizon = 0.72
