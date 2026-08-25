@@ -1,7 +1,7 @@
 # PROJECT STATE
 Last Updated: 2026-08-25
-Updated By: Claude (session 7 - phases 11-16 complete: combat feel, itemization,
-crowd, AI depth, rivals/boss phases, third region + events)
+Updated By: Claude (session 8 - the art layer: 140 generated textures, texture
+slots in the data layer, and the charter §25 animations/VFX that were missing)
 
 ## Current Milestone
 MVP core loop COMPLETE and playable end to end: character creation -> arena duels vs
@@ -9,7 +9,9 @@ generated opponents -> XP/levels/attributes/skills -> gold -> shop/inventory/equ
 champion challenge. ALL charter phases now have their core systems in place:
 P6 COMPLETE for current scope (arena regions + 4-round tournaments ending in the
 region champion; winning unlocks the next region; 2 arenas / 2 champions).
-P7: theme/icons/VFX/synth-SFX. P8: settings screen (volumes, language, screen-shake
+P7: TEXTURED (session 8) - 140 generated textures across items, arenas, UI,
+VFX, portraits and armour materials, plus the full §25 animation/VFX set;
+audio is still synth-SFX + silence. P8: settings screen (volumes, language, screen-shake
 slider, reduced-fx toggle) + in-combat pause overlay (touch button + Esc).
 P9: content grown to 20 weapons / 18 armour / 14 skills / 9 statuses / 2 arenas.
 P10: §35 battle simulator EXISTS (tools/battle_sim.gd, drives the real
@@ -62,9 +64,10 @@ build-guidance recommendations, victory celebration animation.
 - Localization: EN + TR complete (every player-visible string keyed; integrity-tested)
 - Character creation: name, 3 origin presets, colors, live rig preview (2.4x)
 - UI theme: global programmatic theme (UITheme), styled menus/HUD/bars
-- Visuals: rig v3 (3-tone anatomy, face detail, per-slot armour overlays,
-  per-class tier-tinted weapon drawings, grip fist, defend shield); arena v2
-  (drawn crowd tiers w/ cheering figures, brick wall, barred pen gates, columns)
+- Visuals: rig v5 (3-tone anatomy, expressions, per-slot armour filled with
+  real material textures, painted weapon sprite in the fist, legendary aura);
+  arenas draw a painted backdrop, with the v2 primitive rendering (drawn crowd
+  tiers, brick wall, barred pen gates, columns) still live behind it
 - Combat feel (V2 §51): CombatFeel is the one table of weapon-weight pacing
   (windup/swing/recovery/hit-stop/shake/lunge/style per WeaponClass); impact
   hit-stop via a bounded Engine.time_scale dip; CombatCamera frames both
@@ -75,10 +78,26 @@ build-guidance recommendations, victory celebration animation.
   (Breaker/Duelist/Skirmisher/Marksman/Battlemage/Guardian/Brawler) computed
   from the equipped kit; shown on the character sheet, never stored, gates
   nothing. Guardian is currently unreachable - no shield content exists yet
-- Front-end backdrop: a drawn dusk-arena silhouette (stands, arches, pennants,
-  sinking sun, torches, drifting dust) behind the main menu, and dimmed behind
-  settings / arena select / tournament; the arena itself gained a light
-  foreground dust layer
+- Front-end backdrop: painted screen art on menu / town / shop / creation /
+  results / tournament / inventory / skills / sheet, with the original drawn
+  dusk-arena silhouette still live as the no-art fallback
+- ART LAYER (session 8): 140 generated textures wired through DATA slots
+  (WeaponData.sprite, ArmourData.icon/material_texture, ArenaData.backdrop/
+  ground_texture, CharacterData.portrait, Status/SkillData.icon) plus
+  ArtLibrary for VFX sprites, UI plates and material patches. Rig v5 draws
+  painted weapons in the fist and fills armour with real materials; arenas
+  wear painted backdrops; UITheme nine-slices bronze plates; shop/inventory
+  show per-item icons; champions and rivals have portraits. EVERY consumer
+  keeps its primitive path for a null texture, so an item authored with an
+  empty slot still renders; a texture BOUND from a .tres is a normal resource
+  dependency and must be unbound rather than deleted (AI_GUIDE rule 16,
+  docs/art.md)
+- Reactions (§25 complete): Block, Parry, CriticalHit, Stunned, Taunt and
+  Walk/Run on the rig; blood (own toggle), shield impact, armour break, crit
+  burst, level-up, crowd flare, legendary glow and per-damage-type element
+  flourishes in CombatVfx. CombatResolver now reports `target_was_defending`
+  and `armour_broken` so presentation can tell a block from a clean hit and a
+  parry from a plain miss
 - Itemization depth (V2 §52): rarity grants 0-4 derived modifiers per item from
   a 15-affix pool (deterministic per item id — no save-version change), FOUR
   Legendary signature effects hooked into existing systems, and shop/inventory
@@ -106,9 +125,10 @@ build-guidance recommendations, victory celebration animation.
 - Achievements (§33): not started
 - Debug menu (§34): the AI-score overlay exists (F3 / --debug-ai); the broader
   debug menu does not
-- Presentation (§40 P7): placeholder art polished; sparks/shake/synth-SFX exist.
-  Still missing: real animation library, music tracks, final foley
-- Accessibility (§28): settings has volumes/shake/reduced-fx/language; still missing:
+- Presentation (§40 P7): textures generated and wired; the rig's animation set
+  is complete but PROCEDURAL (tweens, not authored frames). Still missing:
+  music tracks, final foley, an art-director pass over the generated set
+- Accessibility (§28): settings has volumes/shake/reduced-fx/blood/language; still missing:
   key-remap UI (no gameplay key bindings exist yet — combat is pointer/touch driven),
   colorblind-checked status icons, text scaling
 
@@ -130,7 +150,9 @@ build-guidance recommendations, victory celebration animation.
   score overlay, not about creating the roster from nothing
 
 ## Current Test Status
-GREEN this session: 31 suites / 5287 assertions (Godot 4.7.2); §35 simulator:
+GREEN this session: 33 suites / 5673 assertions (Godot 4.7.2) - new
+test_art.gd (content invariants + every fallback path) and
+test_combat_reactions.gd (resolver flags, blood toggle, rig reaction set); §35 simulator:
 6 matchups × 150 battles, 0 stalemates, presets in the 39-52% band
 (default-kit-vs-generated sits at 82/69/62% at L1/5/10 - see docs/balancing.md
 for why itemization and in-character temperaments moved it); new economy pacing
@@ -145,10 +167,10 @@ session 7, after the camera/hit-stop and itemization work).
 ### Linux / macOS
 Untested — no environment available. Presets not created.
 ### Web
-WORKS: no-threads export loads and is playable in a Chromium browser
-(menu -> duel -> damage/armour math visible), ~44 MB wasm. Last browser-verified
-session 6; session 7 changed rendering (Camera2D + Engine.time_scale), so
-re-verify in a browser before any release build.
+NEEDS RE-VERIFICATION. Last browser-verified session 6 (no-threads export loaded
+and played in Chromium, ~44 MB wasm). Session 7 changed rendering (Camera2D +
+Engine.time_scale) and session 8 changed it again everywhere AND added ~11 MB of
+textures - re-verify in a real browser before any release build.
 ### Android / iOS
 NOT SET UP — no SDK/keystore in this environment. Do not claim until exported and run.
 
@@ -163,9 +185,11 @@ Armour: 29 (7 slots, T1-T6; 4 mobility pieces) · Skills: 14 (point costs 1-3, i
 Events: 6 · AI personalities: 9 (5 generic + 3 champion + boss)
 
 ## Open Asset Requests
-See docs/ASSET_MANIFEST.md — all art/audio is placeholder (primitives, original SVG
-icons, runtime-synthesized SFX). Highest value next: real foley to replace the
-synthesized cues, one music loop per state, art-directed UI theme.
+See docs/ASSET_MANIFEST.md. Visual assets are `generated` (produced by
+tools/texgen, in the game, NOT art-director-approved - do not call them final).
+AUDIO is now the whole gap: silence for music, runtime-synthesized SFX.
+Highest value next: real foley to replace the synthesized cues, one music loop
+per state, then an art pass over the generated set.
 
 ## Important Recent Decisions
 - Armour = depleting pool with overflow (docs/combat.md); DoTs bypass armour
@@ -176,25 +200,28 @@ synthesized cues, one music loop per state, art-directed UI theme.
   public release (charter §0.3) — NOT DONE, cannot be done by the agent
 
 ## Files Recently Changed
+Session 8 (the art layer): NEW services/art_library.gd, docs/art.md,
+tools/texgen/{manifest,imageops,generate,bind_resources}.py,
+assets/generated/** (140 textures),
+tests/unit/{test_art,test_combat_reactions}.gd;
+CHANGED characters/components/placeholder_rig.gd (v5: weapon sprites, material
+fills, Block/Parry/CriticalHit/Stunned/Taunt/Walk-Run, legendary aura),
+combat/{combat_vfx,combat_controller,combat_resolver,action_result}.gd,
+scenes/arena/arena_visual.gd, scenes/town/town_visual.gd,
+ui/{ui_theme,item_icons,menu_backdrop,combat_hud,shop_screen,inventory_screen,
+results_screen,settings_screen,tournament_screen,main_menu,character_creation,
+skills_screen,character_sheet}.gd, autoload/game_manager.gd (capture harness),
+data/models/{weapon_data,armour_data,arena_data,character_data,
+status_effect_data,skill_data}.gd, every content .tres in data/{weapons,armour,
+skills,status_effects,arenas,characters}, localization/strings.csv,
+scenes/tournament/tournament.tscn, AI_GUIDE.md (rule 16),
+docs/ASSET_MANIFEST.md. REMOVED 13 superseded placeholder skill SVGs.
+
 Session 7 (phases 11-12): NEW combat/{combat_feel,combat_camera}.gd,
 services/item_affixes.gd, ui/item_compare.gd, data/models/affix_data.gd,
 data/affixes/*.tres (15), data/weapons/venomtooth_cleaver.tres,
-tests/unit/{test_combat_feel,test_itemization,test_script_integrity}.gd;
-CHANGED combat/{combat_controller,combatant,combat_resolver,damage_calculator,
-hit_calculator,status_effect_system,combat_vfx}.gd,
-characters/components/placeholder_rig.gd, ui/{combat_hud,shop_screen,
-inventory_screen,settings_screen}.gd, services/opponent_generator.gd,
-autoload/{item_db,game_manager}.gd, data/models/{enums,weapon_data,armour_data,
-item_registry}.gd, scenes/arena/arena.tscn, data/registry/item_registry.tres,
-localization/strings.csv, docs/{combat,items,balancing}.md.
-Session 5: combat/{turn_manager,combat_context,combat_resolver,combat_result,
-combatant,combat_controller,combat_vfx}, services/{progression_calculator,
-progression_service,opponent_generator}, autoload/game_manager,
-data/models/{armour_data,character_data,progression_config,economy_config},
-characters/components/placeholder_rig.gd (rig v4), ui/{character_creation,
-shop_screen,combat_hud,results_screen,town_screen}, scenes (creation, shop),
-+16 item .tres + registry, tests/unit/test_session5_rules.gd.
-Session 4: rig v3, arena_visual crowd/wall v2 (see DEVELOPMENT_LOG.md).
+tests/unit/{test_combat_feel,test_itemization,test_script_integrity}.gd.
+Sessions 4-6: see DEVELOPMENT_LOG.md.
 
 ## Current Blocking Issues
 - Android/iOS/Linux/macOS exports blocked on environment (SDKs/hosts)
@@ -202,27 +229,24 @@ Session 4: rig v3, arena_visual crowd/wall v2 (see DEVELOPMENT_LOG.md).
 - Trademark check for the title requires a human
 
 ## Recommended Next Task
-MASTER_BUILD_PROMPT_V2.md's phase plan (11-16) is COMPLETE. The highest-value
-work now sits outside it:
-1. **The ENDING (charter §30).** GameState.ENDING exists and nothing routes to
-   it - the game stops after the third region's champion. This blocks NG+ and is
-   the last structural gap in the core arc.
-2. **Difficulty tiers (§24)** - evaluated as cheap and system-free this session
-   (docs/decisions/difficulty_and_new_game_plus.md); needs an owner nod on the
-   four-tier naming and whether Iron Gladiator is in scope.
-3. **Real audio/art passes** - every asset is still a placeholder
-   (docs/ASSET_MANIFEST.md); this is now the biggest gap between the game and a
-   commercial impression, and most of it is human-driven work.
+1. **Web re-verification in a real browser.** Session 7 changed rendering
+   (Camera2D + Engine.time_scale) and session 8 changed it again everywhere and
+   added ~11 MB of textures. This environment cannot composite a frame in a
+   browser, so a human has to look. Do this BEFORE any release build.
+2. **Audio.** Every cue is still runtime-synthesized and every music slot is
+   silence. With the visuals textured, this is now the single biggest gap
+   between the game and a commercial impression.
+3. **The ENDING (charter §30).** GameState.ENDING exists and nothing routes to
+   it — the game stops after the third region's champion. Still the last
+   structural gap in the core arc, and it blocks NG+.
 
 ## Next 5 Tasks
-(Re-sequenced this session per MASTER_BUILD_PROMPT_V2.md §56, content ordered after
-combat-feel/build-diversity work per the charter's own priority order.)
-1. The ending + credits flow (§30) - unblocks NG+
-2. Difficulty tiers (§24) as data over the phase 11-16 systems (owner decision first)
-3. Achievements (§33) - never started; cheap now that fame/victories/champions are tracked
-4. Audio: real foley to replace the synthesized cues, one music loop per state
-5. Web re-verification in a real browser: rendering changed twice this session
-   (Camera2D + Engine.time_scale) and this environment cannot composite a frame
+1. Web export re-verified in a real browser (rendering + download size)
+2. Audio: real foley to replace the synthesized cues, one music loop per state
+3. The ending + credits flow (§30) — unblocks NG+
+4. Difficulty tiers (§24) as data (owner decision on naming first —
+   docs/decisions/difficulty_and_new_game_plus.md)
+5. Achievements (§33) — cheap now that fame/victories/champions are tracked
 
 ## Important Recent Decisions (session 7 addition)
 - Classless builds stay; no hard Warrior/Assassin/Archer/Mage classes - confirmed by the

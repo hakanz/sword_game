@@ -575,3 +575,112 @@ Pike shipped with `range_max = CLOSE`, and melee lands ONLY at ADJACENT.
 The ending + credits flow (§30), then difficulty tiers as data over everything phases
 11-16 built.
 
+---
+
+## Session 8 — 2026-08-25 — Textures: the art layer, and the §25 reactions that were missing (Claude)
+
+Owner directive: generate every texture the game needs with the Gemini image model, wire
+them in, and finish the animation/VFX work charter §25 still had open.
+
+### The gap this closed
+The project had no textures at all AND no slots to hang them on — the only `Texture2D`
+field in the whole data layer was `SkillData.icon`. Everything was primitive drawing.
+Charter §25's animation list was missing Block, Parry, CriticalHit, Stunned, Taunt and
+Walk/Run, and its VFX list was missing blood, shield impact, armour break, ice, lightning,
+level-up and legendary glow.
+
+### Added — the art pipeline (`tools/texgen`, docs/art.md)
+- **140 textures generated** from a prompt manifest: 38 weapon sprites, 29 armour icons,
+  14 skill and 9 status emblems, 3 arena backdrops + 3 ground tiles, 7 tiling armour
+  materials, 19 VFX sprites, 12 UI plates/backdrops/emblems, 6 character portraits.
+  ~11 MB on disk (lossy WebP for opaque art, PNG where alpha is needed).
+- The model returns opaque JPEG only, so transparency is recovered in post: cut-out art is
+  painted on flat magenta and distance-keyed with a despill pass; additive VFX are painted
+  on black and luminance-keyed; tiles get a mirrored cross-fade so they wrap.
+- `generate.py` is resumable and caches raw model output under `.texgen_raw/` (gitignored),
+  so `--repost` re-derives every texture with no API calls when the post-processing is
+  tuned. The API key is read from the environment and is never committed.
+- `bind_resources.py` points the 80-odd content `.tres` files at the files, prunes the
+  ext_resources that rebinding orphans, and is safe to re-run.
+
+### Added — texture slots in the DATA layer (the missing half)
+`WeaponData.sprite`, `ArmourData.icon` + `material_texture`, `StatusEffectData.icon`,
+`ArenaData.backdrop` + `ground_texture`, `CharacterData.portrait`. Everything without a
+content resource to hang off (VFX sprites, UI plates, material patches) resolves through
+the new `ArtLibrary`. Gameplay still references logical IDs, never image paths.
+
+**No drawing code assumes a texture exists** — rig, arena, town, menu backdrop, theme,
+item icons, VFX and status chips all branch on null and keep their primitive path live, so
+content authored with an empty slot still renders. Durable rule 16 in AI_GUIDE;
+`test_art.gd` drives both halves of every branch.
+
+I first wrote that as "delete `assets/generated/` and the game still plays" and then
+measured it: false. A texture bound from a `.tres` is an ordinary resource dependency, and
+removing the tree breaks item loading at parse time. Removing only the ArtLibrary-only
+directories (`vfx/`, `ui/`) DOES leave a duel that plays out identically on the same seed.
+The docs now say the accurate thing.
+
+### Added — where the art actually lands
+- **Rig v5:** an equipped weapon with a `sprite` is drawn in the fist, scaled to the
+  class's reach, pivoted on the grip (bottom edge; bows at their centre) and leaned into
+  the fight. Armour pieces fill their shapes with real leather/mail/plate/scale/linen via
+  UV-tiled polygons. A Legendary or Mythic weapon haloes its wielder.
+- **Arena:** painted backdrop per region; the ground texture goes on as low-alpha grain
+  with a feathered seam, because the backdrop already contains its own painted floor and
+  a full-strength tile read as a rug thrown over the arena.
+- **UI:** nine-sliced bronze button plates and stone panels; painted backdrops on menu,
+  town, shop, creation, results, tournament, inventory, skills and the character sheet;
+  per-item icons in shop and inventory rows (weapons on the diagonal, since a sprite
+  painted upright is a few pixels wide in a square slot); painted coin; menu crest.
+- **Portraits:** champions and regional rivals now have a face — in the combat HUD and on
+  the tournament bracket.
+
+### Added — charter §25 completion
+- **Animations:** `play_block`, `play_parry`, `play_critical_reaction`, `set_stunned`
+  (wobble + circling stars), `play_taunt`, `play_move` (walk vs run by distance crossed).
+  Jump is deliberately not built — a turn-based cell duel has nothing to hang it on.
+- **Resolver flags** so presentation can tell these apart at all: `target_was_defending`
+  (block vs clean hit, parry vs plain miss) and `armour_broken` (the blow that empties a
+  pool that had something in it). Both set in `CombatResolver`, so the §35 simulator sees
+  the same execution path.
+- **VFX:** blood (with its own toggle), shield impact, armour break, crit burst, level-up,
+  crowd flare, legendary glow, and per-damage-type flourishes for fire/frost/lightning/
+  arcane/poison. Existing sparks, dust and status bursts now draw with painted sprites.
+- **Taunting is a data flag** (`SkillData.taunts`), not a hardcoded id list — adding a
+  showboating move stays a content task.
+- **Accessibility (§30):** blood is a separate setting from `reduced_fx`. Turning the spray
+  off must not flatten every other effect, and vice versa; a test asserts exactly that.
+
+### Tuning found by looking at the running game
+The dev capture harness earned its keep three times over:
+- Nine-slice borders are also MINIMUM sizes. The 256x128 button plate turned every stepper
+  button into a slab and pushed the character-creation attribute list off its panel; the
+  plates ship at 128x64 now.
+- Wide weapons centred exactly on the grip swallowed the fighter's torso (the Doorslab is
+  a literal door). Sprites now step forward of the fist in proportion to their width.
+- Blood painted "glowing on black" made the model paint a white field, and the luminance
+  key had nothing to remove. Anything that does not actually glow is keyed off magenta.
+
+The harness now also captures a KITTED duel against a named champion — the only frame that
+shows armour materials, weapon sprites and an opponent portrait at once.
+
+### Removed
+13 placeholder skill SVGs superseded by the painted emblems (`skill_focused_loose.svg`
+stays: the town screen uses it as the trainer glyph).
+
+### Verified
+- 33 suites / 5673 assertions green (Godot 4.7.2), including two new suites:
+  `test_art.gd` (content invariants + the fallback paths) and `test_combat_reactions.gd`
+  (the resolver flags, the blood toggle, the rig's reaction set).
+- The armour-break assertion was checked against a deliberately broken resolver and does
+  fail — charter testing rule, assertions must be able to.
+- Multi-seed AI-vs-AI smoke green (seeds 7 / 42 / 1337, 14-19 rounds).
+- Every front-end screen and two duels eyeballed in a real windowed run.
+
+### Not done
+- **Web not re-verified.** This session changed rendering everywhere and added ~11 MB of
+  assets; the export needs a browser check before any release build.
+- **Audio is still entirely placeholder** and is now the single biggest gap between the
+  game and a commercial impression.
+- The generated art is `generated`, not `final` — no art-director pass has happened.
+
