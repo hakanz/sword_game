@@ -111,6 +111,36 @@ func test_reduced_fx_shortens_the_freeze_for_every_class() -> void:
 	SaveManager.set_setting("reduced_fx", previous)
 
 
+## The TIMING table can never exceed the cap on its own, so the safety rail
+## is exercised directly through the pure scaling helper — otherwise deleting
+## the clamp would leave every assertion green.
+func test_the_freeze_cap_actually_clamps() -> void:
+	assert_almost_eq(CombatFeel.hit_stop_seconds(1.0, false, false),
+			CombatFeel.MAX_HIT_STOP, 0.0001, "an absurd base must be clamped")
+	assert_almost_eq(CombatFeel.hit_stop_seconds(0.2, true, false),
+			CombatFeel.MAX_HIT_STOP, 0.0001, "the crit multiplier cannot escape the cap")
+	assert_almost_eq(CombatFeel.hit_stop_seconds(-5.0, true, false), 0.0, 0.0001,
+			"a negative base can never rewind time")
+	assert_almost_eq(CombatFeel.hit_stop_seconds(0.1, false, true),
+			0.1 * CombatFeel.REDUCED_FX_HIT_STOP_SCALE, 0.0001,
+			"reduced_fx scales before the clamp")
+	assert_almost_eq(CombatFeel.hit_stop_seconds(0.1, true, false),
+			0.1 * CombatFeel.CRIT_HIT_STOP_MULTIPLIER, 0.0001)
+
+
+## The impact must be presented when the blow ARRIVES: anticipation + stroke.
+func test_impact_delay_covers_the_whole_stroke() -> void:
+	for weapon_class: int in _classes():
+		var wc := weapon_class as Enums.WeaponClass
+		assert_almost_eq(CombatFeel.impact_delay(wc),
+				CombatFeel.windup_time(wc) + CombatFeel.swing_time(wc), 0.0001,
+				"%s impact must wait out the stroke" % Enums.WeaponClass.keys()[weapon_class])
+		assert_true(CombatFeel.impact_delay(wc) > CombatFeel.windup_time(wc),
+				"presenting at the end of the windup would land mid-swing")
+		assert_true(CombatFeel.impact_delay(wc) <= 0.45,
+				"a strike may never feel sluggish")
+
+
 func test_release_always_restores_normal_time_flow() -> void:
 	Engine.time_scale = CombatFeel.FREEZE_TIME_SCALE
 	CombatFeel.release()
@@ -152,8 +182,12 @@ func test_camera_never_zooms_out_past_the_drawn_arena() -> void:
 func test_motion_zero_is_the_classic_static_frame() -> void:
 	for separation in range(0, 9):
 		assert_almost_eq(CombatCamera.zoom_for_separation(separation, 0.0), 1.0)
-	assert_almost_eq(CombatCamera.focus_x(150.0, 1130.0, 0.0), CombatCamera.DESIGN.x * 0.5)
+	# Deliberately ASYMMETRIC pairs: a pair straddling the centre would return
+	# the centre for every motion value and prove nothing.
 	assert_almost_eq(CombatCamera.focus_x(150.0, 290.0, 0.0), CombatCamera.DESIGN.x * 0.5)
+	assert_almost_eq(CombatCamera.focus_x(850.0, 1130.0, 0.0), CombatCamera.DESIGN.x * 0.5)
+	assert_true(absf(CombatCamera.focus_x(150.0, 290.0, 1.0) - CombatCamera.DESIGN.x * 0.5) > 100.0,
+			"full motion must actually move the frame off centre")
 	assert_almost_eq(CombatCamera.focus_y(0.0), CombatCamera.DESIGN.y * 0.5)
 
 
@@ -192,3 +226,83 @@ func test_oversized_viewports_fall_back_to_centring() -> void:
 			Vector2(200.0, 400.0), 1.0, Vector2(1920.0, 720.0))
 	assert_almost_eq(focus.x, CombatCamera.DESIGN.x * 0.5, 0.001)
 	assert_almost_eq(focus.y, CombatCamera.DESIGN.y * 0.5, 0.001)
+
+
+# --- Accessibility settings, end to end -------------------------------------
+
+## The slider and the camera must read/write the SAME key with the SAME
+## meaning. Mutating either side used to leave the whole suite green.
+func test_camera_motion_setting_drives_the_real_camera() -> void:
+	var previous: Variant = SaveManager.get_setting(CombatCamera.MOTION_SETTING, null)
+	var tree := Engine.get_main_loop() as SceneTree
+
+	SaveManager.set_setting(CombatCamera.MOTION_SETTING, 0)
+	var still := CombatCamera.new()
+	tree.root.add_child(still)
+	assert_almost_eq(still.motion_scale, 0.0, 0.0001, "0 must mean a static frame")
+	assert_almost_eq(still.zoom.x, 1.0, 0.0001, "a static camera never zooms")
+	still.punch_in(true)
+	assert_almost_eq(still.punch_zoom, 0.0, 0.0001, "no push-in when motion is off")
+	tree.root.remove_child(still)
+	still.free()
+
+	SaveManager.set_setting(CombatCamera.MOTION_SETTING, 100)
+	var live := CombatCamera.new()
+	tree.root.add_child(live)
+	assert_almost_eq(live.motion_scale, 1.0, 0.0001, "100 must mean full motion")
+	live.punch_in(true)
+	assert_true(live.punch_zoom > 0.0, "a kill must push the frame in")
+	tree.root.remove_child(live)
+	live.free()
+
+	# Default when the player has never touched the slider: full motion.
+	SaveManager.set_setting(CombatCamera.MOTION_SETTING, CombatCamera.MOTION_DEFAULT)
+	var default_camera := CombatCamera.new()
+	tree.root.add_child(default_camera)
+	assert_almost_eq(default_camera.motion_scale, 1.0, 0.0001,
+			"the shipped default must not be a static camera")
+	tree.root.remove_child(default_camera)
+	default_camera.free()
+
+	if previous == null:
+		SaveManager.set_setting(CombatCamera.MOTION_SETTING, CombatCamera.MOTION_DEFAULT)
+	else:
+		SaveManager.set_setting(CombatCamera.MOTION_SETTING, previous)
+
+
+## Driving the actual widgets in the settings scene — a renamed key on one
+## side of the wire is caught here.
+func test_settings_screen_writes_the_keys_combat_reads() -> void:
+	var previous_camera: Variant = SaveManager.get_setting(CombatCamera.MOTION_SETTING, 100)
+	var previous_shake: Variant = SaveManager.get_setting(CombatController.SHAKE_SETTING, 100)
+	var previous_fx: Variant = SaveManager.get_setting(CombatFeel.REDUCED_FX_SETTING, false)
+
+	var tree := Engine.get_main_loop() as SceneTree
+	var screen: Node = load("res://scenes/settings/settings.tscn").instantiate()
+	tree.root.add_child(screen)
+
+	var camera_slider := screen.find_child("CameraMotionSlider", true, false) as HSlider
+	var shake_slider := screen.find_child("ScreenShakeSlider", true, false) as HSlider
+	var reduced_fx := screen.find_child("ReducedFxCheck", true, false) as CheckButton
+	assert_true(camera_slider != null, "the camera-motion slider must exist")
+	assert_true(shake_slider != null, "the screen-shake slider must exist")
+	assert_true(reduced_fx != null, "the reduced-effects toggle must exist")
+
+	if camera_slider != null:
+		camera_slider.value = 0.0
+		assert_eq(int(SaveManager.get_setting(CombatCamera.MOTION_SETTING, -1)), 0,
+				"the slider must write the key the camera reads")
+	if shake_slider != null:
+		shake_slider.value = 25.0
+		assert_eq(int(SaveManager.get_setting(CombatController.SHAKE_SETTING, -1)), 25,
+				"the slider must write the key the shake reads")
+	if reduced_fx != null:
+		reduced_fx.button_pressed = true
+		assert_true(bool(SaveManager.get_setting(CombatFeel.REDUCED_FX_SETTING, false)),
+				"the toggle must write the key the VFX/hit-stop read")
+
+	tree.root.remove_child(screen)
+	screen.free()
+	SaveManager.set_setting(CombatCamera.MOTION_SETTING, previous_camera)
+	SaveManager.set_setting(CombatController.SHAKE_SETTING, previous_shake)
+	SaveManager.set_setting(CombatFeel.REDUCED_FX_SETTING, previous_fx)
