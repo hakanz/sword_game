@@ -455,7 +455,27 @@ explained in docs/balancing.md (a fighter in rags at level 10 SHOULD struggle).
 - The derived Weapon Mastery Archetype label (V2 §47/§50) is still unbuilt; Phase 14
   needs it for personality pairing.
 
+### Also landed this session
+- **Weapon Mastery Archetype** (V2 §47/§50), the last unbuilt piece of the classless
+  decision: `ProgressionCalculator.combat_archetype_label()` names the fighter
+  Breaker / Duelist / Skirmisher / Marksman / Battlemage / Guardian / Brawler from the
+  kit they are actually wearing. Derived on demand, never stored (a test asserts no
+  save field mentions it), gates nothing. Shown on the character sheet; phase 14 will
+  use it to pair generated opponents with a fitting AI personality. Guardian needs a
+  shield behind heavy plate and no shield content exists yet — noted, not papered over.
+- **Graphics polish pass** (standing owner preference: polish when a package closes):
+  a drawn dusk-arena backdrop (tiered stands, arches, pennants, sinking sun, guttering
+  torches, drifting dust) behind the main menu at full strength and behind settings /
+  arena select / tournament dimmed, so the front end reads as one place; plus a light
+  foreground dust layer in the arena itself. Gradients are drawn as gradient textures
+  rather than stacked translucent bands — banded fills double-blend at their seams once
+  a layer is dimmed and drew visible hairlines across the quieter screens.
+- Exports re-verified: the Windows build passes the smoke test with numbers identical
+  to the editor run. The Web build exports, loads and starts in a browser (Godot 4.7.2,
+  WebGL2 Compatibility, single-threaded, no JS errors) — but the browser pane could not
+  be DISPLAYED in this session, so the canvas never composited a frame and the new
+  camera work is not yet visually confirmed on Web.
+
 ### Next Recommended Task
 Phase 13 (V2 §54): the crowd / audience meter — the last big promise Charisma is
 still waiting on.
-

@@ -64,6 +64,14 @@ build-guidance recommendations, victory celebration animation.
   fighters, zooms with separation and punches in on crits/kills, and owns the
   impact shake. Accessibility: reduced_fx shortens the freeze, a new Camera
   Motion slider (0 = the classic static frame) governs all camera movement
+- Weapon Mastery Archetype (V2 §47/§50): a derived, display-only label
+  (Breaker/Duelist/Skirmisher/Marksman/Battlemage/Guardian/Brawler) computed
+  from the equipped kit; shown on the character sheet, never stored, gates
+  nothing. Guardian is currently unreachable - no shield content exists yet
+- Front-end backdrop: a drawn dusk-arena silhouette (stands, arches, pennants,
+  sinking sun, torches, drifting dust) behind the main menu, and dimmed behind
+  settings / arena select / tournament; the arena itself gained a light
+  foreground dust layer
 - Itemization depth (V2 §52): rarity grants 0-4 derived modifiers per item from
   a 15-affix pool (deterministic per item id — no save-version change), three
   Legendary signature effects hooked into existing systems, and shop/inventory
@@ -98,7 +106,7 @@ build-guidance recommendations, victory celebration animation.
   score overlay, not about creating the roster from nothing
 
 ## Current Test Status
-GREEN this session: 27 suites / 3910 assertions (Godot 4.7.2); §35 simulator:
+GREEN this session: 27 suites / 3982 assertions (Godot 4.7.2); §35 simulator:
 6 matchups × 150 battles, 0 stalemates, presets in the 40-53% band
 (default-kit-vs-generated dropped to 81/63/50% at L1/5/10 now that generated
 opponents carry modifier-bearing gear - accepted, see docs/balancing.md)
