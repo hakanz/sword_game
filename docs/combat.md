@@ -111,6 +111,21 @@ wins pay `config.champion_xp_multiplier` XP (the level-pacing anchor).
 `hits_landed`; XP scales by `combat_effectiveness = clamp(0.65 + 0.9 *
 hits/actions, 0.65, 1.25)` — real fighting earns more, stalling less.
 
+**Session-6 additions:**
+- **Critical hits:** per-weapon base chance (`WeaponData.crit_chance`) + the
+  class-matched attribute (`HitCalculator.crit_attribute`: axe/blunt=STR,
+  sword/bow=AGI, spear=ATT, staff=ARC) × `CRIT_ATTR_PER_POINT` (0.2%/pt),
+  clamped 1-25%. Damage ×2 at the §15 Critical step; both sides roll the
+  same math; AI expected damage includes the crit EV.
+- **Opening distance:** default cells 1/6 (LONG) — closing is part of the
+  fight. Level-1 opponents and the new player both start armourless.
+- **Weapon memory:** a WON fight carries the end-of-fight weapon into the
+  next one (`profile.prefers_main_weapon`); a LOSS resets to the sidearm
+  and drains the next opening to 60% energy (`battle_fatigue`, save v6).
+- **Auto-rest:** a player turn at 0 energy rests automatically.
+- **Debut:** the first-ever victory pays `first_victory_gold_bonus` and
+  tops XP to a guaranteed level-up.
+
 ## Determinism
 All combat randomness flows through `RngService` (`--combat-seed=N` reproduces a fight).
 Decorative visuals (crowd, sand) use local fixed-seed RNGs so they never consume combat

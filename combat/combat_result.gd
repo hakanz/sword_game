@@ -9,6 +9,12 @@ var player_damage_dealt: int = 0
 ## Effectiveness tally for the XP multiplier (landed strikes / actions).
 var player_hits: int = 0
 var player_actions: int = 0
+## Weapon in hand when the fight ended — a WON fight carries this choice
+## into the next one (session-6 ranged flow). Only meaningful when the
+## fighter could actually switch (had a sidearm) — melee-only fights carry
+## no weapon memory.
+var player_ended_wielding_main: bool = false
+var player_could_switch: bool = false
 var victor_name: String = ""
 var loser_name: String = ""
 ## Level of the opponent — input for the XP reward formula.

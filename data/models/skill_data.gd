@@ -36,6 +36,9 @@ enum Target {
 
 @export_group("Requirements")
 @export_range(1, 60) var required_level: int = 1
+## Skill points needed to learn (session-6 owner design: every skill has its
+## own price — stronger arts cost more AND gate on level).
+@export_range(1, 5) var point_cost: int = 1
 ## Empty = usable with any weapon.
 @export var allowed_weapon_classes: Array[Enums.WeaponClass] = []
 

@@ -88,7 +88,13 @@ static func _resolve_strike(
 		actor.arrows = maxi(actor.arrows - 1, 0)
 	if not result.hit:
 		return
-	var raw: int = DamageCalculator.roll_attack_damage(actor, multiplier)
+	# Critical step of the §15 pipeline (after the skill multiplier): a rare
+	# heavy blow for BOTH fighters — odds come from the weapon plus the
+	# wielder's class-matched attribute (HitCalculator.crit_chance_for).
+	result.crit = RngService.chance(
+			HitCalculator.crit_chance_for(actor.data.attributes, actor.get_weapon()))
+	var crit_multiplier: float = CombatTuning.CRIT_MULTIPLIER if result.crit else 1.0
+	var raw: int = DamageCalculator.roll_attack_damage(actor, multiplier * crit_multiplier)
 	var mitigation := DamageCalculator.compute_mitigation(
 			raw,
 			foe.get_resistance(actor.get_weapon().damage_type),

@@ -18,6 +18,14 @@ const MAX_HIT_CHANCE: float = 0.95
 const DEFEND_AVOIDANCE_BONUS: int = 8
 const DEFEND_DAMAGE_REDUCTION: float = 0.3
 
+# --- Critical hits (session-6 owner design: rare, heavy, for BOTH sides;
+# base chance lives per weapon, the class-matched attribute adds on top) ---
+const CRIT_MULTIPLIER: float = 2.0
+## Crit chance added per point of the weapon class's crit attribute.
+const CRIT_ATTR_PER_POINT: float = 0.002
+const MIN_CRIT_CHANCE: float = 0.01
+const MAX_CRIT_CHANCE: float = 0.25
+
 # --- Action energy (charter §15: builds should use resources differently) ---
 const MOVE_ENERGY_COST: int = 2
 const REST_ENERGY_RESTORE_FRACTION: float = 0.4

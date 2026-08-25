@@ -17,7 +17,10 @@ var _left: Combatant = null
 var _right: Combatant = null
 
 
-func setup(left: Combatant, right: Combatant, left_cell: int = 2, right_cell: int = 5) -> void:
+## Default opening cells put the fighters SEVERAL moves apart (session-6
+## owner design: separation 5 = LONG band — closing the gap is part of the
+## fight, not a given).
+func setup(left: Combatant, right: Combatant, left_cell: int = 1, right_cell: int = 6) -> void:
 	_left = left
 	_right = right
 	_left.cell = left_cell

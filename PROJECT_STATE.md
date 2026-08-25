@@ -1,6 +1,6 @@
 # PROJECT STATE
 Last Updated: 2026-08-24
-Updated By: Claude (autonomous session 5)
+Updated By: Claude (autonomous session 6)
 
 ## Current Milestone
 MVP core loop COMPLETE and playable end to end: character creation -> arena duels vs
@@ -25,7 +25,12 @@ the fight; mobility tiers (agility + gear, 2-cell moves at score 14+); effective
 XP (landed/actions in [0.65,1.25], champion x1.5); the arena's call (forced tournament
 at band midpoint, elite brackets, house gold bonus); rig v4 living animations +
 expressions + 1.35x; elemental skill VFX; shop fitting booth + sealed level-locks;
-level/XP bars in HUD + town.
+level/XP bars in HUD + town;
+session 6: town-first debut (armourless, Worn Shiv, LONG opening distance, level-1
+foes equally bare), first-victory debut purse + guaranteed level-up, weapon-based
+crits (per-weapon base + class-matched attribute, x2, shown in shop/sheet), weapon
+memory + defeat fatigue (save v6), auto-rest at 0 energy, per-skill point costs +
+build-guidance recommendations, victory celebration animation.
 
 ## Current Game Version
 0.1.0 (semver; also in project.godot)
@@ -43,7 +48,7 @@ level/XP bars in HUD + town.
   + equip with requirements ("two points away" anticipation)
 - Champions: Maulhilda (tank, Doorslab) + Orzha Sablewind (duelist, Sablefang) —
   fought as tournament finals; one-time unique rewards with rematch guards
-- Persistence: versioned JSON saves (v5) with a tested v0->v5 migration chain; autosaves
+- Persistence: versioned JSON saves (v6) with a tested v0->v6 migration chain; autosaves
 - Localization: EN + TR complete (every player-visible string keyed; integrity-tested)
 - Character creation: name, 3 origin presets, colors, live rig preview (2.4x)
 - UI theme: global programmatic theme (UITheme), styled menus/HUD/bars
@@ -90,8 +95,9 @@ NOT SET UP — no SDK/keystore in this environment. Do not claim until exported 
 
 ## Current Content
 ### Arenas: 2 (Gravelmaw 1-8, Emberholt 8-16) · Enemies: procedural generator (+elite
-bracket variant) · Champions: 2 (Maulhilda, Orzha) · Weapons: 29 (6 classes; 4 bows +
-knife, T1-T5) · Armour: 26 (7 slots, T1-T5; 3 mobility pieces) · Skills: 14 (incl.
+bracket variant; level-1 foes armourless) · Champions: 2 (Maulhilda, Orzha) ·
+Weapons: 30 (6 classes; 4 bows + knife + starter shiv, T1-T5, per-weapon crit) ·
+Armour: 26 (7 slots, T1-T5; 3 mobility pieces) · Skills: 14 (point costs 1-3, incl.
 2 mana spells) · Status Effects: 9
 
 ## Open Asset Requests

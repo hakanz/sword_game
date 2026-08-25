@@ -13,7 +13,7 @@ extends Node
 
 const SETTINGS_PATH: String = "user://settings.cfg"
 const SETTINGS_SECTION: String = "settings"
-const SAVE_VERSION: int = 5
+const SAVE_VERSION: int = 6
 
 ## Overridable for tests; gameplay always uses the default.
 var profile_path: String = "user://save_slot_1.json"
@@ -135,6 +135,8 @@ func _migrate(payload: Dictionary, from_version: int) -> Dictionary:
 				payload = _migrate_v3_to_v4(payload)
 			4:
 				payload = _migrate_v4_to_v5(payload)
+			5:
+				payload = _migrate_v5_to_v6(payload)
 			_:
 				push_warning("SaveManager: no migration path from save_version %d" % version)
 				return {}
@@ -196,5 +198,17 @@ static func _migrate_v4_to_v5(payload: Dictionary) -> Dictionary:
 		if profile_fields.get("defeated_champion_ids", []).has("character.champion_maulhilda"):
 			completed.append("arena.gravelmaw")
 		profile_fields["completed_tournament_arena_ids"] = completed
+	payload["profile"] = profile_fields
+	return payload
+
+
+## v6 added the ranged-weapon preference + defeat fatigue (session 6).
+## Older saves start on the sidearm rule with no fatigue.
+static func _migrate_v5_to_v6(payload: Dictionary) -> Dictionary:
+	var profile_fields: Dictionary = payload.get("profile", {})
+	if not profile_fields.has("prefers_main_weapon"):
+		profile_fields["prefers_main_weapon"] = false
+	if not profile_fields.has("battle_fatigue"):
+		profile_fields["battle_fatigue"] = false
 	payload["profile"] = profile_fields
 	return payload

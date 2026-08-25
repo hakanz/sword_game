@@ -27,3 +27,6 @@ extends Resource
 ## Extra purse "from the house" for COMPLETING a region tournament, on top
 ## of the final's normal rewards (session-5 owner design).
 @export_range(0, 10000) var tournament_gold_bonus: int = 250
+## One-time purse for the player's FIRST arena victory (session-6 owner
+## design: the debut win should feel like a payday).
+@export_range(0, 10000) var first_victory_gold_bonus: int = 75

@@ -11,6 +11,8 @@ var action: Enums.ActionType = Enums.ActionType.ATTACK
 # Attack fields
 var hit: bool = false
 var hit_chance: float = 0.0
+## A rare heavy blow (CombatTuning.CRIT_CHANCE) — damage already doubled.
+var crit: bool = false
 var mitigation: DamageCalculator.MitigationResult = null
 var killed: bool = false
 

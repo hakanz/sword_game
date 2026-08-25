@@ -19,5 +19,6 @@ accuracy_mod = 2
 armour_pen_bonus = 0.0
 range_extend = 0
 applies_status = ExtResource("2")
+point_cost = 2
 required_level = 5
 allowed_weapon_classes = Array[int]([6])

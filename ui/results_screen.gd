@@ -99,6 +99,9 @@ func _ready() -> void:
 			xp_text += "  ·  " + tr("results.xp_stalled")
 		_xp.text = xp_text
 		_gold.text = tr("results.gold_gained").format({"gold": reward.gold_gained})
+		if reward.first_victory:
+			_gold.text += "\n" + tr("results.first_victory").format(
+					{"gold": reward.first_victory_gold})
 		if reward.levels_gained > 0:
 			_level_up.text = tr("results.level_up").format({"level": reward.new_level})
 			_points.text = tr("results.points_gained").format({

@@ -17,6 +17,12 @@ static func get_stream(sfx_name: StringName) -> AudioStreamWAV:
 	match sfx_name:
 		&"hit":
 			samples = _mix([_noise_burst(0.14, 8.0), _sine_sweep(0.14, 95.0, 70.0, 9.0, 0.9)])
+		&"crit":
+			# Heavier, longer, with a ringing overtone — a blow that lands HARD.
+			samples = _mix([
+				_noise_burst(0.22, 6.0), _sine_sweep(0.22, 130.0, 55.0, 6.0, 1.0),
+				_tone(0.2, 1560.0, 10.0, 0.22),
+			])
 		&"armour_hit":
 			samples = _mix([
 				_tone(0.16, 1150.0, 14.0, 0.45), _tone(0.16, 1780.0, 18.0, 0.3),

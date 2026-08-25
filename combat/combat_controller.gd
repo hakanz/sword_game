@@ -54,6 +54,20 @@ func _ready() -> void:
 	world_root.add_child(enemy)
 	player.setup(player_data, true, false)
 	enemy.setup(enemy_data, false, true)
+
+	# Session-6 ranged flow: after a WON fight the player's last-held weapon
+	# comes back selected (a loss resets to the sidearm); a loss also drains
+	# the next fight's opening energy (battle fatigue, consumed here).
+	var profile: PlayerProfile = GameManager.profile
+	if profile != null:
+		if player.can_switch_weapon() and profile.prefers_main_weapon:
+			player.switch_weapon()
+		if profile.battle_fatigue:
+			profile.battle_fatigue = false
+			SaveManager.save_profile(profile)
+			player.current_energy = roundi(player.max_energy * 0.6)
+			player.energy_changed.emit(player.current_energy, player.max_energy)
+
 	ctx.setup(player, enemy)
 	player.position = Vector2(_cell_to_x(player.cell), GROUND_Y)
 	enemy.position = Vector2(_cell_to_x(enemy.cell), GROUND_Y)
@@ -86,12 +100,22 @@ func _run_combat() -> void:
 		else:
 			var decision: CombatDecision
 			if actor.is_player_controlled and not GameManager.smoke_test:
-				hud.begin_player_turn(actor)
-				var selection: Array = await hud.action_selected
-				hud.end_player_turn()
-				decision = CombatDecision.new()
-				decision.type = selection[0]
-				decision.skill = selection[1]
+				if actor.current_energy <= 0 \
+						and CombatAction.is_valid(Enums.ActionType.REST, actor, ctx):
+					# Session-6 owner design: an empty energy pool rests
+					# automatically — no menu for a fighter who cannot act.
+					decision = CombatDecision.new()
+					decision.type = Enums.ActionType.REST
+					_spawn_float_text(actor, tr("combat.float.auto_rest"),
+							Color(0.7, 0.85, 0.7))
+					await _delay(0.5)
+				else:
+					hud.begin_player_turn(actor)
+					var selection: Array = await hud.action_selected
+					hud.end_player_turn()
+					decision = CombatDecision.new()
+					decision.type = selection[0]
+					decision.skill = selection[1]
 			else:
 				await _delay(0.5)
 				decision = CombatAI.choose_action(actor, _foe_of(actor), ctx)
@@ -217,7 +241,8 @@ func _present_strike(result: ActionResult, foe: Combatant) -> void:
 	if result.hit:
 		foe.rig.play_hit_flash()
 		var armour_only: bool = result.mitigation.hp_damage == 0
-		AudioManager.play(&"armour_hit" if armour_only else &"hit")
+		AudioManager.play(&"crit" if result.crit else
+				(&"armour_hit" if armour_only else &"hit"))
 		# Melee blows carve a visible arc; the element burst rides on-hit
 		# statuses (flame skill -> flame at the target).
 		if not result.actor.get_weapon().is_ranged():
@@ -228,9 +253,14 @@ func _present_strike(result: ActionResult, foe: Combatant) -> void:
 		if result.applied_status != null:
 			CombatVfx.spawn_status_burst(world_root,
 					foe.position + Vector2(0, -95), result.applied_status)
-		_shake(5.0 if armour_only else 8.0)
-		_spawn_float_text(foe, str(result.mitigation.after_stance),
-				Color(1.0, 0.85, 0.3) if armour_only else Color(1.0, 0.35, 0.3))
+		_shake(13.0 if result.crit else (5.0 if armour_only else 8.0))
+		if result.crit:
+			_spawn_float_text(foe, tr("combat.float.crit").format(
+					{"damage": result.mitigation.after_stance}),
+					Color(1.0, 0.45, 0.1), 40)
+		else:
+			_spawn_float_text(foe, str(result.mitigation.after_stance),
+					Color(1.0, 0.85, 0.3) if armour_only else Color(1.0, 0.35, 0.3))
 		if result.killed:
 			foe.rig.play_death()
 	else:
@@ -258,6 +288,8 @@ func _finish() -> void:
 	result.player_damage_dealt = player.damage_dealt_total
 	result.player_hits = player.hits_landed
 	result.player_actions = player.actions_taken
+	result.player_ended_wielding_main = player.wielding_main
+	result.player_could_switch = player.can_switch_weapon()
 	result.enemy_level = enemy.data.level
 	if enemy.data.is_champion:
 		result.champion_id = enemy.data.id
@@ -266,7 +298,9 @@ func _finish() -> void:
 	GameManager.last_combat_result = result
 
 	EventBus.combat_ended.emit(victor, loser)
-	await _delay(1.4)
+	# The winner celebrates on the sand before the results (session 6).
+	victor.rig.play_victory()
+	await _delay(1.6)
 	SceneRouter.goto_results()
 
 
@@ -294,10 +328,11 @@ func _animate_step(actor: Combatant) -> void:
 			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 
 
-func _spawn_float_text(over: Combatant, text: String, color: Color) -> void:
+func _spawn_float_text(
+		over: Combatant, text: String, color: Color, font_size: int = 30) -> void:
 	var label := Label.new()
 	label.text = text
-	label.add_theme_font_size_override("font_size", 30)
+	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", color)
 	label.add_theme_color_override("font_outline_color", Color(0.1, 0.1, 0.1))
 	label.add_theme_constant_override("outline_size", 6)

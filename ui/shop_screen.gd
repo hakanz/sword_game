@@ -392,6 +392,10 @@ func _weapon_stats(weapon: WeaponData) -> String:
 		tr("item.stat.damage").format({"min": weapon.damage_min, "max": weapon.damage_max}),
 		tr("item.stat.tier").format({"tier": weapon.tier}),
 	]
+	# EFFECTIVE crit for THIS gladiator (weapon base + class-matched
+	# attribute) — upgrade decisions should see the real number.
+	text += "  ·  " + tr("item.stat.crit").format({"value": roundi(
+			HitCalculator.crit_chance_for(GameManager.profile.attributes, weapon) * 100)})
 	if weapon.is_ranged():
 		text += "  ·  " + tr("item.stat.ammo").format({"ammo": weapon.ammo})
 	return text

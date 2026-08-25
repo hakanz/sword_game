@@ -15,6 +15,13 @@ func _initialize() -> void:
 
 func _run_tests() -> void:
 	print("=== Arena Legends unit tests ===")
+	# HARD RULE (charter: CI must never touch real user saves; session-6
+	# review found a leak): disk writes are OFF for the whole run. Suites
+	# that genuinely test persistence opt back in with their own temp
+	# profile_path and restore both flags (see test_save_manager.gd).
+	# Runtime lookup: `-s` main scripts compile before autoload globals
+	# register, so the SaveManager identifier is unavailable here.
+	root.get_node("SaveManager").disk_writes_enabled = false
 	var dir := DirAccess.open(TESTS_DIR)
 	if dir == null:
 		push_error("Test runner: cannot open %s" % TESTS_DIR)

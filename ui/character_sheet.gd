@@ -135,10 +135,11 @@ func _refresh_stats(attrs: AttributeBlock) -> void:
 		["stat.evasion", ProgressionCalculator.evasion(attrs)],
 		["stat.initiative", ProgressionCalculator.initiative(attrs)],
 		["stat.damage_bonus", ProgressionCalculator.attribute_damage_bonus(attrs, weapon.weapon_class)],
+		["stat.crit_chance", "%d%%" % roundi(HitCalculator.crit_chance_for(attrs, weapon) * 100)],
 	]
 	for row in rows:
 		var label := Label.new()
-		label.text = "%s: %d" % [tr(row[0]), row[1]]
+		label.text = "%s: %s" % [tr(row[0]), str(row[1])]
 		label.add_theme_font_size_override("font_size", 17)
 		_stats_box.add_child(label)
 

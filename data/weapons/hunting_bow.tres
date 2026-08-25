@@ -12,6 +12,7 @@ damage_type = 1
 damage_min = 8
 damage_max = 13
 accuracy_bonus = 2
+crit_chance = 0.06
 armour_penetration = 0.08
 range_min = 1
 range_max = 3

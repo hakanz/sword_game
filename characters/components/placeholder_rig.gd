@@ -10,7 +10,7 @@ extends Node2D
 ## specific designs. Gameplay talks only to the animation methods; final art
 ## swaps in behind the same API (docs/ASSET_MANIFEST.md).
 
-enum Face { NEUTRAL, ANGRY, WORRIED, PAIN }
+enum Face { NEUTRAL, ANGRY, WORRIED, PAIN, HAPPY }
 
 const OUTLINE := Color(0.14, 0.09, 0.09, 0.95)
 const BOOT_LEATHER := Color(0.33, 0.21, 0.12)
@@ -185,6 +185,33 @@ func play_switch_flourish() -> void:
 	tween.tween_property(_arm, "rotation", 0.0, 0.18) \
 			.set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
 	tween.tween_callback(_restart_sway)
+
+
+## Victory celebration (session-6 owner design): the champion of the duel
+## pumps the weapon arm sky-high and hops on the spot, grinning.
+func play_victory() -> void:
+	if _dead:
+		return
+	flash_expression(Face.HAPPY, 3.5)
+	if _sway_tween != null:
+		_sway_tween.kill()
+	var arm: Tween = create_tween()
+	arm.tween_property(_arm, "rotation", -2.3, 0.22) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	for _pump in 2:
+		arm.tween_property(_arm, "rotation", -1.9, 0.18) \
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		arm.tween_property(_arm, "rotation", -2.3, 0.18) \
+				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	arm.tween_property(_arm, "rotation", 0.0, 0.3) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	arm.tween_callback(_restart_sway)
+	var hops: Tween = create_tween()
+	for _hop in 3:
+		hops.tween_property(self, "position:y", -14.0, 0.16) \
+				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT).as_relative()
+		hops.tween_property(self, "position:y", 14.0, 0.16) \
+				.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN).as_relative()
 
 
 func play_death() -> void:
@@ -418,6 +445,13 @@ func _draw_face(skin_sh: Color) -> void:
 			draw_line(Vector2(4, -106), Vector2(13, -104.5), OUTLINE, 3.0)
 			draw_line(Vector2(15, -99), Vector2(17, -96), skin_sh, 2.4)
 			draw_circle(Vector2(9, -90.5), 3.2, Color(0.32, 0.14, 0.13))
+		Face.HAPPY:
+			# Brow lifted, bright eye, wide open grin.
+			draw_line(Vector2(4, -107.5), Vector2(13, -107), OUTLINE, 2.8)
+			draw_circle(Vector2(9, -101.5), 3.8, Color(0.96, 0.94, 0.9))
+			draw_circle(Vector2(10, -101.5), 2.0, Color(0.12, 0.1, 0.12))
+			draw_line(Vector2(15, -99), Vector2(17, -96), skin_sh, 2.4)
+			draw_arc(Vector2(9, -92), 4.2, PI * 0.15, PI * 0.85, 10, mouth_color, 2.6)
 		_:
 			# Neutral: steady brow, open eye, small closed mouth.
 			draw_line(Vector2(4, -106), Vector2(13, -104.5), OUTLINE, 3.0)

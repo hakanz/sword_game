@@ -75,11 +75,13 @@ func change_state(next: GameState) -> void:
 	state_changed.emit(previous, next)
 
 
-## Creates a fresh profile (overwriting any existing save) and starts a duel.
+## Creates a fresh profile (overwriting any existing save). A new gladiator
+## arrives in TOWN first (session-6 owner design) — the first fight is a
+## choice, never an ambush.
 func start_new_game() -> void:
 	profile = PlayerProfile.create_default()
 	SaveManager.save_profile(profile)
-	start_next_duel()
+	SceneRouter.goto_town()
 
 
 ## Creates a profile from the character-creation screen's choices.
@@ -95,15 +97,15 @@ func start_new_game_custom(
 	profile.body_color = body
 	profile.accent_color = accent
 	SaveManager.save_profile(profile)
-	start_next_duel()
+	SceneRouter.goto_town()
 
 
-## Loads the saved profile and starts a duel. Returns false if load failed.
+## Loads the saved profile and returns to town. Returns false if load failed.
 func continue_game() -> bool:
 	profile = SaveManager.load_profile()
 	if profile == null:
 		return false
-	start_next_duel()
+	SceneRouter.goto_town()
 	return true
 
 
@@ -283,6 +285,18 @@ func consume_combat_rewards() -> ProgressionService.RewardResult:
 	last_reward = ProgressionService.apply_combat_rewards(
 			profile, PROGRESSION_CONFIG, ECONOMY_CONFIG, last_combat_result)
 	last_combat_result.rewards_applied = true
+
+	# Session-6 ranged flow: a WIN keeps the last-held weapon selected for
+	# the next fight; a LOSS resets to the sidearm and leaves the fighter
+	# fatigued (drained opening energy next fight).
+	if last_combat_result.player_won:
+		# Weapon memory only forms in fights where switching was a real
+		# choice — a melee-only win must never pre-draw a bow bought later.
+		if last_combat_result.player_could_switch:
+			profile.prefers_main_weapon = last_combat_result.player_ended_wielding_main
+	else:
+		profile.prefers_main_weapon = false
+		profile.battle_fatigue = true
 
 	# Tournament bookkeeping (once per fight, same idempotence guard).
 	_clear_tournament_flags()

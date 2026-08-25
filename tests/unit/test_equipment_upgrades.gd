@@ -3,11 +3,11 @@ extends TestCase
 
 
 func test_weapon_upgrade_detection() -> void:
-	var profile := PlayerProfile.create_default()  # training_shortsword (6-10)
+	var profile := PlayerProfile.create_default()  # worn_shiv (5-8, session 6)
 	assert_true(EquipmentService.is_weapon_upgrade(
-			profile, ItemDB.weapon(&"weapon.bronze_gladius")), "9-14 beats 6-10")
+			profile, ItemDB.weapon(&"weapon.bronze_gladius")), "9-14 beats 5-8")
 	assert_false(EquipmentService.is_weapon_upgrade(
-			profile, ItemDB.weapon(&"weapon.training_shortsword")),
+			profile, ItemDB.weapon(&"weapon.worn_shiv")),
 			"an identical weapon is not an upgrade")
 	profile.weapon_id = &"weapon.crescent_battleaxe"
 	assert_false(EquipmentService.is_weapon_upgrade(
@@ -16,7 +16,8 @@ func test_weapon_upgrade_detection() -> void:
 
 
 func test_armour_upgrade_detection() -> void:
-	var profile := PlayerProfile.create_default()  # padded_vest (12, CHEST)
+	var profile := PlayerProfile.create_default()  # armourless (session 6)
+	profile.armour_ids.append(&"armour.padded_vest")  # dress the chest: 12
 	assert_true(EquipmentService.is_armour_upgrade(
 			profile, ItemDB.armour_piece(&"armour.boiled_leather_cuirass")), "16 beats 12")
 	assert_false(EquipmentService.is_armour_upgrade(

@@ -47,7 +47,9 @@ func test_equip_weapon_refuses_unowned_or_blocked() -> void:
 
 func test_equip_armour_swaps_same_slot_only() -> void:
 	var profile := _profile_with(5)
-	# Default kit wears padded_vest (CHEST). Add a chest and a helmet.
+	# Session-6 default kit is armourless — dress the chest slot first so
+	# the swap rule has something to swap.
+	profile.armour_ids.append(&"armour.padded_vest")
 	profile.inventory_armour_ids.append(&"armour.boiled_leather_cuirass")
 	profile.inventory_armour_ids.append(&"armour.rag_hood")
 

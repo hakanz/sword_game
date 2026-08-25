@@ -27,6 +27,7 @@ func test_champion_preset_is_complete() -> void:
 
 func test_first_kill_grants_unique_rewards() -> void:
 	var profile := PlayerProfile.create_default()
+	profile.victories = 3  # past the debut — this fight pays champion rates only
 	var reward := ProgressionService.apply_combat_rewards(profile, CONFIG, ECONOMY, _champion_win())
 	assert_true(reward.champion_defeated)
 	assert_eq(reward.reward_item_id, &"weapon.doorslab")

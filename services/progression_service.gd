@@ -28,6 +28,9 @@ class RewardResult:
 	## Extra purse for completing a region tournament (set by GameManager —
 	## only it knows the bracket state).
 	var tournament_bonus_gold: int = 0
+	## The player's first-ever victory this profile (debut rewards granted).
+	var first_victory: bool = false
+	var first_victory_gold: int = 0
 
 
 static func apply_combat_rewards(
@@ -48,6 +51,15 @@ static func apply_combat_rewards(
 	if result.player_won:
 		profile.victories += 1
 		profile.fame += result.enemy_level
+		# Debut rewards (session-6 owner design): the first win pays a bonus
+		# purse AND guarantees the level-up — a strong hook into the loop.
+		if profile.victories == 1:
+			reward.first_victory = true
+			reward.first_victory_gold = economy.first_victory_gold_bonus
+			reward.gold_gained += reward.first_victory_gold
+			profile.gold += reward.first_victory_gold
+			reward.xp_gained = maxi(reward.xp_gained,
+					ProgressionCalculator.xp_required(config, profile.level))
 	else:
 		profile.defeats += 1
 

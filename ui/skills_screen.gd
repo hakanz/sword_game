@@ -21,7 +21,14 @@ func _ready() -> void:
 
 func _refresh() -> void:
 	var profile: PlayerProfile = GameManager.profile
-	_points.text = tr("sheet.skill_points").format({"points": profile.skill_points})
+	# Build guidance (session-6 owner design): name the dominant trait and
+	# tag the skills that suit it.
+	_points.text = "%s   ·   %s" % [
+		tr("sheet.skill_points").format({"points": profile.skill_points}),
+		tr("skills.build_hint").format({
+			"attr": tr("attr.%s" % SkillService.dominant_attribute(profile)),
+		}),
+	]
 	for child in _list.get_children():
 		child.queue_free()
 	for skill in ItemDB.all_skills():
@@ -50,6 +57,16 @@ func _add_row(profile: PlayerProfile, skill: SkillData) -> void:
 	name_label.add_theme_font_size_override("font_size", 19)
 	info.add_child(name_label)
 
+	if SkillService.is_recommended(profile, skill) \
+			and not profile.known_skill_ids.has(skill.id):
+		var recommended := Label.new()
+		recommended.text = tr("skills.recommended").format({
+			"attr": tr("attr.%s" % SkillService.SKILL_AFFINITY[skill.id]),
+		})
+		recommended.add_theme_font_size_override("font_size", 14)
+		recommended.add_theme_color_override("font_color", Color(0.95, 0.85, 0.45))
+		info.add_child(recommended)
+
 	var desc_label := Label.new()
 	desc_label.text = tr(skill.description_key)
 	desc_label.add_theme_font_size_override("font_size", 14)
@@ -58,7 +75,8 @@ func _add_row(profile: PlayerProfile, skill: SkillData) -> void:
 	info.add_child(desc_label)
 
 	var cost_label := Label.new()
-	var cost_text: String = tr("skills.cost_energy").format({"energy": skill.energy_cost})
+	var cost_text: String = tr("skills.point_cost").format({"points": skill.point_cost})
+	cost_text += "  ·  " + tr("skills.cost_energy").format({"energy": skill.energy_cost})
 	if skill.cooldown_rounds > 0:
 		cost_text += "  ·  " + tr("skills.cooldown").format({"rounds": skill.cooldown_rounds})
 	if not skill.allowed_weapon_classes.is_empty():
@@ -91,8 +109,9 @@ func _add_row(profile: PlayerProfile, skill: SkillData) -> void:
 			req.add_theme_color_override("font_color", Color(0.95, 0.75, 0.4))
 			row.add_child(req)
 		var button := Button.new()
-		button.text = tr("skills.learn")
-		button.custom_minimum_size = Vector2(130, 48)
+		button.text = "%s (%s)" % [tr("skills.learn"),
+				tr("skills.point_cost").format({"points": skill.point_cost})]
+		button.custom_minimum_size = Vector2(150, 48)
 		button.disabled = reason != ""
 		button.pressed.connect(_on_learn.bind(skill))
 		row.add_child(button)

@@ -58,12 +58,13 @@ func test_cooldown_ticks_down() -> void:
 
 func test_learning_rules() -> void:
 	var profile := PlayerProfile.create_default()
-	profile.skill_points = 0
-	assert_eq(SkillService.learn_block_reason(profile, CRUSHING), "skills.hint.no_points")
-	profile.skill_points = 1
+	profile.skill_points = CRUSHING.point_cost - 1
+	assert_eq(SkillService.learn_block_reason(profile, CRUSHING), "skills.hint.no_points",
+			"one point short of the cost must block (session-6 per-skill costs)")
+	profile.skill_points = CRUSHING.point_cost
 	assert_eq(SkillService.learn_block_reason(profile, CRUSHING), "")
 	assert_true(SkillService.learn(profile, CRUSHING))
-	assert_eq(profile.skill_points, 0, "learning consumes the point")
+	assert_eq(profile.skill_points, 0, "learning consumes the full point cost")
 	assert_true(profile.known_skill_ids.has(CRUSHING.id))
 	assert_eq(SkillService.learn_block_reason(profile, CRUSHING), "skills.hint.known")
 	profile.skill_points = 5
@@ -73,7 +74,7 @@ func test_learning_rules() -> void:
 
 func test_known_skills_reach_combat() -> void:
 	var profile := PlayerProfile.create_default()
-	profile.skill_points = 1
+	profile.skill_points = CRUSHING.point_cost
 	SkillService.learn(profile, CRUSHING)
 	var data := profile.to_character_data()
 	assert_eq(data.skills.size(), 1)

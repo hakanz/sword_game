@@ -17,5 +17,6 @@ power_multiplier = 1.1
 accuracy_mod = 3
 armour_pen_bonus = 0.0
 range_extend = 0
+point_cost = 1
 required_level = 2
 allowed_weapon_classes = Array[int]([1, 4])

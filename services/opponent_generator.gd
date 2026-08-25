@@ -91,10 +91,13 @@ static func _assign_gear(data: CharacterData, level: int, elite: bool = false) -
 		data.weapon = RngService.pick(weapon_pool)
 
 	var pieces: Array[ArmourData] = []
-	_maybe_add_piece(pieces, Enums.EquipSlot.CHEST, 1.0, max_tier)
-	_maybe_add_piece(pieces, Enums.EquipSlot.HELMET, 0.95 if elite else 0.7, max_tier)
-	_maybe_add_piece(pieces, Enums.EquipSlot.LEGS, 0.8 if elite else 0.5, max_tier)
-	_maybe_add_piece(pieces, Enums.EquipSlot.BOOTS, 0.65 if elite else 0.3, max_tier)
+	# Level-1 pit fighters come as bare as the player does (session-6 owner
+	# design: everyone starts armourless) — gear appears from level 2 up.
+	if level >= 2 or elite:
+		_maybe_add_piece(pieces, Enums.EquipSlot.CHEST, 1.0, max_tier)
+		_maybe_add_piece(pieces, Enums.EquipSlot.HELMET, 0.95 if elite else 0.7, max_tier)
+		_maybe_add_piece(pieces, Enums.EquipSlot.LEGS, 0.8 if elite else 0.5, max_tier)
+		_maybe_add_piece(pieces, Enums.EquipSlot.BOOTS, 0.65 if elite else 0.3, max_tier)
 	data.armour_pieces = pieces
 
 

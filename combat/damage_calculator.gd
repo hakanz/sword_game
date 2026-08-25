@@ -40,11 +40,14 @@ static func roll_attack_damage(attacker: Combatant, skill_multiplier: float = 1.
 
 
 ## Expected value of roll_attack_damage — used by AI estimates and tooltips.
+## Includes the crit expectation so high-crit weapons weigh what they hit.
 static func average_attack_damage(attacker: Combatant, skill_multiplier: float = 1.0) -> float:
 	var weapon: WeaponData = attacker.get_weapon()
 	var base: float = weapon.average_damage() + ProgressionCalculator.attribute_damage_bonus(
 			attacker.data.attributes, weapon.weapon_class)
-	return base * skill_multiplier * StatusEffectSystem.damage_dealt_multiplier(attacker)
+	var crit_ev: float = 1.0 + HitCalculator.crit_chance_for(attacker.data.attributes, weapon) \
+			* (CombatTuning.CRIT_MULTIPLIER - 1.0)
+	return base * skill_multiplier * crit_ev * StatusEffectSystem.damage_dealt_multiplier(attacker)
 
 
 ## Direct-to-HP damage (status DoTs): resistance applies, armour does not.

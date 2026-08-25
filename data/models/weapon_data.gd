@@ -17,6 +17,10 @@ extends Resource
 ## Fraction of post-mitigation damage (after resistance AND stance reduction)
 ## that bypasses the armour pool straight to HP (0-1).
 @export_range(0.0, 1.0) var armour_penetration: float = 0.0
+## Base critical-hit chance of THIS weapon (session-6 owner design: crits
+## vary weapon to weapon — daggers bite often, mauls rarely). The wielder's
+## class-matched attribute adds on top (HitCalculator.crit_chance_for).
+@export_range(0.0, 0.5) var crit_chance: float = 0.05
 ## Distance bands this weapon can attack from (inclusive).
 @export var range_min: Enums.DistanceBand = Enums.DistanceBand.ADJACENT
 @export var range_max: Enums.DistanceBand = Enums.DistanceBand.CLOSE

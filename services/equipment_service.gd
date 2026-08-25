@@ -66,6 +66,10 @@ static func equip_weapon(profile: PlayerProfile, id: StringName) -> bool:
 	profile.inventory_weapon_ids.erase(id)
 	profile.inventory_weapon_ids.append(profile.weapon_id)
 	profile.weapon_id = id
+	# A newly equipped main weapon has never been drawn: the first fight
+	# opens on the sidearm rule again (session-6 review finding — a melee
+	# win must not pre-draw a bow bought afterwards).
+	profile.prefers_main_weapon = false
 	return true
 
 

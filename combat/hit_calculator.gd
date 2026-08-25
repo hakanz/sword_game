@@ -29,3 +29,29 @@ static func hit_chance(
 	var delta: int = accuracy_score(attacker, accuracy_mod) - avoidance_score(defender, stance_override)
 	var chance: float = CombatTuning.BASE_HIT_CHANCE + delta * CombatTuning.HIT_CHANCE_PER_POINT
 	return clampf(chance, CombatTuning.MIN_HIT_CHANCE, CombatTuning.MAX_HIT_CHANCE)
+
+
+## The attribute that sharpens crits for a weapon class (session-6 owner
+## design: strength weapons crit off strength, finesse weapons off agility,
+## spears off attack, staves off arcana).
+static func crit_attribute(weapon_class: Enums.WeaponClass) -> String:
+	match weapon_class:
+		Enums.WeaponClass.AXE, Enums.WeaponClass.BLUNT, Enums.WeaponClass.UNARMED:
+			return "strength"
+		Enums.WeaponClass.SPEAR:
+			return "attack"
+		Enums.WeaponClass.MAGICAL:
+			return "arcana"
+		_:
+			return "agility"  # swords, bows
+
+
+## Effective crit chance = weapon base + class-matched attribute scaling.
+## Shared by the resolver, the AI's damage expectation, and every shop/sheet
+## display — one math home (charter §6).
+static func crit_chance_for(attrs: AttributeBlock, weapon: WeaponData) -> float:
+	if weapon == null:
+		return CombatTuning.MIN_CRIT_CHANCE
+	var attr_value: int = int(attrs.get(crit_attribute(weapon.weapon_class)))
+	return clampf(weapon.crit_chance + attr_value * CombatTuning.CRIT_ATTR_PER_POINT,
+			CombatTuning.MIN_CRIT_CHANCE, CombatTuning.MAX_CRIT_CHANCE)

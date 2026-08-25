@@ -258,3 +258,53 @@ order, mobility tiers/clamps, effectiveness bounds, the arena's call,
 house bonus, elite tiers); smoke seeds 7/99/424242 + archer 31337 green;
 §35 sim (unbiased, post-fix): default kit 89/78/76% vs generated L1/5/10;
 presets 43-53.5%, 0 stalemates, 19-22 rounds.
+
+---
+
+## Session 6 — 2026-08-25 — Owner batch 4: the debut arc, crits, weapon memory (Claude)
+
+### Added
+- **Debut arc:** a new gladiator lands in TOWN (never straight into a
+  fight), starts ARMOURLESS with a Worn Shiv; level-1 opponents are just
+  as bare (gear returns from level 2). Opening cells are 1/6 — LONG band,
+  several moves apart. The FIRST victory pays a debut purse
+  (economy.first_victory_gold_bonus) and tops XP up to a guaranteed
+  level-up; the results screen says so.
+- **Critical hits:** per-WEAPON base chance (daggers 8-9%, mauls 3%) plus
+  the class-matched attribute (axes/mauls scale on Strength, swords/bows
+  on Agility, spears on Attack, staves on Arcana; +0.2%/point, clamp
+  1-25%) — one math home: HitCalculator.crit_chance_for. Damage x2 at the
+  §15 Critical step; AI expected-damage includes the crit EV; shop rows
+  and the character sheet show the EFFECTIVE percent so upgrades weigh it.
+  Presentation: "KRİTİK! N" burst, heavy shake, dedicated synth SFX.
+- **Weapon memory + fatigue (ranged flow):** first bow use still demands
+  the switch; a WON fight carries the end-of-fight weapon into the next
+  one (profile.prefers_main_weapon), a LOSS resets to the sidearm AND
+  drains the next fight's opening energy to 60% (battle_fatigue). Save v6.
+- **Auto-rest:** a player turn with 0 energy rests automatically
+  ("Bitkin — dinleniyor") — no dead menu.
+- **Skill economy + guidance:** per-skill point costs (1-3 SP, in data);
+  the skills screen names your dominant trait and tags skills that suit
+  your top-two attributes AND your current weapon ("✦ ... yapına uygun").
+- **Victory celebration:** the winner pumps the weapon arm, hops and
+  grins (Face.HAPPY) before the results screen.
+- Brawler preset retuned [11,7,9,7,10,8,2,2] (crit-era balance).
+
+### Tests / balance
+24 suites / 2765 assertions green (new test_session6_rules.gd: crit
+scaling/mapping/clamps/occurrence, pref+fatigue loop, save roundtrip,
+armourless starts, LONG opening, recommendations); smoke seeds
+7/99/424242 + archer 31337 green (debut level-up visible); §35 sim:
+presets 39.5-54%, 0 stalemates (swift's agility-crit identity noted).
+
+### Fixed (session-6 adversarial review, 9-agent workflow, 2 confirmed)
+- MAJOR (charter rule): unit-test runs wrote the REAL user save via
+  consume_combat_rewards -> save_profile (test_session5/6 flow tests) —
+  the runner now force-disables disk writes for every suite (persistence
+  suites opt back in with their own temp path). The on-disk save on this
+  dev machine had already been replaced by a test fixture.
+- Weapon-memory pollution: melee-only wins set prefers_main_weapon, so a
+  bow bought later opened PRE-DRAWN (skipping the mandatory first switch).
+  Memory now forms only in fights where switching was a real choice
+  (CombatResult.player_could_switch) AND equipping a new main weapon
+  clears it. Regression tests added.

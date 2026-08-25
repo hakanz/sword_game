@@ -12,17 +12,32 @@ func _result(enemy_level: int, won: bool) -> CombatResult:
 	return result
 
 
-func test_simple_win_grants_xp_and_record() -> void:
+func test_first_win_is_a_debut_payday() -> void:
+	# Session-6 owner design: the FIRST victory guarantees the level-up and
+	# pays a one-time debut purse on top of normal combat gold.
 	var profile := PlayerProfile.create_default()
 	var reward := ProgressionService.apply_combat_rewards(profile, CONFIG, ECONOMY, _result(1, true))
-	assert_eq(reward.xp_gained, ProgressionCalculator.xp_reward(CONFIG, 1, 1, true))
-	assert_eq(profile.xp, reward.xp_gained, "sub-level XP stays on the profile")
-	assert_eq(profile.level, 1, "one easy win must not level")
+	assert_true(reward.first_victory)
+	assert_eq(reward.xp_gained, ProgressionCalculator.xp_required(CONFIG, 1),
+			"debut XP tops up to exactly one level")
+	assert_eq(profile.level, 2, "the first win must level the gladiator")
 	assert_eq(profile.victories, 1)
 	assert_eq(profile.defeats, 0)
 	assert_true(profile.fame > 0, "victory grants fame")
-	assert_eq(reward.gold_gained, EconomyCalculator.combat_gold_reward(ECONOMY, 1, true))
+	assert_eq(reward.gold_gained,
+			EconomyCalculator.combat_gold_reward(ECONOMY, 1, true) + ECONOMY.first_victory_gold_bonus)
 	assert_eq(profile.gold, reward.gold_gained, "gold lands on the profile")
+
+
+func test_second_win_pays_the_normal_rate() -> void:
+	var profile := PlayerProfile.create_default()
+	profile.victories = 1  # debut already behind them
+	var reward := ProgressionService.apply_combat_rewards(profile, CONFIG, ECONOMY, _result(1, true))
+	assert_false(reward.first_victory)
+	assert_eq(reward.xp_gained, ProgressionCalculator.xp_reward(CONFIG, 1, 1, true))
+	assert_eq(profile.xp, reward.xp_gained, "sub-level XP stays on the profile")
+	assert_eq(profile.level, 1, "one easy win past the debut must not level")
+	assert_eq(reward.gold_gained, EconomyCalculator.combat_gold_reward(ECONOMY, 1, true))
 
 
 func test_loss_counts_and_still_teaches() -> void:

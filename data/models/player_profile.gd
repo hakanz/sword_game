@@ -35,6 +35,13 @@ const STARTER: CharacterData = preload("res://data/characters/player_default.tre
 @export var body_color: Color = Color(0.85, 0.64, 0.47)
 @export var accent_color: Color = Color(0.22, 0.36, 0.6)
 
+## Session-6 owner design (ranged flow): a bow-wielder must SWITCH to the
+## bow the first time — but after a WON fight, whatever weapon was in hand
+## at the end comes back selected. A LOSS resets this to the sidearm.
+@export var prefers_main_weapon: bool = false
+## Set on defeat: the next fight starts with drained energy, then clears.
+@export var battle_fatigue: bool = false
+
 
 static func create_default() -> PlayerProfile:
 	var profile := PlayerProfile.new()
@@ -111,6 +118,8 @@ func to_dict() -> Dictionary:
 				func(id: StringName) -> String: return String(id)),
 		"body_color": body_color.to_html(),
 		"accent_color": accent_color.to_html(),
+		"prefers_main_weapon": prefers_main_weapon,
+		"battle_fatigue": battle_fatigue,
 	}
 
 
@@ -155,4 +164,6 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 		profile.completed_tournament_arena_ids.append(StringName(str(id)))
 	profile.body_color = Color.from_string(str(data.get("body_color", "")), profile.body_color)
 	profile.accent_color = Color.from_string(str(data.get("accent_color", "")), profile.accent_color)
+	profile.prefers_main_weapon = bool(data.get("prefers_main_weapon", false))
+	profile.battle_fatigue = bool(data.get("battle_fatigue", false))
 	return profile

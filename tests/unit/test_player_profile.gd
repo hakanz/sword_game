@@ -42,7 +42,9 @@ func test_empty_dict_yields_playable_defaults() -> void:
 	var profile := PlayerProfile.from_dict({})
 	assert_eq(profile.level, 1)
 	assert_true(profile.attributes != null)
-	assert_true(profile.armour_ids.size() > 0, "defaults must include starter armour")
+	assert_eq(profile.armour_ids.size(), 0,
+			"a new gladiator starts armourless (session-6 owner design)")
+	assert_eq(profile.weapon_id, &"weapon.worn_shiv", "the debut weapon is the worn shiv")
 
 
 func test_to_character_data_resolves_items() -> void:
