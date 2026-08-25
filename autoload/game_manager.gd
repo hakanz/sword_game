@@ -259,6 +259,10 @@ func run_screenshot_capture(dir: String) -> void:
 	for _turn in 12:
 		_capture_player_action()
 		await get_tree().create_timer(0.55).timeout
+	# Stop driving and let the duel settle on the PLAYER's turn: the radial
+	# action ring is only up while it waits for input, and it is exactly what
+	# needs eyeballing after a camera change (it is anchored to a world point).
+	await get_tree().create_timer(2.5).timeout
 	get_viewport().get_texture().get_image().save_png(dir.path_join("arena_engaged.png"))
 	SceneRouter.goto_settings()
 	await get_tree().create_timer(1.0).timeout
@@ -276,9 +280,20 @@ func run_screenshot_capture(dir: String) -> void:
 	SceneRouter.goto_town()
 	await get_tree().create_timer(1.0).timeout
 	get_viewport().get_texture().get_image().save_png(dir.path_join("town.png"))
+	# A level-1 purse only ever shows sealed crates and Common stock, which
+	# hides rarity, item modifiers and the comparison deltas (V2 §52) — the
+	# capture temporarily grows the gladiator so those rows are visible.
+	profile.level = 12
+	profile.gold = 2000
+	profile.attributes.strength = 16
 	SceneRouter.goto_weaponsmith()
 	await get_tree().create_timer(1.0).timeout
 	get_viewport().get_texture().get_image().save_png(dir.path_join("weaponsmith.png"))
+	profile.inventory_weapon_ids.append(&"weapon.iron_longsword")
+	profile.inventory_armour_ids.append(&"armour.scaled_hauberk")
+	SceneRouter.goto_inventory()
+	await get_tree().create_timer(1.0).timeout
+	get_viewport().get_texture().get_image().save_png(dir.path_join("inventory.png"))
 	get_tree().quit(0)
 
 
