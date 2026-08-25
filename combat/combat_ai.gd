@@ -84,7 +84,7 @@ static func _score_base(
 			# when too CLOSE (inside a ranged weapon's minimum band) — closing
 			# further would be exactly wrong there (retreat handles it).
 			if ctx.band() > actor.get_weapon().range_max:
-				return 15.0 * p.aggression
+				return 15.0 * _aggression_now(actor, foe, p)
 			return 1.0
 
 		Enums.ActionType.RETREAT:
@@ -131,7 +131,7 @@ static func _score_base(
 			var other_usable: bool = other.can_attack_from(ctx.band()) \
 					and (not other.is_ranged() or actor.arrows > 0)
 			if other_usable and not current_usable:
-				return 16.0 * p.aggression
+				return 16.0 * _aggression_now(actor, foe, p)
 			if not current_usable and other.is_ranged() and actor.arrows > 0:
 				return 8.0  # draw the bow, then open distance to fire
 			return 0.5
@@ -161,7 +161,7 @@ static func _score_skill(
 		if effect.damage_dealt_mult > 1.0:
 			# A damage buff is only good if we can actually reach the foe soon.
 			var reach: float = 1.0 if actor.get_weapon().can_attack_from(ctx.band()) else 0.4
-			value += 7.0 * p.aggression * reach
+			value += 7.0 * _aggression_now(actor, foe, p) * reach
 		return value - cost_penalty
 
 	var value: float = _score_strike(actor, foe, ctx, p,
@@ -185,7 +185,18 @@ static func _score_strike(
 	var kill_bonus: float = 0.0
 	if est.hp_damage >= foe.current_hp:
 		kill_bonus = 50.0 * chance
-	return expected * p.aggression * finisher + kill_bonus + _impatience(ctx)
+	# Temperament shifts with the state of the fight (V2 §53.1): a berserker
+	# swings harder while bleeding, an opportunist while the foe is dying.
+	# ONE formula, personality-weighted inputs — never a per-personality fork.
+	return expected * _aggression_now(actor, foe, p) * finisher \
+			+ kill_bonus + _impatience(ctx)
+
+
+## Current aggression for this fighter against this foe.
+static func _aggression_now(actor: Combatant, foe: Combatant, p: AIPersonality) -> float:
+	return p.aggression_now(
+			float(actor.current_hp) / float(actor.max_hp),
+			float(foe.current_hp) / float(foe.max_hp))
 
 
 static func _impatience(ctx: CombatContext) -> float:

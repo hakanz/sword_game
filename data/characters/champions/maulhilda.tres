@@ -7,7 +7,7 @@
 [ext_resource type="Resource" path="res://data/weapons/doorslab.tres" id="5"]
 [ext_resource type="Resource" path="res://data/armour/iron_chainmail.tres" id="6"]
 [ext_resource type="Resource" path="res://data/armour/iron_helm.tres" id="7"]
-[ext_resource type="Resource" path="res://data/characters/personalities/boss.tres" id="8"]
+[ext_resource type="Resource" path="res://data/characters/personalities/champion_maulhilda.tres" id="8"]
 [ext_resource type="Resource" path="res://data/skills/skull_ringer.tres" id="9"]
 [ext_resource type="Resource" path="res://data/skills/war_bellow.tres" id="10"]
 

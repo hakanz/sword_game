@@ -9,11 +9,27 @@ class_name OpponentGenerator
 
 const BASE: CharacterData = preload("res://data/characters/enemy_vosk.tres")
 
-const PERSONALITY_POOL: Array[AIPersonality] = [
-	preload("res://data/characters/personalities/aggressive.tres"),
-	preload("res://data/characters/personalities/defensive.tres"),
-	preload("res://data/characters/personalities/cautious.tres"),
-]
+const AGGRESSIVE: AIPersonality = preload("res://data/characters/personalities/aggressive.tres")
+const DEFENSIVE: AIPersonality = preload("res://data/characters/personalities/defensive.tres")
+const CAUTIOUS: AIPersonality = preload("res://data/characters/personalities/cautious.tres")
+const BERSERKER: AIPersonality = preload("res://data/characters/personalities/berserker.tres")
+const OPPORTUNIST: AIPersonality = preload("res://data/characters/personalities/opportunist.tres")
+
+## Temperaments that FIT each Weapon Mastery Archetype (V2 §50/§53.2): a
+## generated marksman must not roll `aggressive` and charge down the sand.
+## Keyed by the archetype label ProgressionCalculator derives from the kit,
+## so the pairing follows the gear the generator actually rolled.
+const PERSONALITY_BY_ARCHETYPE: Dictionary = {
+	&"archetype.breaker": [AGGRESSIVE, BERSERKER],
+	&"archetype.duelist": [AGGRESSIVE, OPPORTUNIST, DEFENSIVE],
+	&"archetype.skirmisher": [CAUTIOUS, OPPORTUNIST],
+	# Ranged temperaments never CHARGE, but one of them should still take the
+	# finishing shot — two purely passive heads made every archer identical.
+	&"archetype.marksman": [CAUTIOUS, DEFENSIVE, OPPORTUNIST],
+	&"archetype.battlemage": [CAUTIOUS, DEFENSIVE, OPPORTUNIST],
+	&"archetype.guardian": [DEFENSIVE],
+	&"archetype.brawler": [AGGRESSIVE, BERSERKER],
+}
 
 const FIRST_NAMES: PackedStringArray = [
 	"Vosk", "Harga", "Tullo", "Brakka", "Snegg", "Morda", "Ulfen", "Kresh",
@@ -54,7 +70,6 @@ static func generate_at_level(level: int, elite: bool = false) -> CharacterData:
 	data.is_name_localization_key = false
 	data.name_text = "%s %s" % [RngService.pick(FIRST_NAMES), RngService.pick(EPITHETS)]
 	data.level = level
-	data.personality = RngService.pick(PERSONALITY_POOL)
 
 	# Distribute the same points a leveling player would earn (3 per level).
 	var points: int = (level - 1) * 3
@@ -68,6 +83,9 @@ static func generate_at_level(level: int, elite: bool = false) -> CharacterData:
 				break
 
 	_assign_gear(data, level, elite)
+	# Temperament comes AFTER the kit: it is chosen to suit what this fighter
+	# is actually holding (V2 §53.2), not rolled blind.
+	data.personality = _personality_for(data)
 	_assign_skills(data, level, elite)
 
 	# Slight cosmetic variation so opponents don't look identical.
@@ -76,6 +94,13 @@ static func generate_at_level(level: int, elite: bool = false) -> CharacterData:
 			wrapf(data.body_color.h + hue_shift, 0.0, 1.0),
 			data.body_color.s, data.body_color.v)
 	return data
+
+
+## Picks a temperament that reads right for the generated build's archetype.
+static func _personality_for(data: CharacterData) -> AIPersonality:
+	var archetype: StringName = ProgressionCalculator.archetype_of(data)
+	var pool: Array = PERSONALITY_BY_ARCHETYPE.get(archetype, [AGGRESSIVE])
+	return RngService.pick(pool)
 
 
 ## Enemies draw from the same item catalog as the player, capped by tier so
