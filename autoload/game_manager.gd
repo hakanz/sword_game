@@ -252,6 +252,14 @@ func run_screenshot_capture(dir: String) -> void:
 	start_next_duel()
 	await get_tree().create_timer(2.4).timeout
 	get_viewport().get_texture().get_image().save_png(dir.path_join("arena.png"))
+	# Second arena frame, with the duel actually JOINED: the fight opens at
+	# LONG range, so the opening still shows neither the melee rig work nor
+	# the dynamic camera's close-quarters framing (V2 §51). Drive the player
+	# forward for a few turns, then capture.
+	for _turn in 12:
+		_capture_player_action()
+		await get_tree().create_timer(0.55).timeout
+	get_viewport().get_texture().get_image().save_png(dir.path_join("arena_engaged.png"))
 	SceneRouter.goto_settings()
 	await get_tree().create_timer(1.0).timeout
 	get_viewport().get_texture().get_image().save_png(dir.path_join("settings.png"))
@@ -272,6 +280,21 @@ func run_screenshot_capture(dir: String) -> void:
 	await get_tree().create_timer(1.0).timeout
 	get_viewport().get_texture().get_image().save_png(dir.path_join("weaponsmith.png"))
 	get_tree().quit(0)
+
+
+## Dev capture helper: plays one player action (close the gap, then swing)
+## by emitting the HUD's own selection signal. Emitting while the controller
+## is NOT awaiting input is a no-op, so this can be fired on a timer.
+func _capture_player_action() -> void:
+	var arena := get_tree().current_scene as CombatController
+	if arena == null or arena.player == null or arena.hud == null:
+		return
+	var action: Enums.ActionType = Enums.ActionType.ATTACK
+	if not CombatAction.is_valid(action, arena.player, arena.ctx):
+		action = Enums.ActionType.APPROACH
+	if not CombatAction.is_valid(action, arena.player, arena.ctx):
+		return
+	arena.hud.action_selected.emit(action, null)
 
 
 ## Applies XP/level rewards for the finished combat exactly once and
