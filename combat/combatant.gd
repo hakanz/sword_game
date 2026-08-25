@@ -75,6 +75,10 @@ var move_cells: int = 1
 var actions_taken: int = 0
 var hits_landed: int = 0
 
+## Boss phase this fighter is currently in (1 = opening shape). Tracked so a
+## crossing is announced exactly once; recomputed from HP, never stored.
+var phase: int = 1
+
 ## Standing with the audience for THIS fight (charter §19 / V2 §54).
 ## Starts Neutral, resets every duel, never saved.
 var crowd: int = CrowdSystem.START
@@ -131,6 +135,8 @@ func setup(character: CharacterData, player_controlled: bool, facing_left: bool)
 	hp_changed.connect(func(current: int, max_value: int) -> void:
 		if rig != null:
 			rig.set_worried_baseline(current < roundi(max_value * 0.35)))
+	# Champions change shape as they fall (V2 §55).
+	hp_changed.connect(func(_current: int, _max_value: int) -> void: refresh_phase())
 
 
 func display_name() -> String:
@@ -187,8 +193,37 @@ func get_resistance(_damage_type: Enums.DamageType) -> float:
 	return 0.0
 
 
+## Known skills, plus the signature moves a boss unlocks in phase two. The AI
+## and the HUD both read this, so a phase change needs no special-case code.
 func get_skills() -> Array[SkillData]:
-	return data.skills
+	if phase < 2 or data.phase_two_skills.is_empty():
+		return data.skills
+	var all: Array[SkillData] = data.skills.duplicate()
+	for skill in data.phase_two_skills:
+		if skill != null and not all.has(skill):
+			all.append(skill)
+	return all
+
+
+## The temperament driving this fighter RIGHT NOW — a cornered champion
+## fights with a different head (V2 §55), chosen from data, not a branch.
+func active_personality() -> AIPersonality:
+	if phase >= 3 and data.phase_three_personality != null:
+		return data.phase_three_personality
+	return data.personality
+
+
+## Recomputes the boss phase from current HP and announces a crossing once.
+## Phases never go backwards: healing out of a phase would flicker the
+## announcement and take a signature move away mid-fight.
+func refresh_phase() -> void:
+	if not data.has_phases() or not is_alive():
+		return
+	var next: int = data.phase_at(float(current_hp) / float(max_hp))
+	if next <= phase:
+		return
+	phase = next
+	EventBus.boss_phase_changed.emit(self, phase)
 
 
 ## Direct HP damage (status DoTs) — bypasses the armour pool by design.

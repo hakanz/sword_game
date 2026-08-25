@@ -57,6 +57,12 @@ var last_combat_result: CombatResult = null
 ## Rewards of the most recent combat (guarded against double application).
 var last_reward: ProgressionService.RewardResult = null
 
+## True when the CURRENT opponent is the region's recurring rival (V2 §55).
+## Runtime only: the rivalry RECORD is saved, this flag is not.
+var opponent_is_rival: bool = false
+## A rival never turns up twice running — the region is not their pit alone.
+var _last_opponent_was_rival: bool = false
+
 ## True when launched with `--smoke-test`: the game auto-plays one full
 ## AI-vs-AI duel at zero delay and quits with an exit code (dev/CI only).
 var smoke_test: bool = false
@@ -186,7 +192,14 @@ func start_next_duel() -> void:
 	var arena: ArenaData = selected_arena()
 	current_arena = arena
 	player_character = profile.to_character_data()
-	next_opponent = OpponentGenerator.generate_for_arena(profile.level, arena)
+	# The region's rival gets first refusal on this duel (V2 §55).
+	opponent_is_rival = false
+	if not _last_opponent_was_rival and RivalService.should_appear(profile, arena):
+		next_opponent = RivalService.build(profile, arena)
+		opponent_is_rival = next_opponent != null
+	if not opponent_is_rival:
+		next_opponent = OpponentGenerator.generate_for_arena(profile.level, arena)
+	_last_opponent_was_rival = opponent_is_rival
 	last_combat_result = null
 	last_reward = null
 	SceneRouter.goto_arena()
@@ -213,6 +226,7 @@ func start_tournament_round() -> void:
 	var arena: ArenaData = ItemDB.arena(tournament_arena_id)
 	current_arena = arena
 	player_character = profile.to_character_data()
+	opponent_is_rival = false  # bracket fights are never rivalry fights
 	if tournament_round >= TOURNAMENT_ROUNDS - 1:
 		next_opponent = arena.champion.duplicate(true)
 	else:

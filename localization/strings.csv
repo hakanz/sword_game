@@ -340,3 +340,15 @@ crowd.excited,Excited,Coşkulu
 crowd.frenzied,Frenzied,Çılgın
 combat.float.crowd_up,"THE PIT ROARS!","ÇUKUR KÜKRÜYOR!"
 combat.float.crowd_down,"The pit turns...","Çukur soğuyor..."
+champion.maulhilda.phase_two,"Maulhilda rolls her shoulders. Something in there clicks.","Maulhilda omuzlarını çeviriyor. İçeride bir şey çıt diyor."
+champion.maulhilda.phase_three,"Maulhilda stops blocking entirely. This is now a race.","Maulhilda savunmayı tamamen bıraktı. Bu artık bir yarış."
+champion.orzha.phase_two,"Orzha smiles and switches feet. The warm-up is over.","Orzha gülümseyip ayak değiştiriyor. Isınma bitti."
+champion.orzha.phase_three,"Orzha drops the showmanship and starts fighting like she means it.","Orzha gösteriyi bırakıp ciddi ciddi dövüşmeye başlıyor."
+character.rival_grissa.name,Grissa Two-Coin,İki Akçe Grissa
+character.rival_vurm.name,Vurm the Kindler,Ateşçi Vurm
+rival.grissa.intro,"Grissa flips a coin, pockets it, and does not tell you the result.","Grissa bir akçe atıyor, cebine koyuyor ve sonucu sana söylemiyor."
+rival.vurm.intro,"Vurm points the axe at you, then at the sand. The message is clear enough.","Vurm baltayı önce sana, sonra kuma doğrultuyor. Mesaj yeterince açık."
+rival.standing_ahead,"You are {margin} up on {name}.","{name} karşısında {margin} öndesin."
+rival.standing_behind,"{name} is {margin} up on you.","{name} sana karşı {margin} önde."
+rival.standing_even,"You and {name} are even. For now.","{name} ile berabersiniz. Şimdilik."
+results.rival,Rivalry,Rekabet

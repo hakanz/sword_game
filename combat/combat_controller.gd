@@ -328,6 +328,9 @@ func _finish() -> void:
 	result.enemy_level = enemy.data.level
 	if enemy.data.is_champion:
 		result.champion_id = enemy.data.id
+	if GameManager.opponent_is_rival:
+		result.rival_id = enemy.data.id
+		result.rival_weapon_id = enemy.main_weapon.id
 	result.victor_name = victor.display_name()
 	result.loser_name = loser.display_name()
 	GameManager.last_combat_result = result

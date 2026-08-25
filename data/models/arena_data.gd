@@ -13,6 +13,10 @@ extends Resource
 ## This arena's handcrafted champion — the tournament's final opponent
 ## (charter §20/§21).
 @export var champion: CharacterData
+## This region's RECURRING opponent (amendment V2 §55): a named fighter the
+## player meets again and again in ordinary duels, who remembers how the last
+## meeting went. Optional — a region without one simply never fields a rival.
+@export var rival: CharacterData
 
 @export_group("Placeholder Visuals")
 ## Placeholder palette until real backgrounds exist (charter §27).

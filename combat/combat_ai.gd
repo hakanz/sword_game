@@ -28,7 +28,9 @@ const NEW_STATUS_VALUE: float = 6.0
 
 
 static func choose_action(actor: Combatant, foe: Combatant, ctx: CombatContext) -> CombatDecision:
-	var personality: AIPersonality = actor.data.personality
+	# active_personality(), not data.personality: a champion past its last
+	# threshold fights with a different head (V2 §55).
+	var personality: AIPersonality = actor.active_personality()
 	if personality == null:
 		# Player character driven by AI (smoke test): behave like a balanced fighter.
 		personality = AIPersonality.new()

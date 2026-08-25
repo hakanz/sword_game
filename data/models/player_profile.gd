@@ -26,6 +26,14 @@ const STARTER: CharacterData = preload("res://data/characters/player_default.tre
 @export var inventory_armour_ids: Array[StringName] = []
 ## Learned active skills (charter §17).
 @export var known_skill_ids: Array[StringName] = []
+## Rivalry record per recurring rival (V2 §55): rival id -> the PLAYER's net
+## wins against them (negative = the rival is ahead). Drives how well armed
+## they turn up next time.
+@export var rival_score: Dictionary = {}
+## What each rival last fought with — the rival's own weapon memory, the
+## mirror of the player's `prefers_main_weapon` (session 6).
+@export var rival_weapon: Dictionary = {}
+
 ## Champions this gladiator has toppled (by CharacterData id).
 @export var defeated_champion_ids: Array[StringName] = []
 ## Arena the player currently fights in (charter §21 regions).
@@ -120,6 +128,8 @@ func to_dict() -> Dictionary:
 		"accent_color": accent_color.to_html(),
 		"prefers_main_weapon": prefers_main_weapon,
 		"battle_fatigue": battle_fatigue,
+		"rival_score": rival_score.duplicate(),
+		"rival_weapon": rival_weapon.duplicate(),
 	}
 
 
@@ -166,4 +176,9 @@ static func from_dict(data: Dictionary) -> PlayerProfile:
 	profile.accent_color = Color.from_string(str(data.get("accent_color", "")), profile.accent_color)
 	profile.prefers_main_weapon = bool(data.get("prefers_main_weapon", false))
 	profile.battle_fatigue = bool(data.get("battle_fatigue", false))
+	# JSON keys are always strings; the rest of the game speaks StringName.
+	for id: Variant in data.get("rival_score", {}).keys():
+		profile.rival_score[StringName(str(id))] = int(data["rival_score"][id])
+	for id: Variant in data.get("rival_weapon", {}).keys():
+		profile.rival_weapon[StringName(str(id))] = StringName(str(data["rival_weapon"][id]))
 	return profile

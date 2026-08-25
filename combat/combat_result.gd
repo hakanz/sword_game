@@ -21,6 +21,10 @@ var loser_name: String = ""
 var enemy_level: int = 1
 ## Set to the champion's CharacterData id when the opponent was a champion.
 var champion_id: StringName = &""
+## Set when the opponent was a region RIVAL (V2 §55), plus what they fought
+## with, so the rivalry record and their weapon memory can be updated once.
+var rival_id: StringName = &""
+var rival_weapon_id: StringName = &""
 ## Set by GameManager.consume_combat_rewards() to guard double application.
 var rewards_applied: bool = false
 

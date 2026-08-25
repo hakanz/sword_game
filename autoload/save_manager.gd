@@ -13,7 +13,7 @@ extends Node
 
 const SETTINGS_PATH: String = "user://settings.cfg"
 const SETTINGS_SECTION: String = "settings"
-const SAVE_VERSION: int = 6
+const SAVE_VERSION: int = 7
 
 ## Overridable for tests; gameplay always uses the default.
 var profile_path: String = "user://save_slot_1.json"
@@ -137,6 +137,8 @@ func _migrate(payload: Dictionary, from_version: int) -> Dictionary:
 				payload = _migrate_v4_to_v5(payload)
 			5:
 				payload = _migrate_v5_to_v6(payload)
+			6:
+				payload = _migrate_v6_to_v7(payload)
 			_:
 				push_warning("SaveManager: no migration path from save_version %d" % version)
 				return {}
@@ -204,6 +206,18 @@ static func _migrate_v4_to_v5(payload: Dictionary) -> Dictionary:
 
 ## v6 added the ranged-weapon preference + defeat fatigue (session 6).
 ## Older saves start on the sidearm rule with no fatigue.
+## v7 adds the rivalry record (V2 §55). An existing gladiator simply has no
+## history with anyone yet — empty dictionaries, nothing lost.
+static func _migrate_v6_to_v7(payload: Dictionary) -> Dictionary:
+	var profile_fields: Dictionary = payload.get("profile", {})
+	if not profile_fields.has("rival_score"):
+		profile_fields["rival_score"] = {}
+	if not profile_fields.has("rival_weapon"):
+		profile_fields["rival_weapon"] = {}
+	payload["profile"] = profile_fields
+	return payload
+
+
 static func _migrate_v5_to_v6(payload: Dictionary) -> Dictionary:
 	var profile_fields: Dictionary = payload.get("profile", {})
 	if not profile_fields.has("prefers_main_weapon"):

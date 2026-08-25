@@ -16,6 +16,8 @@ const CHAMPION_REWARDS: Dictionary = {
 
 class RewardResult:
 	extends RefCounted
+	## Set when this fight was against a recurring rival (results screen).
+	var rival_id: StringName = &""
 	var xp_gained: int = 0
 	var gold_gained: int = 0
 	var levels_gained: int = 0
@@ -75,6 +77,12 @@ static func apply_combat_rewards(
 		reward.gold_gained += economy.champion_gold_bonus
 		profile.gold += economy.champion_gold_bonus
 		profile.fame += economy.champion_fame_bonus
+
+	# Rivalry bookkeeping (V2 §55): who is ahead now, and what they brought.
+	if result.rival_id != &"":
+		RivalService.record_result(profile, result.rival_id,
+				result.player_won, result.rival_weapon_id)
+		reward.rival_id = result.rival_id
 
 	profile.xp += reward.xp_gained
 	while profile.level < config.max_level \

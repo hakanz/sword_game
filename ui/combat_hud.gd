@@ -101,6 +101,7 @@ func _ready() -> void:
 	EventBus.status_applied.connect(_on_status_changed)
 	EventBus.status_ticked.connect(_on_status_ticked)
 	EventBus.status_expired.connect(_on_status_gone)
+	EventBus.boss_phase_changed.connect(_on_boss_phase_changed)
 
 
 func setup(new_player: Combatant, new_enemy: Combatant, combat_ctx: CombatContext) -> void:
@@ -388,6 +389,14 @@ func _on_leave_confirmed() -> void:
 
 
 ## Fading center-screen banner (champion intros/defeats and other big beats).
+## A champion changing shape is announced on the same banner the intro and
+## defeat lines use — the player must SEE the fight get harder (V2 §55).
+func _on_boss_phase_changed(fighter: Combatant, phase: int) -> void:
+	var key: String = fighter.data.phase_key(phase)
+	if key != "":
+		show_announcement(tr(key))
+
+
 func show_announcement(text: String) -> void:
 	_announce_label.text = text
 	_announce_label.modulate.a = 1.0

@@ -82,6 +82,14 @@ func _ready() -> void:
 	if _next_duel.visible and GameManager.tournament_required():
 		_next_duel.text = tr("town.tournament_call")
 		_next_duel.add_theme_color_override("font_color", Color(1.0, 0.84, 0.3))
+	# Rivalry standings (V2 §55): a recurring opponent only matters if the
+	# player is told where the score stands after the fight.
+	if reward != null and reward.rival_id != &"":
+		var profile: PlayerProfile = GameManager.profile
+		_tournament.text = tr(RivalService.standing_key(profile, reward.rival_id)).format({
+			"name": tr("%s.name" % reward.rival_id),
+			"margin": absi(RivalService.score(profile, reward.rival_id)),
+		})
 	if GameManager.tournament_completed and reward != null \
 			and reward.tournament_bonus_gold > 0:
 		_tournament.text += "\n" + tr("results.tournament_bonus").format({

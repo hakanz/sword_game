@@ -28,6 +28,12 @@ signal status_ticked(target: Combatant, results: Array)
 ## takes a plain Array). `rising` separates a roar from a groan.
 signal crowd_state_changed(fighter: Combatant, state: int, rising: bool)
 
+# --- Boss phases (V2 §55) ---
+## A champion crossed into a new phase (2 = signature moves unlocked,
+## 3 = temperament shift). Phase is a plain int for the same autoload-typing
+## reason as crowd_state_changed.
+signal boss_phase_changed(fighter: Combatant, phase: int)
+
 # --- Debug / tooling ---
 ## AI decision scores for the debug overlay (charter §34). Keys: action label, values: utility score.
 signal ai_scores_computed(combatant_name: String, scores: Dictionary)
