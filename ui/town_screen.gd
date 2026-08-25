@@ -29,6 +29,10 @@ var _locations: Array[Array] = [
 @onready var _grid: GridContainer = %LocationGrid
 @onready var _back: Button = %BackButton
 
+## The between-fights encounter panel, built in code and shown over the hub
+## when one is waiting (charter §23).
+var _event_panel: PanelContainer = null
+
 
 func _ready() -> void:
 	if GameManager.profile == null:
@@ -76,3 +80,109 @@ func _ready() -> void:
 			pulse.tween_property(button, "modulate", Color(1.15, 1.08, 0.9), 0.55)
 			pulse.tween_property(button, "modulate", Color.WHITE, 0.55)
 		_grid.add_child(button)
+
+	# Something happened on the way home (charter §23).
+	var event: EventData = GameManager.take_pending_event()
+	if event != null:
+		_show_event(event, profile)
+
+
+# --- Between-fights encounters (charter §23) --------------------------------
+
+## Presents one encounter as a modal card: the scene, then the choices the
+## purse can actually afford, then what came of it.
+func _show_event(event: EventData, profile: PlayerProfile) -> void:
+	_event_panel = PanelContainer.new()
+	_event_panel.set_anchors_preset(Control.PRESET_CENTER)
+	_event_panel.custom_minimum_size = Vector2(620, 0)
+	add_child(_event_panel)
+	_event_panel.position = (size - _event_panel.custom_minimum_size) * 0.5
+	_event_panel.position.y = size.y * 0.18
+
+	var margin := MarginContainer.new()
+	for side: String in ["left", "right", "top", "bottom"]:
+		margin.add_theme_constant_override("margin_%s" % side, 18)
+	_event_panel.add_child(margin)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 10)
+	margin.add_child(box)
+
+	var heading := Label.new()
+	heading.text = tr("town.event_title")
+	heading.add_theme_font_size_override("font_size", 14)
+	heading.add_theme_color_override("font_color", Color(0.72, 0.68, 0.78))
+	box.add_child(heading)
+
+	var title := Label.new()
+	title.text = tr(event.title_key)
+	title.add_theme_font_size_override("font_size", 24)
+	title.add_theme_color_override("font_color", Color(0.95, 0.82, 0.45))
+	box.add_child(title)
+
+	var body := Label.new()
+	body.text = tr(event.body_key)
+	body.add_theme_font_size_override("font_size", 17)
+	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body.custom_minimum_size = Vector2(580, 0)
+	box.add_child(body)
+
+	for choice: EventChoiceData in event.available_choices(profile.gold):
+		var button := Button.new()
+		button.text = tr(choice.label_key)
+		button.custom_minimum_size = Vector2(0, 52)
+		button.add_theme_font_size_override("font_size", 18)
+		button.pressed.connect(_on_event_choice.bind(choice, profile, box))
+		box.add_child(button)
+
+
+## Applies the chosen outcome, then replaces the options with what happened.
+func _on_event_choice(
+		choice: EventChoiceData, profile: PlayerProfile, box: VBoxContainer) -> void:
+	var outcome: EventService.Outcome = EventService.apply(profile, choice)
+	SaveManager.save_profile(profile)  # autosave after a state change (charter §31)
+	for child in box.get_children():
+		if child is Button:
+			child.queue_free()
+
+	var result := Label.new()
+	result.text = tr(outcome.text_key)
+	result.add_theme_font_size_override("font_size", 17)
+	result.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	result.custom_minimum_size = Vector2(580, 0)
+	result.add_theme_color_override("font_color",
+			Color(0.92, 0.55, 0.5) if outcome.wagered and not outcome.wager_won
+			else Color(0.62, 0.87, 0.58))
+	box.add_child(result)
+
+	var ledger: String = _outcome_ledger(outcome)
+	if ledger != "":
+		var summary := Label.new()
+		summary.text = ledger
+		summary.add_theme_font_size_override("font_size", 16)
+		summary.add_theme_color_override("font_color", Color(0.95, 0.85, 0.45))
+		box.add_child(summary)
+
+	var close := Button.new()
+	close.text = tr("event.continue")
+	close.custom_minimum_size = Vector2(0, 52)
+	close.pressed.connect(func() -> void:
+		_event_panel.queue_free()
+		_gold_label.text = str(profile.gold))
+	box.add_child(close)
+	_gold_label.text = str(profile.gold)
+
+
+## "+35 gold · +6 fame" — the numbers behind the sentence.
+func _outcome_ledger(outcome: EventService.Outcome) -> String:
+	var parts: PackedStringArray = []
+	if outcome.gold_delta != 0:
+		parts.append("%+d %s" % [outcome.gold_delta, tr("common.gold_short")])
+	if outcome.fame_delta != 0:
+		parts.append("%+d %s" % [outcome.fame_delta, tr("common.fame_short")])
+	if outcome.xp_gain != 0:
+		parts.append("+%d %s" % [outcome.xp_gain, tr("sheet.xp")])
+	if outcome.attribute_points != 0:
+		parts.append("+%d %s" % [outcome.attribute_points, tr("common.attribute_point_short")])
+	if outcome.item_id != &"":
+		parts.append(tr("event.item_received"))
+	return "  ·  ".join(parts)

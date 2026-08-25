@@ -41,12 +41,45 @@ const EPITHETS: PackedStringArray = [
 	"the Modest", "Sandbiter",
 ]
 
-## Attribute growth weights for the brute archetype (more archetypes arrive
-## with the arena-progression phase).
-const GROWTH_WEIGHTS: Dictionary = {
-	"strength": 0.22, "agility": 0.16, "attack": 0.20,
-	"defence": 0.14, "vitality": 0.16, "stamina": 0.12,
-}
+## Build archetypes a generated fighter can grow into (phase 16). Each one
+## says where its level-up points go AND which weapon classes it will pick up,
+## so the pit stops being an endless queue of identical brutes — and staves
+## finally reach an opponent's hands.
+##
+## `weight` is how often the archetype is rolled; `weapons` gates gear so the
+## build and the kit agree (a mage without a staff is just a bad brute).
+const GROWTH_PROFILES: Array[Dictionary] = [
+	{
+		"id": &"brute", "weight": 3.0,
+		"growth": {"strength": 0.24, "agility": 0.14, "attack": 0.20,
+				"defence": 0.14, "vitality": 0.16, "stamina": 0.12},
+		"weapons": [Enums.WeaponClass.AXE, Enums.WeaponClass.BLUNT, Enums.WeaponClass.SWORD],
+	},
+	{
+		"id": &"duelist", "weight": 2.5,
+		"growth": {"strength": 0.16, "agility": 0.24, "attack": 0.22,
+				"defence": 0.14, "vitality": 0.12, "stamina": 0.12},
+		"weapons": [Enums.WeaponClass.SWORD, Enums.WeaponClass.SPEAR],
+	},
+	{
+		"id": &"skirmisher", "weight": 2.0,
+		"growth": {"strength": 0.16, "agility": 0.26, "attack": 0.20,
+				"defence": 0.12, "vitality": 0.12, "stamina": 0.14},
+		"weapons": [Enums.WeaponClass.SPEAR, Enums.WeaponClass.RANGED],
+	},
+	{
+		"id": &"marksman", "weight": 1.5,
+		"growth": {"strength": 0.10, "agility": 0.30, "attack": 0.24,
+				"defence": 0.10, "vitality": 0.12, "stamina": 0.14},
+		"weapons": [Enums.WeaponClass.RANGED],
+	},
+	{
+		"id": &"mage", "weight": 1.0,
+		"growth": {"arcana": 0.34, "agility": 0.14, "attack": 0.14,
+				"defence": 0.12, "vitality": 0.14, "stamina": 0.12},
+		"weapons": [Enums.WeaponClass.MAGICAL],
+	},
+]
 
 
 static func generate(player_level: int) -> CharacterData:
@@ -71,18 +104,23 @@ static func generate_at_level(level: int, elite: bool = false) -> CharacterData:
 	data.name_text = "%s %s" % [RngService.pick(FIRST_NAMES), RngService.pick(EPITHETS)]
 	data.level = level
 
+	# Which kind of fighter is this? Chosen first, because it decides both
+	# where the level-up points go and what they can hold.
+	var profile: Dictionary = _pick_profile()
+	var growth: Dictionary = profile["growth"]
+
 	# Distribute the same points a leveling player would earn (3 per level).
 	var points: int = (level - 1) * 3
 	for _i in points:
 		var roll: float = RngService.randf()
 		var cumulative: float = 0.0
-		for attr_name: String in GROWTH_WEIGHTS.keys():
-			cumulative += GROWTH_WEIGHTS[attr_name]
+		for attr_name: String in growth.keys():
+			cumulative += growth[attr_name]
 			if roll <= cumulative:
 				data.attributes.set(attr_name, int(data.attributes.get(attr_name)) + 1)
 				break
 
-	_assign_gear(data, level, elite)
+	_assign_gear(data, level, elite, profile)
 	# Temperament comes AFTER the kit: it is chosen to suit what this fighter
 	# is actually holding (V2 §53.2), not rolled blind.
 	data.personality = _personality_for(data)
@@ -105,15 +143,43 @@ static func _personality_for(data: CharacterData) -> AIPersonality:
 
 ## Enemies draw from the same item catalog as the player, capped by tier so
 ## gear power tracks level (T1 at 1-4, T2 at 5-8, T3 at 9+ ...).
-static func _assign_gear(data: CharacterData, level: int, elite: bool = false) -> void:
+## Weighted archetype roll.
+static func _pick_profile() -> Dictionary:
+	var total: float = 0.0
+	for profile: Dictionary in GROWTH_PROFILES:
+		total += float(profile["weight"])
+	var ticket: float = RngService.randf() * total
+	for profile: Dictionary in GROWTH_PROFILES:
+		ticket -= float(profile["weight"])
+		if ticket <= 0.0:
+			return profile
+	return GROWTH_PROFILES[0]
+
+
+static func _assign_gear(data: CharacterData, level: int, elite: bool = false,
+		profile: Dictionary = {}) -> void:
 	var max_tier: int = 1 + (level - 1) / 4 + (1 if elite else 0)
 	# shop_available filter keeps champion-unique rewards out of random hands;
 	# the arcana filter keeps staves off the brute archetype (no ARC growth);
 	# the rarity filter keeps LEGENDARY signature gear (V2 §52.3) a player
 	# chase item / champion reward instead of random pit-fighter loot.
+	var classes: Array = profile.get("weapons", [])
 	var weapon_pool: Array[WeaponData] = ItemDB.all_weapons().filter(
 			func(w: WeaponData) -> bool:
-				return w.tier <= max_tier and w.shop_available and w.required_arcana == 0 						and w.rarity < Enums.Rarity.LEGENDARY)
+				if w.tier > max_tier or not w.shop_available:
+					return false
+				if w.rarity >= Enums.Rarity.LEGENDARY:
+					return false
+				if not classes.is_empty() and not classes.has(w.weapon_class):
+					return false
+				# The build must actually be able to lift it — this is what
+				# keeps a staff out of a brute's hands now that the arcana
+				# blanket ban is gone.
+				if data.attributes.strength < w.required_strength:
+					return false
+				if data.attributes.agility < w.required_agility:
+					return false
+				return data.attributes.arcana >= w.required_arcana)
 	if not weapon_pool.is_empty():
 		data.weapon = RngService.pick(weapon_pool)
 

@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="ItemRegistry" format=3 load_steps=95]
+[gd_resource type="Resource" script_class="ItemRegistry" format=3 load_steps=104]
 
 [ext_resource type="Script" path="res://data/models/item_registry.gd" id="1"]
 [ext_resource type="Script" path="res://data/models/weapon_data.gd" id="2"]
@@ -78,6 +78,15 @@
 [ext_resource type="Resource" path="res://data/armour/bulwark_plate.tres" id="76"]
 [ext_resource type="Resource" path="res://data/weapons/worn_shiv.tres" id="77"]
 [ext_resource type="Resource" path="res://data/weapons/venomtooth_cleaver.tres" id="78"]
+[ext_resource type="Resource" path="res://data/weapons/ashquill_rod.tres" id="79"]
+[ext_resource type="Resource" path="res://data/arenas/saltmere.tres" id="80"]
+[ext_resource type="Script" path="res://data/models/event_data.gd" id="81"]
+[ext_resource type="Resource" path="res://data/events/merchant.tres" id="82"]
+[ext_resource type="Resource" path="res://data/events/injured.tres" id="83"]
+[ext_resource type="Resource" path="res://data/events/trainer.tres" id="84"]
+[ext_resource type="Resource" path="res://data/events/dice.tres" id="85"]
+[ext_resource type="Resource" path="res://data/events/fan.tres" id="86"]
+[ext_resource type="Resource" path="res://data/events/official.tres" id="87"]
 [ext_resource type="Script" path="res://data/models/affix_data.gd" id="90"]
 [ext_resource type="Resource" path="res://data/affixes/of_the_bear.tres" id="100"]
 [ext_resource type="Resource" path="res://data/affixes/of_the_cat.tres" id="101"]
@@ -97,8 +106,9 @@
 
 [resource]
 script = ExtResource("1")
-weapons = Array[ExtResource("2")]([ExtResource("6"), ExtResource("7"), ExtResource("8"), ExtResource("9"), ExtResource("10"), ExtResource("11"), ExtResource("12"), ExtResource("13"), ExtResource("14"), ExtResource("15"), ExtResource("16"), ExtResource("17"), ExtResource("18"), ExtResource("19"), ExtResource("20"), ExtResource("21"), ExtResource("22"), ExtResource("23"), ExtResource("24"), ExtResource("25"), ExtResource("60"), ExtResource("61"), ExtResource("62"), ExtResource("63"), ExtResource("64"), ExtResource("65"), ExtResource("66"), ExtResource("67"), ExtResource("68"), ExtResource("77"), ExtResource("78")])
+weapons = Array[ExtResource("2")]([ExtResource("6"), ExtResource("7"), ExtResource("8"), ExtResource("9"), ExtResource("10"), ExtResource("11"), ExtResource("12"), ExtResource("13"), ExtResource("14"), ExtResource("15"), ExtResource("16"), ExtResource("17"), ExtResource("18"), ExtResource("19"), ExtResource("20"), ExtResource("21"), ExtResource("22"), ExtResource("23"), ExtResource("24"), ExtResource("25"), ExtResource("60"), ExtResource("61"), ExtResource("62"), ExtResource("63"), ExtResource("64"), ExtResource("65"), ExtResource("66"), ExtResource("67"), ExtResource("68"), ExtResource("77"), ExtResource("78"), ExtResource("79")])
 armour = Array[ExtResource("3")]([ExtResource("26"), ExtResource("27"), ExtResource("28"), ExtResource("29"), ExtResource("30"), ExtResource("31"), ExtResource("32"), ExtResource("33"), ExtResource("34"), ExtResource("35"), ExtResource("36"), ExtResource("37"), ExtResource("38"), ExtResource("39"), ExtResource("40"), ExtResource("41"), ExtResource("42"), ExtResource("43"), ExtResource("69"), ExtResource("70"), ExtResource("71"), ExtResource("72"), ExtResource("73"), ExtResource("74"), ExtResource("75"), ExtResource("76")])
 skills = Array[ExtResource("4")]([ExtResource("44"), ExtResource("45"), ExtResource("46"), ExtResource("47"), ExtResource("48"), ExtResource("49"), ExtResource("50"), ExtResource("51"), ExtResource("52"), ExtResource("53"), ExtResource("54"), ExtResource("55"), ExtResource("56"), ExtResource("57")])
 affixes = Array[ExtResource("90")]([ExtResource("100"), ExtResource("101"), ExtResource("102"), ExtResource("103"), ExtResource("104"), ExtResource("105"), ExtResource("106"), ExtResource("107"), ExtResource("108"), ExtResource("109"), ExtResource("110"), ExtResource("111"), ExtResource("112"), ExtResource("113"), ExtResource("114")])
-arenas = Array[ExtResource("5")]([ExtResource("58"), ExtResource("59")])
+events = Array[ExtResource("81")]([ExtResource("82"), ExtResource("83"), ExtResource("84"), ExtResource("85"), ExtResource("86"), ExtResource("87")])
+arenas = Array[ExtResource("5")]([ExtResource("58"), ExtResource("59"), ExtResource("80")])

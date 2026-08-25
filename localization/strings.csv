@@ -352,3 +352,66 @@ rival.standing_ahead,"You are {margin} up on {name}.","{name} karşısında {mar
 rival.standing_behind,"{name} is {margin} up on you.","{name} sana karşı {margin} önde."
 rival.standing_even,"You and {name} are even. For now.","{name} ile berabersiniz. Şimdilik."
 results.rival,Rivalry,Rekabet
+arena.saltmere.name,Saltmere Bowl,Tuzgöl Çanağı
+character.champion_pyx.name,Pyx the Unblinking,Gözünü Kırpmayan Pyx
+character.rival_ilsa.name,Ilsa Hollowreed,Boşkamış Ilsa
+item.weapon.ashquill_rod.name,Ashquill Rod,Kül Kalem
+unique.arcane_echo,Arcane Echo,Arkan Yankısı
+unique.arcane_echo.desc,"A spell that connects pays half its mana back.","Hedefini bulan büyü, mananın yarısını geri öder."
+champion.pyx.intro,"Pyx does not blink. Pyx has not blinked since the last challenger.","Pyx gözünü kırpmıyor. Son meydan okuyandan beri kırpmadı."
+champion.pyx.defeat,"Pyx blinks. Twice. The stands lose their minds.","Pyx gözünü kırpıyor. İki kez. Tribünler çıldırıyor."
+champion.pyx.phase_two,"Pyx starts writing in the air with the rod. This is rarely good news.","Pyx asayla havaya bir şeyler yazmaya başlıyor. Bu genelde iyiye işaret değil."
+champion.pyx.phase_three,"Pyx stops conserving anything at all.","Pyx artık hiçbir şeyi idareli kullanmıyor."
+rival.ilsa.intro,"Ilsa measures the distance to you with the pike, twice, and looks satisfied.","Ilsa mızrakla aranızdaki mesafeyi iki kez ölçüyor ve memnun görünüyor."
+town.event_title,On the way home,Eve dönerken
+event.continue,Move on,Yoluna devam et
+event.merchant.title,A traveling merchant,Gezgin bir tüccar
+event.merchant.body,"A cart blocks the alley. The man on it is already unrolling straps you did not ask about.","Bir araba sokağı kapatmış. Üzerindeki adam, sormadığın kayışları çoktan açmış bile."
+event.merchant.buy,Buy the straps (45g),Kayışları al (45a)
+event.merchant.buy_result,"They smell of someone else's bad afternoon, but they fit.","Başkasının kötü bir gününün kokusunu taşıyorlar ama tam oturuyorlar."
+event.merchant.haggle,Haggle (stake 25g),Pazarlık et (25a ortaya)
+event.merchant.haggle_result,"You out-talk him. He hands back more than you put down, muttering.","Onu lafla yeniyorsun. Söylenerek koyduğundan fazlasını geri veriyor."
+event.merchant.haggle_failed,"He out-talks YOU. Somehow you leave lighter and with nothing.","O seni lafla yeniyor. Bir şekilde daha hafif ve elin boş ayrılıyorsun."
+event.merchant.leave,Keep walking,Yürümeye devam et
+event.merchant.leave_result,"The cart is gone by the time you look back.","Dönüp baktığında araba ortadan kaybolmuş."
+event.injured.title,An injured gladiator,Yaralı bir gladyatör
+event.injured.body,"Someone from an earlier bout is sitting against a wall, being extremely brave about a knee.","Önceki dövüşlerden biri duvara yaslanmış, diziyle ilgili fazlasıyla cesur davranıyor."
+event.injured.help,Pay for the surgeon (30g),Cerrahın parasını öde (30a)
+event.injured.help_result,"Word gets around. It usually does.","Haber yayılıyor. Genelde yayılır."
+event.injured.ignore,Walk past,Yanından geç
+event.injured.ignore_result,"Word gets around about that, too.","Bunun da haberi yayılıyor."
+event.trainer.title,A mysterious trainer,Gizemli bir hoca
+event.trainer.body,"An old fighter watches you walk, then tells you exactly what is wrong with it.","Yaşlı bir dövüşçü yürüyüşünü izliyor ve neyin yanlış olduğunu tam tamına söylüyor."
+event.trainer.pay,Pay for a lesson (120g),Ders için öde (120a)
+event.trainer.pay_result,"Three hours of standing still. Something clicks anyway.","Üç saat kıpırdamadan durmak. Yine de bir şey yerine oturuyor."
+event.trainer.spar,Spar for free,Bedava idman yap
+event.trainer.spar_result,"You lose every exchange and learn from all of them.","Her karşılaşmayı kaybediyorsun ve hepsinden bir şey öğreniyorsun."
+event.trainer.decline,Decline politely,Kibarca reddet
+event.trainer.decline_result,"They shrug and go back to watching the next one walk past.","Omuz silkip bir sonrakinin yürüyüşünü izlemeye dönüyor."
+event.dice.title,Dice behind the stables,Ahırların arkasında zar
+event.dice.body,"Four people, one cup, and a great deal of confidence. All of it in gold.","Dört kişi, bir tas ve bolca özgüven. Hepsi de altın üzerine."
+event.dice.small,Small stake (40g),Küçük bahis (40a)
+event.dice.small_result,"The cup goes your way. You leave before it changes its mind.","Tas senden yana. Fikrini değiştirmeden ayrılıyorsun."
+event.dice.big,Big stake (150g),Büyük bahis (150a)
+event.dice.big_result,"An unreasonable number of sixes. Nobody accuses you out loud.","Akıl almaz sayıda altı. Kimse yüzüne karşı bir şey demiyor."
+event.dice.lost,"The cup goes their way. Repeatedly.","Tas onlardan yana. Üst üste."
+event.dice.walk,Not tonight,Bu akşam olmaz
+event.dice.walk_result,"You keep your gold and your evening.","Altınını da akşamını da koruyorsun."
+event.fan.title,An arena fan,Bir arena hayranı
+event.fan.body,"Someone has painted your name on a plank. Mostly correctly.","Biri adını bir tahtaya yazmış. Çoğunlukla doğru."
+event.fan.sign,Sign the plank,Tahtayı imzala
+event.fan.sign_result,"The plank is now a small local landmark.","Tahta artık küçük bir yerel simge."
+event.fan.gift,Accept their coins,Parasını kabul et
+event.fan.gift_result,"They insist. The crowd notices you letting them.","Israr ediyor. Kalabalık senin izin verdiğini fark ediyor."
+event.official.title,A helpful official,Yardımsever bir görevli
+event.official.body,"A man with a ledger explains, at length, how flexible the next draw could be.","Elinde defterle bir adam, sıradaki eşleşmenin ne kadar esnek olabileceğini uzun uzun anlatıyor."
+event.official.bribe,Pay the "fee" (90g),"""Ücreti"" öde (90a)"
+event.official.bribe_result,"You learn a great deal about your next opponent. Ethically, less so.","Sıradaki rakibin hakkında çok şey öğreniyorsun. Ahlaken pek değil."
+event.official.refuse,Refuse,Reddet
+event.official.refuse_result,"He shrugs. Someone in the queue behind you was listening.","Omuz silkiyor. Arkandaki sıradan biri dinliyordu."
+event.official.report,Report him (25g to the right ear),Onu ihbar et (doğru kulağa 25a)
+event.official.report_result,"The ledger disappears. So does he. The stands approve.","Defter ortadan kayboluyor. O da öyle. Tribünler onaylıyor."
+common.gold_short,gold,altın
+common.fame_short,fame,şöhret
+common.attribute_point_short,attribute point,nitelik puanı
+event.item_received,item received,eşya alındı

@@ -10,6 +10,10 @@ class_name CombatResolver
 const DEFEND_ENERGY_REFUND: int = 6
 
 
+## Fraction of a landed skill's mana cost paid back by Arcane Echo.
+const ARCANE_ECHO_REFUND: float = 0.5
+
+
 ## Extra status stacks this fighter's kit grants (Venom Mastery).
 static func _bonus_stacks(actor: Combatant) -> int:
 	return 1 if actor.has_unique(Enums.UniqueEffect.VENOM_MASTERY) else 0
@@ -88,6 +92,12 @@ static func execute(
 	actor.actions_taken += 1
 	if result.hit:
 		actor.hits_landed += 1
+
+	# Arcane Echo (V2 §52.3 family): a skill that CONNECTS refunds mana. Only
+	# on a landed strike or a self-buff — a whiffed spell pays full price.
+	if result.skill != null and actor.has_unique(Enums.UniqueEffect.ARCANE_ECHO):
+		if result.hit or result.skill.target == SkillData.Target.SELF:
+			actor.restore_mana(roundi(result.skill.mana_cost * ARCANE_ECHO_REFUND))
 
 	# The pit passes judgement on what it just watched (V2 §54). Applied
 	# HERE so the §35 simulator feels the crowd exactly as a played fight

@@ -57,6 +57,13 @@ var last_combat_result: CombatResult = null
 ## Rewards of the most recent combat (guarded against double application).
 var last_reward: ProgressionService.RewardResult = null
 
+## Encounter waiting to be shown on the way home (charter §23). Runtime only:
+## an unseen event is simply forgotten if the player quits, which is fine —
+## events are texture, never progression.
+var pending_event: EventData = null
+## Last encounter shown, so the same one never lands twice running.
+var _last_event_id: StringName = &""
+
 ## True when the CURRENT opponent is the region's recurring rival (V2 §55).
 ## Runtime only: the rivalry RECORD is saved, this flag is not.
 var opponent_is_rival: bool = false
@@ -241,6 +248,15 @@ func start_tournament_round() -> void:
 	SceneRouter.goto_arena()
 
 
+## Hands the waiting encounter to the town screen exactly once.
+func take_pending_event() -> EventData:
+	var event: EventData = pending_event
+	pending_event = null
+	if event != null:
+		_last_event_id = event.id
+	return event
+
+
 func _clear_tournament_flags() -> void:
 	tournament_won_round = false
 	tournament_completed = false
@@ -294,6 +310,15 @@ func run_screenshot_capture(dir: String) -> void:
 	SceneRouter.goto_town()
 	await get_tree().create_timer(1.0).timeout
 	get_viewport().get_texture().get_image().save_png(dir.path_join("town.png"))
+	# ...and again with a between-fights encounter waiting (charter §23), so
+	# the capture actually exercises the panel.
+	profile.victories = maxi(profile.victories, EventService.FIRST_ENCOUNTER_AFTER_VICTORIES)
+	profile.gold = maxi(profile.gold, 400)
+	profile.level = maxi(profile.level, 8)  # most encounters gate on level
+	pending_event = EventService.pick(profile, &"")
+	SceneRouter.goto_town()
+	await get_tree().create_timer(1.0).timeout
+	get_viewport().get_texture().get_image().save_png(dir.path_join("town_event.png"))
 	# A level-1 purse only ever shows sealed crates and Common stock, which
 	# hides rarity, item modifiers and the comparison deltas (V2 §52) — the
 	# capture temporarily grows the gladiator so those rows are visible.
@@ -349,6 +374,11 @@ func consume_combat_rewards() -> ProgressionService.RewardResult:
 	else:
 		profile.prefers_main_weapon = false
 		profile.battle_fatigue = true
+
+	# Something on the way home (charter §23) — rolled once per fight, under
+	# the same idempotence guard as the rewards themselves.
+	if EventService.should_occur(profile):
+		pending_event = EventService.pick(profile, _last_event_id)
 
 	# Tournament bookkeeping (once per fight, same idempotence guard).
 	_clear_tournament_flags()

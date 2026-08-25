@@ -151,6 +151,8 @@ static func unique_effect_key(effect: Enums.UniqueEffect) -> String:
 			return "unique.bulwark_reserve"
 		Enums.UniqueEffect.RELENTLESS_EDGE:
 			return "unique.relentless_edge"
+		Enums.UniqueEffect.ARCANE_ECHO:
+			return "unique.arcane_echo"
 		_:
 			return ""
 

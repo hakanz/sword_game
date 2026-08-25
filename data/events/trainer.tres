@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="EventData" format=3 load_steps=6]
+
+[ext_resource type="Script" path="res://data/models/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://data/models/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="Choice_0"]
+script = ExtResource("2")
+label_key = "event.trainer.pay"
+result_key = "event.trainer.pay_result"
+gold_delta = -120
+attribute_points = 1
+requires_gold = 120
+
+[sub_resource type="Resource" id="Choice_1"]
+script = ExtResource("2")
+label_key = "event.trainer.spar"
+result_key = "event.trainer.spar_result"
+xp_gain = 45
+
+[sub_resource type="Resource" id="Choice_2"]
+script = ExtResource("2")
+label_key = "event.trainer.decline"
+result_key = "event.trainer.decline_result"
+
+[resource]
+script = ExtResource("1")
+id = &"event.trainer"
+title_key = "event.trainer.title"
+body_key = "event.trainer.body"
+weight = 1.5
+min_level = 4
+choices = Array[ExtResource("2")]([SubResource("Choice_0"), SubResource("Choice_1"), SubResource("Choice_2")])

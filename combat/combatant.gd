@@ -245,6 +245,15 @@ func heal(amount: int) -> int:
 	return healed
 
 
+## Returns the amount actually restored (capped at the pool).
+func restore_mana(amount: int) -> int:
+	if amount <= 0:
+		return 0
+	var before: int = current_mana
+	current_mana = mini(current_mana + amount, max_mana)
+	return current_mana - before
+
+
 func spend_mana(amount: int) -> void:
 	if amount <= 0:
 		return

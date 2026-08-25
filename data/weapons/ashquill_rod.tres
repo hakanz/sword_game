@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 load_steps=2]
+
+[ext_resource type="Script" path="res://data/models/weapon_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"weapon.ashquill_rod"
+name_key = "item.weapon.ashquill_rod.name"
+weapon_class = 6
+damage_type = 7
+damage_min = 17
+damage_max = 25
+accuracy_bonus = 4
+crit_chance = 0.06
+armour_penetration = 0.12
+range_min = 0
+range_max = 0
+energy_cost = 8
+unique_effect = 4
+tier = 5
+rarity = 4
+shop_available = false
+value = 560
+required_level = 16
+required_strength = 0
+required_agility = 0
+required_arcana = 18

@@ -54,6 +54,8 @@ enum UniqueEffect {
 	BULWARK_RESERVE,
 	## A critical hit ticks every skill cooldown down by one round.
 	RELENTLESS_EDGE,
+	## A skill that LANDS pays some of its mana back (CombatResolver).
+	ARCANE_ECHO,
 }
 
 enum ArmourClass {

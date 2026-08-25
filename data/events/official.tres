@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="EventData" format=3 load_steps=6]
+
+[ext_resource type="Script" path="res://data/models/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://data/models/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="Choice_0"]
+script = ExtResource("2")
+label_key = "event.official.bribe"
+result_key = "event.official.bribe_result"
+gold_delta = -90
+xp_gain = 60
+requires_gold = 90
+
+[sub_resource type="Resource" id="Choice_1"]
+script = ExtResource("2")
+label_key = "event.official.refuse"
+result_key = "event.official.refuse_result"
+fame_delta = 3
+
+[sub_resource type="Resource" id="Choice_2"]
+script = ExtResource("2")
+label_key = "event.official.report"
+result_key = "event.official.report_result"
+gold_delta = -25
+fame_delta = 8
+requires_gold = 25
+
+[resource]
+script = ExtResource("1")
+id = &"event.official"
+title_key = "event.official.title"
+body_key = "event.official.body"
+weight = 1.2
+min_level = 6
+choices = Array[ExtResource("2")]([SubResource("Choice_0"), SubResource("Choice_1"), SubResource("Choice_2")])

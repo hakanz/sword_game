@@ -74,6 +74,11 @@ func all_affixes() -> Array[AffixData]:
 	return REGISTRY.affixes.duplicate()
 
 
+## Between-fights encounter pool (EventService).
+func all_events() -> Array[EventData]:
+	return REGISTRY.events.duplicate()
+
+
 func affix(id: StringName) -> AffixData:
 	for entry in REGISTRY.affixes:
 		if entry.id == id:

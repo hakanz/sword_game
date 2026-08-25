@@ -11,5 +11,7 @@ extends Resource
 ## Item modifier pool (V2 §52). Which affixes an item ends up with is derived
 ## from the item itself — see ItemAffixes.
 @export var affixes: Array[AffixData] = []
+## Between-fights encounters (charter §23).
+@export var events: Array[EventData] = []
 ## Arena regions, ordered by ArenaData.order.
 @export var arenas: Array[ArenaData] = []

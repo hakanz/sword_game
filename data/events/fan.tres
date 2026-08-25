@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="EventData" format=3 load_steps=5]
+
+[ext_resource type="Script" path="res://data/models/event_data.gd" id="1"]
+[ext_resource type="Script" path="res://data/models/event_choice_data.gd" id="2"]
+
+[sub_resource type="Resource" id="Choice_0"]
+script = ExtResource("2")
+label_key = "event.fan.sign"
+result_key = "event.fan.sign_result"
+fame_delta = 6
+
+[sub_resource type="Resource" id="Choice_1"]
+script = ExtResource("2")
+label_key = "event.fan.gift"
+result_key = "event.fan.gift_result"
+gold_delta = 35
+fame_delta = -1
+
+[resource]
+script = ExtResource("1")
+id = &"event.fan"
+title_key = "event.fan.title"
+body_key = "event.fan.body"
+weight = 2.0
+min_level = 3
+choices = Array[ExtResource("2")]([SubResource("Choice_0"), SubResource("Choice_1")])
