@@ -111,6 +111,42 @@ output file already exists is skipped, so an interrupted run costs nothing to
 restart, and `--repost` re-derives every texture from the cache when the
 post-processing is tuned — no API calls, no cost.
 
+## Arena framing: the backdrop is placed by its horizon
+
+The first pass put the fighters directly in front of the arena wall, its gates
+and its crowd, and they disappeared into it. The fix has three parts, and all
+three are needed:
+
+1. **Composition is a contract with the generator.** Arena backdrop prompts
+   pin the layout by percentage: a thin strip of sky, then packed tiered stands
+   from 20% to 62% of the image height, the plain perimeter wall from 62% to
+   72%, and nothing at all below 72%. No gates, no torches, no props at fighter
+   height.
+2. **The engine anchors on the horizon, not the edges.**
+   `ArenaData.backdrop_horizon` records where that empty ground begins in the
+   image, and `ArenaVisual` places the painting so the line lands on
+   `GROUND_TOP` — just above the tallest helmet. Scale comes from width, so the
+   wall always spans the screen and whatever that pushes off the top is sky,
+   which costs nothing. A backdrop with a different composition only needs a
+   different `backdrop_horizon`.
+3. **The engine draws the fighting ground itself**, tiled across the full
+   frame and well past the bottom edge, so the sand is boundless at any aspect
+   ratio instead of ending where a painting happens to end. This is why the
+   ground textures are prompted to be near-uniform and very low contrast: a
+   tile with big blotches or directional ripples announces every repeat.
+   Depth-scaled strips were tried and reverted — the seams between strips read
+   as horizontal banding, which is worse than a flat texture.
+
+On top of the geometry, everything behind the ground line sits under a cool
+distance haze. Geometry alone still leaves two brown fighters on a brown wall;
+the haze is what makes them read as nearer.
+
+The relationship between `ArenaVisual.GROUND_TOP`, `CombatController.GROUND_Y`,
+`PlaceholderRig.HEIGHT` and `Combatant.RIG_SCALE` is four numbers in three
+files, so `test_art.gd` asserts the clearance rather than trusting it — along
+with the camera's lower bound, which exists because the radial action ring
+hangs below the player and a higher frame would clip it.
+
 ## Nine-slice sizes are minimum sizes
 
 `UITheme`'s plate borders (`BUTTON_SLICE`, `PANEL_SLICE`) also set each

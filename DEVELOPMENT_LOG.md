@@ -684,3 +684,67 @@ stays: the town screen uses it as the trainer glyph).
   game and a commercial impression.
 - The generated art is `generated`, not `final` — no art-director pass has happened.
 
+---
+
+## Session 9 — 2026-08-25 — Owner feedback: read the arena, read the blow (Claude)
+
+Two owner notes on the session-8 art pass: the fighters were disappearing into
+the backdrop, and the swings were over before their effects could be seen.
+
+### The arena reframe
+The fighters stood directly in front of the wall, its gates, its torches and
+its crowd. Three changes, all needed:
+
+- **The backdrop composition is now a contract with the generator.** Prompts
+  pin the layout by percentage — thin sky strip, packed stands from 20% to 62%,
+  plain wall 62-72%, and NOTHING below 72%. No gates or torches at fighter
+  height, and the stands packed dense so the place reads as enormous.
+- **The engine anchors the painting by its HORIZON, not its edges.** New
+  `ArenaData.backdrop_horizon` records where the open ground starts in the
+  image; ArenaVisual places the backdrop so that line lands just above the
+  tallest helmet. A future backdrop with a different composition only needs a
+  different number.
+- **The engine draws the fighting sand itself**, tiled across the full frame
+  and past the bottom edge, so the ground is boundless at any aspect ratio
+  rather than ending where a painting happens to end (owner: "kum kısmının
+  uçsuz olması gerekiyor"). Ground textures were regenerated near-uniform and
+  very low contrast — the first set had blotches and ripples that announced
+  every repeat.
+
+Geometry alone still left two brown fighters on a brown wall, so everything
+behind the ground line now sits under a cool distance haze.
+
+Depth-scaled ground strips were tried and reverted: the seams between strips
+read as horizontal banding, worse than the flat texture they were disguising.
+
+`CombatCamera.FOCUS_Y` moved from 400 to 332 — the sand below the fighters is
+boundless and costs nothing to lose, while every pixel of crowd above them is
+worth keeping. It cannot go higher: the radial action ring hangs below the
+player, and `test_art.gd` now asserts both that bound and the head clearance,
+because the framing is four numbers in three files.
+
+### The pacing pass
+Slowed by a fixed factor per key — windup x1.20, swing x1.20, recovery x1.35,
+hit-stop x1.30 — weighted deliberately rather than uniformly. The unreadable
+part was never the wind-up; it was that the blow resolved and the turn moved on
+before the impact could register, so most of the extra time went to the beat
+AFTER the hit. `CombatVfx.LINGER` (1.35) holds every effect on screen longer,
+and painted flashes now hold full brightness for their first third instead of
+fading from frame one.
+
+The controller's loose `await _delay(0.25)`-style beats moved into CombatFeel as
+named constants (`BEAT_AFTER_ACTION`, `BEAT_SKILL`, ...). Charter rule 10 puts
+combat-feel pacing in ONE table, and tuning a fight's rhythm should not mean
+hunting through the controller for stray awaits.
+
+One test bound moved with the design: `recovery <= 0.4` became `<= 0.45`. The
+windup, swing, impact-delay and freeze-cap bounds all still hold unchanged.
+
+### Verified
+- 33 suites / 5690 assertions green.
+- Smoke runs are BIT-IDENTICAL to session 8 at seeds 7/42/1337 (same rounds,
+  same damage, same XP), which is the proof that the pacing work stayed on the
+  presentation side of the line the charter draws.
+- All three arena compositions checked against the placement maths; both duel
+  frames eyeballed in a real windowed run.
+

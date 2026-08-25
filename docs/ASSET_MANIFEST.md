@@ -21,8 +21,8 @@ files (docs/art.md).
 | items.weapons.* (38) | weapon sprite + icon | painted upright sprite per weapon, grip at the bottom edge; one texture serves the fist and the shop row | art-director pass; per-tier variants | generated |
 | items.armour.* (29) | armour icon | painted three-quarter icon per piece | art-director pass | generated |
 | materials.* (7) | tiling material patch | worn/studded leather, linen, bronze, mail, steel, scale — filled into the rig's armour shapes | more variety per tier | generated |
-| arenas.\*.backdrop (3) | background | painted 16:9 backdrop per region (Gravelmaw / Emberholt / Saltmere) | layered parallax version | generated |
-| arenas.\*.ground (3) | tiling ground | painted per-region ground, laid over the backdrop as low-alpha grain | — | generated |
+| arenas.\*.backdrop (3) | background | painted 16:9 backdrop per region (Gravelmaw / Emberholt / Saltmere). Composition is a CONTRACT: sky strip, packed stands 20-62%, plain wall 62-72%, nothing below 72% — the engine anchors on that line (docs/art.md) | layered parallax version | generated |
+| arenas.\*.ground (3) | tiling ground | painted per-region ground, tiled across the whole frame as the boundless fighting sand. Deliberately near-uniform and low contrast so repeats do not show | — | generated |
 | ui.backdrops (5) | screen art | menu / town / shop / creation / results paintings | art-director pass | generated |
 | ui.plates | theme skin | painted bronze button plates (normal/hover/pressed) + stone and parchment panels, nine-sliced by `UITheme` | full art-directed theme incl. sliders, checkboxes, tabs | generated |
 | ui.icons.skills (14) | icon set | painted per-skill emblems | — | generated |

@@ -1,7 +1,8 @@
 # PROJECT STATE
 Last Updated: 2026-08-25
-Updated By: Claude (session 8 - the art layer: 140 generated textures, texture
-slots in the data layer, and the charter §25 animations/VFX that were missing)
+Updated By: Claude (session 9 - owner feedback on the art pass: the arena
+reframed so fighters read against boundless sand, and combat pacing slowed a
+notch so the player can see the blow land)
 
 ## Current Milestone
 MVP core loop COMPLETE and playable end to end: character creation -> arena duels vs
@@ -66,10 +67,15 @@ build-guidance recommendations, victory celebration animation.
 - UI theme: global programmatic theme (UITheme), styled menus/HUD/bars
 - Visuals: rig v5 (3-tone anatomy, expressions, per-slot armour filled with
   real material textures, painted weapon sprite in the fist, legendary aura);
-  arenas draw a painted backdrop, with the v2 primitive rendering (drawn crowd
-  tiers, brick wall, barred pen gates, columns) still live behind it
+  arenas draw a painted backdrop ANCHORED BY ITS HORIZON (session 9) so the
+  wall base lands above the fighters, with the boundless fighting sand tiled by
+  the engine below it and a distance haze behind; the v2 primitive rendering
+  (drawn crowd tiers, brick wall, barred pen gates, columns) is still live as
+  the no-art path
 - Combat feel (V2 §51): CombatFeel is the one table of weapon-weight pacing
-  (windup/swing/recovery/hit-stop/shake/lunge/style per WeaponClass); impact
+  (windup/swing/recovery/hit-stop/shake/lunge/style per WeaponClass) AND, since
+  session 9, of the fixed presentation beats the controller holds between
+  actions. Slowed a notch that session so impacts can be read; impact
   hit-stop via a bounded Engine.time_scale dip; CombatCamera frames both
   fighters, zooms with separation and punches in on crits/kills, and owns the
   impact shake. Accessibility: reduced_fx shortens the freeze, a new Camera
@@ -150,9 +156,11 @@ build-guidance recommendations, victory celebration animation.
   score overlay, not about creating the roster from nothing
 
 ## Current Test Status
-GREEN this session: 33 suites / 5673 assertions (Godot 4.7.2) - new
-test_art.gd (content invariants + every fallback path) and
-test_combat_reactions.gd (resolver flags, blood toggle, rig reaction set); §35 simulator:
+GREEN this session: 33 suites / 5690 assertions (Godot 4.7.2) - test_art.gd
+(content invariants, every fallback path, and the arena framing/camera
+clearances) and test_combat_reactions.gd (resolver flags, blood toggle, rig
+reaction set). Session-9 smoke runs are bit-identical to session 8 at the same
+seeds, which is how the pacing change was shown to be presentation-only; §35 simulator:
 6 matchups × 150 battles, 0 stalemates, presets in the 39-52% band
 (default-kit-vs-generated sits at 82/69/62% at L1/5/10 - see docs/balancing.md
 for why itemization and in-character temperaments moved it); new economy pacing
