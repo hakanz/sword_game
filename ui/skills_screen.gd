@@ -13,6 +13,7 @@ func _ready() -> void:
 	if GameManager.profile == null:
 		SceneRouter.goto_main_menu()
 		return
+	MenuBackdrop.install(self, &"backdrop_creation")
 	_title.text = tr("skills.title")
 	_back.text = tr("common.back")
 	_back.pressed.connect(SceneRouter.goto_town)

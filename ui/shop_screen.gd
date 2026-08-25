@@ -39,9 +39,10 @@ func _ready() -> void:
 	if GameManager.profile == null:
 		SceneRouter.goto_main_menu()
 		return
+	MenuBackdrop.install(self, &"backdrop_shop")
 	_title.text = tr("shop.weaponsmith.title") if _weapons_mode() else tr("shop.armourer.title")
 	_flavor.text = tr("shop.weaponsmith.flavor") if _weapons_mode() else tr("shop.armourer.flavor")
-	_gold_icon.texture = preload("res://assets/icons/coin.svg")
+	_gold_icon.texture = ItemIcons.coin()
 	_tab_buy.text = tr("shop.tab_buy")
 	_tab_sell.text = tr("shop.tab_sell")
 	_back.text = tr("common.back")
@@ -199,7 +200,7 @@ func _add_buy_row(profile: PlayerProfile, item: Resource, is_weapon: bool) -> vo
 		price_label.add_theme_font_size_override("font_size", 18)
 		price_label.add_theme_color_override("font_color", Color(0.95, 0.85, 0.45))
 		row.add_child(price_label)
-		row.add_child(ItemIcons.make_icon(preload("res://assets/icons/coin.svg"), 5, 20))
+		row.add_child(ItemIcons.make_coin(20))
 		var button := Button.new()
 		button.text = tr("shop.buy")
 		button.custom_minimum_size = Vector2(110, 48)
@@ -235,8 +236,7 @@ func _add_sealed_row(item: Resource, is_weapon: bool) -> void:
 	row.add_theme_constant_override("separation", 12)
 	margin.add_child(row)
 
-	var glyph: Texture2D = ItemIcons.weapon_icon(item) if is_weapon else ItemIcons.armour_icon(item)
-	var icon: Control = ItemIcons.make_icon(glyph, int(item.get("tier")))
+	var icon: Control = ItemIcons.make_item_icon(item)
 	icon.modulate = Color(0.12, 0.1, 0.14)  # blacked-out silhouette
 	row.add_child(icon)
 
@@ -277,8 +277,7 @@ func _make_row(item: Resource, is_weapon: bool, requirement: String,
 	margin.add_child(row)
 
 	var tier: int = int(item.get("tier"))
-	var glyph: Texture2D = ItemIcons.weapon_icon(item) if is_weapon else ItemIcons.armour_icon(item)
-	row.add_child(ItemIcons.make_icon(glyph, tier))
+	row.add_child(ItemIcons.make_item_icon(item))
 
 	var info := VBoxContainer.new()
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL

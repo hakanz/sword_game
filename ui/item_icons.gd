@@ -1,8 +1,11 @@
 class_name ItemIcons
-## Shared item iconography: white base glyphs per weapon class / armour slot,
-## tinted by tier (modulate) so shops/inventory read at a glance.
-## Placeholder art rule applies (charter §27) — final per-item art replaces
-## these via the same helper.
+## Shared item iconography for shop and inventory rows.
+##
+## An item that carries its own painted art (`WeaponData.sprite`,
+## `ArmourData.icon`) is shown as-is — the art already says which weapon it is
+## and what it is made of. An item without one falls back to the original
+## white per-class / per-slot glyph tinted by tier, which is what the whole
+## catalogue looked like before the art existed (charter §27).
 
 const WEAPON_ICONS: Dictionary = {
 	Enums.WeaponClass.UNARMED: preload("res://assets/icons/class_sword.svg"),
@@ -34,13 +37,91 @@ const TIER_TINTS: Dictionary = {
 }
 const TIER_TINT_HIGH := Color(0.85, 0.6, 0.95)
 
+const COIN_GLYPH := preload("res://assets/icons/coin.svg")
 
+
+## The painted sprite when the weapon has one, else the class glyph.
 static func weapon_icon(weapon: WeaponData) -> Texture2D:
+	if weapon.sprite != null:
+		return weapon.sprite
 	return WEAPON_ICONS.get(weapon.weapon_class, WEAPON_ICONS[Enums.WeaponClass.SWORD])
 
 
+## The painted icon when the piece has one, else the slot glyph.
 static func armour_icon(piece: ArmourData) -> Texture2D:
+	if piece.icon != null:
+		return piece.icon
 	return ARMOUR_ICONS.get(piece.slot, ARMOUR_ICONS[Enums.EquipSlot.CHEST])
+
+
+## True when this item draws itself — painted art must NOT be tier-tinted, the
+## metal is already in the paint.
+static func is_painted(item: Resource) -> bool:
+	if item is WeaponData:
+		return (item as WeaponData).sprite != null
+	if item is ArmourData:
+		return (item as ArmourData).icon != null
+	return false
+
+
+## Ready-to-place icon for a weapon or armour piece. Painted art is drawn
+## untinted (the metal is already in the paint) and a weapon sprite is laid on
+## the diagonal, because a weapon painted standing straight up is a few pixels
+## wide once it is letterboxed into a square row slot.
+static func make_item_icon(item: Resource, size: float = 44.0) -> Control:
+	var painted: bool = is_painted(item)
+	var weapon: bool = item is WeaponData
+	var icon := ItemIconRect.new()
+	icon.texture = weapon_icon(item as WeaponData) if weapon 			else armour_icon(item as ArmourData)
+	icon.tint = Color.WHITE if painted else tier_tint(int(item.get("tier")))
+	icon.angle = -PI / 4.0 if painted and weapon else 0.0
+	icon.custom_minimum_size = Vector2(size, size)
+	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	return icon
+
+
+class ItemIconRect:
+	extends Control
+	## Draws one item texture scaled to fit its box at `angle`, so a tall
+	## weapon sprite uses the square's diagonal instead of its width.
+
+	var texture: Texture2D = null
+	var tint: Color = Color.WHITE
+	var angle: float = 0.0
+
+	func _draw() -> void:
+		if texture == null:
+			return
+		var src: Vector2 = texture.get_size()
+		if src.x <= 0.0 or src.y <= 0.0:
+			return
+		# Bounding box of the rotated sprite, solved for the largest scale
+		# that still fits the control.
+		var horizontal: float = absf(cos(angle))
+		var vertical: float = absf(sin(angle))
+		var fit: float = minf(
+				size.x / (src.x * horizontal + src.y * vertical),
+				size.y / (src.x * vertical + src.y * horizontal))
+		var drawn: Vector2 = src * fit
+		draw_set_transform(size * 0.5, angle, Vector2.ONE)
+		draw_texture_rect(texture, Rect2(-drawn * 0.5, drawn), false, tint)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## The gold coin used wherever a price or a purse is shown.
+static func coin() -> Texture2D:
+	var painted: Texture2D = ArtLibrary.ui(&"coin")
+	return painted if painted != null else COIN_GLYPH
+
+
+## Coin widget for a price row. The painted coin is already gold, so it is
+## only tinted when the flat glyph is standing in for it.
+static func make_coin(size: float = 20.0) -> TextureRect:
+	var painted: Texture2D = ArtLibrary.ui(&"coin")
+	var rect: TextureRect = make_icon(coin(), 5, size)
+	if painted != null:
+		rect.modulate = Color.WHITE
+	return rect
 
 
 static func tier_tint(tier: int) -> Color:

@@ -16,6 +16,7 @@ func _ready() -> void:
 	if GameManager.profile == null:
 		SceneRouter.goto_main_menu()
 		return
+	MenuBackdrop.install(self, &"backdrop_shop")
 	_title.text = tr("inventory.title")
 	_weapons_title.text = tr("inventory.weapons")
 	_armour_title.text = tr("inventory.armour")
@@ -95,6 +96,10 @@ func _add_row(
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
 	margin.add_child(row)
+
+	# Same painted item icon the shop rows use — the satchel and the stall are
+	# the same decision and should read the same way.
+	row.add_child(ItemIcons.make_item_icon(item))
 
 	var info := VBoxContainer.new()
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL

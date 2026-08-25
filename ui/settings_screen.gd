@@ -1,6 +1,6 @@
 extends Control
 ## Settings (charter §28 accessibility): volume sliders per bus, language,
-## screen-shake intensity, reduced-effects toggle. Values persist via
+## screen-shake intensity, reduced-effects and blood toggles. Values persist via
 ## SaveManager settings; consumers read them live (controller shake,
 ## CombatVfx particle counts). Key-remap UI is still an open item — combat
 ## is fully pointer/touch driven and no gameplay key bindings exist yet
@@ -48,6 +48,15 @@ func _ready() -> void:
 			func(pressed: bool) -> void:
 				SaveManager.set_setting(CombatFeel.REDUCED_FX_SETTING, pressed),
 			"ReducedFxCheck")
+
+	# Charter §25/§30: blood is its own toggle. Turning effects down should not
+	# be the only way to stop the spray, and stopping the spray should not
+	# flatten every other effect in the fight.
+	_add_check_row(tr("settings.blood"),
+			CombatVfx.blood_enabled(),
+			func(pressed: bool) -> void:
+				SaveManager.set_setting(CombatVfx.BLOOD_SETTING, pressed),
+			"BloodCheck")
 
 	var language := Button.new()
 	language.text = tr("menu.language")

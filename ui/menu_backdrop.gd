@@ -1,9 +1,11 @@
 class_name MenuBackdrop
 extends Control
-## Original programmatic backdrop for the front-end screens (charter §27:
-## placeholders are DRAWN, never borrowed). A dusk arena silhouette — tiered
-## stands, arched gates, pennants — under a warm horizon glow, with two
-## guttering torches and dust drifting through the light.
+## Backdrop for the front-end screens. When the painting named by `art_key`
+## is installed it is drawn cover-fitted behind the screen; when it is not,
+## the original DRAWN dusk-arena silhouette takes over — tiered stands, arched
+## gates, pennants under a warm horizon glow, with two guttering torches.
+## Either way the drifting dust and the floor wash ride on top, so the
+## front-end is never a still image.
 ##
 ## Boundaries: pure decoration. It draws nothing gameplay-relevant, uses a
 ## LOCAL fixed-seed RNG (never RngService, so no seeded replay can be
@@ -12,6 +14,10 @@ extends Control
 
 ## Design-space box the silhouette is composed for; it scales to fit.
 const DESIGN := Vector2(1280.0, 720.0)
+
+## Which painting in `ArtLibrary.ui` this screen wears. Set before the node
+## enters the tree (or via `install`).
+@export var art_key: StringName = &"backdrop_menu"
 
 const SKY_TOP := Color(0.20, 0.13, 0.25)
 const SKY_LOW := Color(0.33, 0.18, 0.24)
@@ -33,10 +39,33 @@ var _animated: bool = true
 ## screens, drawing visible hairlines across them.
 var _sky: GradientTexture2D = null
 var _floor_shade: GradientTexture2D = null
+## The painting for `art_key`, or null when the art is not installed.
+var _painting: Texture2D = null
+
+
+## Drops a backdrop in behind an existing screen — for the screens composed
+## against a flat `Background` ColorRect rather than an editor-placed backdrop.
+##
+## That flat fill would sit on top and hide the art, so it is turned down to
+## `wash` alpha and becomes the readability scrim over the painting instead.
+## Screens with no such node simply get the backdrop at the bottom.
+static func install(root: Control, key: StringName,
+		wash: float = 0.55) -> MenuBackdrop:
+	var backdrop := MenuBackdrop.new()
+	backdrop.art_key = key
+	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
+	backdrop.name = "PaintedBackdrop"
+	root.add_child(backdrop)
+	root.move_child(backdrop, 0)
+	var fill := root.get_node_or_null(^"Background") as ColorRect
+	if fill != null:
+		fill.color = Color(fill.color, wash)
+	return backdrop
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_painting = ArtLibrary.ui(art_key)
 	_sky = _vertical_gradient([SKY_TOP, SKY_LOW])
 	_floor_shade = _vertical_gradient(
 			[Color(0.03, 0.02, 0.05, 0.0), Color(0.03, 0.02, 0.05, 0.55)])
@@ -70,14 +99,30 @@ func _draw() -> void:
 	var offset := (size - DESIGN * scale_factor) * 0.5
 	draw_set_transform(offset, 0.0, Vector2(scale_factor, scale_factor))
 
-	_draw_sky()
-	_draw_stands(392.0, 0.75, STONE_FAR)
-	_draw_stands(492.0, 1.0, STONE_NEAR)
-	_draw_torches()
+	if _painting != null:
+		_draw_painting()
+	else:
+		_draw_sky()
+		_draw_stands(392.0, 0.75, STONE_FAR)
+		_draw_stands(492.0, 1.0, STONE_NEAR)
+		_draw_torches()
 	if _animated:
 		_draw_motes()
 	_draw_floor_shadow()
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## Cover-fits the painting inside the design box: the art is 16:9 and the box
+## is 16:9, so this is an exact fill at the reference ratio and a centred crop
+## at anything else.
+func _draw_painting() -> void:
+	var art: Vector2 = _painting.get_size()
+	if art.x <= 0.0 or art.y <= 0.0:
+		return
+	var cover: float = maxf(DESIGN.x / art.x, DESIGN.y / art.y)
+	var drawn: Vector2 = art * cover
+	draw_texture_rect(_painting,
+			Rect2((DESIGN - drawn) * 0.5, drawn), false)
 
 
 func _draw_sky() -> void:

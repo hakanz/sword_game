@@ -111,6 +111,7 @@ func setup(new_player: Combatant, new_enemy: Combatant, combat_ctx: CombatContex
 
 	_player_name.text = player.display_name()
 	_enemy_name.text = enemy.display_name()
+	_show_enemy_portrait()
 	_build_xp_row()
 
 	player.hp_changed.connect(func(_c: int, _m: int) -> void: _refresh_stat_rows())
@@ -486,8 +487,27 @@ func _refresh_distance() -> void:
 	_distance_label.text = tr(Enums.distance_band_key(ctx.band()))
 
 
-## Placeholder status icons: tinted squares + stack count (distinct colors;
-## real colorblind-safe icons arrive with final art — tracked in ASSET_MANIFEST).
+## Named opponents — champions and regional rivals — are shown by face above
+## their bars. Generated opponents carry no portrait and get none.
+func _show_enemy_portrait() -> void:
+	if enemy.data == null or enemy.data.portrait == null:
+		return
+	var box := _enemy_name.get_parent() as BoxContainer
+	if box == null or box.has_node(^"EnemyPortrait"):
+		return
+	var frame := TextureRect.new()
+	frame.name = "EnemyPortrait"
+	frame.texture = enemy.data.portrait
+	frame.custom_minimum_size = Vector2(0, 62)
+	frame.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	frame.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	box.add_child(frame)
+	box.move_child(frame, 0)
+
+
+## Status chips: the effect's painted emblem where it has one, and the older
+## tinted swatch where it does not. Shape AND colour differ per effect, which
+## is what keeps the row readable without relying on hue alone (§28).
 func _refresh_status_rows() -> void:
 	_fill_status_row(_player_status_row, player)
 	_fill_status_row(_enemy_status_row, enemy)
@@ -497,11 +517,22 @@ func _fill_status_row(row: HBoxContainer, combatant: Combatant) -> void:
 	for child in row.get_children():
 		child.queue_free()
 	for instance in combatant.status_effects:
-		var swatch := ColorRect.new()
-		swatch.color = instance.data.tint
-		swatch.custom_minimum_size = Vector2(16, 16)
-		swatch.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		row.add_child(swatch)
+		var chip: Control
+		if instance.data.icon != null:
+			var art := TextureRect.new()
+			art.texture = instance.data.icon
+			art.custom_minimum_size = Vector2(26, 26)
+			art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			chip = art
+		else:
+			var swatch := ColorRect.new()
+			swatch.color = instance.data.tint
+			swatch.custom_minimum_size = Vector2(16, 16)
+			chip = swatch
+		chip.tooltip_text = tr(instance.data.name_key)
+		chip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(chip)
 		if instance.stacks > 1:
 			var stacks := Label.new()
 			stacks.text = "x%d" % instance.stacks

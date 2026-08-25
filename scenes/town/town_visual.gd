@@ -1,11 +1,32 @@
 class_name TownVisual
 extends Node2D
-## Placeholder street backdrop for Dustwell, the fighters' quarter
-## (charter §22/§27): dusk sky, building silhouettes with lit windows, two
-## shop fronts. Local fixed-seed RNG only — never gameplay RNG.
+## Street backdrop for Dustwell, the fighters' quarter (charter §22/§27).
+## Draws the painted town street when that art is installed and the original
+## primitive dusk skyline — sky bands, building silhouettes with lit windows,
+## two shop fronts — when it is not. Local fixed-seed RNG only, never gameplay
+## RNG.
+
+## Design-space box the street is composed for.
+const DESIGN := Vector2(1280.0, 720.0)
 
 
 func _draw() -> void:
+	var painting: Texture2D = ArtLibrary.ui(&"backdrop_town")
+	if painting != null:
+		var art: Vector2 = painting.get_size()
+		if art.x > 0.0 and art.y > 0.0:
+			# Cover-fit, over-wide so an expanded aspect never shows void.
+			var cover: float = maxf(DESIGN.x * 1.6 / art.x, DESIGN.y / art.y)
+			var drawn: Vector2 = art * cover
+			draw_texture_rect(painting,
+					Rect2((DESIGN - drawn) * 0.5, drawn), false)
+			# A dark wash so the town's buttons and panels stay readable.
+			draw_rect(Rect2(-2000, -200, 5280, 2000), Color(0.06, 0.04, 0.09, 0.42))
+			return
+	_draw_primitives()
+
+
+func _draw_primitives() -> void:
 	# Dusk sky bands
 	var sky_top := Color(0.2, 0.13, 0.26)
 	var sky_bottom := Color(0.55, 0.3, 0.28)

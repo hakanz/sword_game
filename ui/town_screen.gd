@@ -64,7 +64,7 @@ func _ready() -> void:
 	var status_box: VBoxContainer = _name_label.get_parent()
 	status_box.add_child(_xp_bar)
 	status_box.move_child(_xp_bar, _name_label.get_index() + 1)
-	_gold_icon.texture = preload("res://assets/icons/coin.svg")
+	_gold_icon.texture = ItemIcons.coin()
 	_gold_label.text = str(profile.gold)
 	_back.text = tr("town.leave")
 	_back.pressed.connect(SceneRouter.goto_main_menu)

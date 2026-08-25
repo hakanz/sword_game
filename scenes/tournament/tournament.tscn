@@ -31,6 +31,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("2")
+art_key = &"backdrop_results"
 
 [node name="Center" type="CenterContainer" parent="."]
 layout_mode = 1

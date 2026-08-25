@@ -36,7 +36,23 @@ func _ready() -> void:
 	_fight.pressed.connect(GameManager.start_tournament_round)
 	_abandon.pressed.connect(_abandon_dialog.popup_centered)
 	_abandon_dialog.confirmed.connect(_on_abandon_confirmed)
+	_show_champion(arena.champion)
 	_build_rounds()
+
+
+## Portrait of the champion at the end of the bracket, above the round list.
+## Champions without one simply do not get a picture (charter §27).
+func _show_champion(champion: CharacterData) -> void:
+	if champion == null or champion.portrait == null:
+		return
+	var frame := TextureRect.new()
+	frame.texture = champion.portrait
+	frame.custom_minimum_size = Vector2(150, 150)
+	frame.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	frame.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_rounds_box.add_child(frame)
+	_rounds_box.move_child(frame, 0)
 
 
 func _build_rounds() -> void:

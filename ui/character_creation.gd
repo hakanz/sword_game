@@ -62,6 +62,7 @@ var _rows: Dictionary = {}
 
 
 func _ready() -> void:
+	MenuBackdrop.install(self, &"backdrop_creation")
 	_title.text = tr("creation.title")
 	_name_label.text = tr("creation.name_label")
 	_name_edit.text = tr("character.default_name")

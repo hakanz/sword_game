@@ -34,6 +34,7 @@ func _ready() -> void:
 	if _profile == null:
 		SceneRouter.goto_main_menu()
 		return
+	MenuBackdrop.install(self, &"backdrop_creation")
 	_back.text = tr("common.back")
 	_confirm.text = tr("common.confirm")
 	_stats_title.text = tr("sheet.stats_title")

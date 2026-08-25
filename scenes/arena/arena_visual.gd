@@ -1,12 +1,27 @@
 class_name ArenaVisual
 extends Node2D
-## Placeholder arena backdrop (charter §27): sky, colosseum wall, crowd dots,
-## and sand — all primitives, palette-driven by ArenaData. Replaced by real
-## background art later; tracked in docs/ASSET_MANIFEST.md.
+## Arena backdrop (charter §27). An arena that carries a painted `backdrop`
+## draws that, with its `ground_texture` tiled over the fighting sand; an arena
+## that carries neither falls back to the original primitive rendering — sky,
+## stands with a drawn crowd, brick wall, pen gates, columns and lit sand.
+## Both paths are live, so the art is a genuine drop-in replacement.
 ##
 ## NOTE: decorative variation uses a LOCAL fixed-seed RNG on purpose —
 ## visuals must never consume RngService rolls or combat replays would
 ## diverge for the same combat seed.
+
+## The 1280x720 design frame the whole scene is composed in, over-extended
+## sideways so an expanded aspect ratio never shows void at the edges.
+const FRAME := Rect2(-360, 0, 2000, 720)
+## Sand starts here in design space — everything below is fighting ground.
+const GROUND_TOP: float = 503.0
+## Rig-space size of one tile of the ground texture. Big: a small tile turns
+## into visible repetition the moment the camera pulls back.
+const GROUND_TILE: float = 430.0
+## Height of the fade that blends the tiled ground into the backdrop's own
+## painted floor, so the two never meet on a hard line.
+const GROUND_FADE: float = 96.0
+
 
 var arena: ArenaData = null:
 	set(value):
@@ -15,6 +30,8 @@ var arena: ArenaData = null:
 
 
 func _ready() -> void:
+	# The ground texture is drawn as a tiled rect, which needs repeat on.
+	texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	# Foreground dust hanging in the arena light (session-7 polish). Its own
 	# node so the animated layer redraws WITHOUT repainting the whole crowd
 	# every frame — the backdrop below is static and expensive.
@@ -24,6 +41,64 @@ func _ready() -> void:
 func _draw() -> void:
 	if arena == null:
 		return
+	if arena.backdrop != null:
+		_draw_painted()
+		return
+	_draw_primitives()
+
+
+## Painted path: the backdrop is fitted to the design frame by HEIGHT, so the
+## horizon and the wall line land where the fighters stand no matter how wide
+## the viewport gets, and the sides are covered by stretching the same art out
+## to the frame edges.
+func _draw_painted() -> void:
+	var size: Vector2 = arena.backdrop.get_size()
+	if size.x <= 0.0 or size.y <= 0.0:
+		return
+	var height: float = FRAME.size.y
+	var width: float = height * size.x / size.y
+	var left: float = 640.0 - width / 2.0
+	# Side fill first: a wide viewport must not reveal the void beside the art.
+	draw_rect(Rect2(FRAME.position.x, 0, FRAME.size.x, height),
+			arena.sky_color.darkened(0.35))
+	draw_texture_rect(arena.backdrop, Rect2(left, 0, width, height), false)
+
+	if arena.ground_texture != null:
+		_draw_ground(0.3)
+	# Warm pool of light on the duelling oval, tying fighters to the ground.
+	draw_set_transform(Vector2(640, 630), 0.0, Vector2(1.0, 0.17))
+	draw_circle(Vector2.ZERO, 540.0, Color(1.0, 0.92, 0.72, 0.10))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## Ground grain over the fighting sand.
+##
+## On the painted path the backdrop ALREADY contains its own floor, so the
+## tile goes on as a low-alpha grain that adds texture underfoot instead of a
+## second surface arguing with the painting — anything heavier reads as a rug
+## thrown over the arena. On the primitive path there is no painted floor to
+## respect, so the same tile is laid down at full strength.
+func _draw_ground(opacity: float) -> void:
+	var tile: Vector2 = arena.ground_texture.get_size()
+	if tile.x <= 0.0 or tile.y <= 0.0:
+		return
+	var height: float = FRAME.size.y - GROUND_TOP + 240.0
+	draw_set_transform(Vector2(FRAME.position.x, GROUND_TOP), 0.0,
+			Vector2(GROUND_TILE, GROUND_TILE) / tile)
+	draw_texture_rect(arena.ground_texture,
+			Rect2(Vector2.ZERO, Vector2(FRAME.size.x, height) * tile / GROUND_TILE),
+			true, Color(1, 1, 1, opacity))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	# Feathered seam: a few darkening bands standing in for a gradient, which
+	# the Compatibility renderer gets for free as flat rects.
+	for band in 8:
+		var t: float = band / 8.0
+		draw_rect(Rect2(FRAME.position.x, GROUND_TOP + t * GROUND_FADE,
+				FRAME.size.x, GROUND_FADE / 8.0 + 1.0),
+				Color(arena.ground_color.darkened(0.4), 0.3 * (1.0 - t) * opacity))
+
+
+func _draw_primitives() -> void:
 	# Oversized rects so aspect "expand" never shows void at any ratio.
 	# Simple 4-band sky gradient (Compatibility-safe, no shaders).
 	var sky_top: Color = arena.sky_color.lightened(0.22)
@@ -126,6 +201,8 @@ func _draw() -> void:
 	# Sand with a lit fighting oval (kept BELOW the wall line at 503 so the
 	# glow never paints over the gates/brickwork)
 	draw_rect(Rect2(-2000, 503, 5280, 1500), arena.ground_color)
+	if arena.ground_texture != null:
+		_draw_ground(1.0)
 	draw_set_transform(Vector2(640, 640), 0.0, Vector2(1.0, 0.18))
 	draw_circle(Vector2.ZERO, 560.0, arena.ground_color.lightened(0.1))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

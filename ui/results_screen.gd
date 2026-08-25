@@ -18,6 +18,7 @@ extends Control
 
 
 func _ready() -> void:
+	MenuBackdrop.install(self, &"backdrop_results")
 	_back.text = tr("results.back_to_town")
 	_next_duel.text = tr("results.next_duel")
 	_next_round.text = tr("results.next_round")
@@ -55,6 +56,10 @@ func _ready() -> void:
 	_gold.visible = reward != null
 	_level_up.visible = reward != null and reward.levels_gained > 0
 	_points.visible = _level_up.visible
+	if _level_up.visible and not GameManager.smoke_test:
+		# Charter §25 "level-up" VFX: the moment deserves more than a line of
+		# text. Rides on the label so it lands wherever the layout puts it.
+		_celebrate_level_up.call_deferred()
 	_champion.visible = reward != null and reward.champion_defeated
 	_champion_reward.visible = _champion.visible and reward.reward_item_id != &""
 	if _champion.visible:
@@ -131,6 +136,17 @@ func _ready() -> void:
 			RngService.current_seed,
 		])
 		get_tree().quit(0 if ok else 1)
+
+
+## Golden rays and rising motes behind the level-up line.
+func _celebrate_level_up() -> void:
+	if not is_inside_tree():
+		return
+	var host := Node2D.new()
+	add_child(host)
+	move_child(host, get_child_count() - 1)
+	CombatVfx.spawn_level_up(host, _level_up.global_position
+			+ Vector2(_level_up.size.x * 0.5, _level_up.size.y * 0.5))
 
 
 func _on_back_pressed() -> void:

@@ -265,8 +265,8 @@ func _clear_tournament_flags() -> void:
 	tournament_failed = false
 
 
-## Dev-only visual check (`--screenshot-dir=`): captures menu, creation and
-## arena frames to PNG then quits. Lives on this autoload so it survives the
+## Dev-only visual check (`--screenshot-dir=`): captures menu, creation, town,
+## shop and arena frames to PNG then quits. Lives on this autoload so it survives the
 ## scene changes it drives.
 func run_screenshot_capture(dir: String) -> void:
 	SaveManager.disk_writes_enabled = false
@@ -335,6 +335,27 @@ func run_screenshot_capture(dir: String) -> void:
 	SceneRouter.goto_inventory()
 	await get_tree().create_timer(1.0).timeout
 	get_viewport().get_texture().get_image().save_png(dir.path_join("inventory.png"))
+	# Finally a KITTED duel against a named champion: the level-1 opening shot
+	# shows two bare fighters, which hides everything the armour materials, the
+	# weapon sprites and the opponent portrait are there to do.
+	EquipmentService.equip_weapon(profile, &"weapon.iron_longsword")
+	for piece: StringName in [&"armour.steel_breastplate", &"armour.iron_helm",
+			&"armour.iron_shoulderguards", &"armour.riveted_leggings",
+			&"armour.duelist_boots", &"armour.studded_gloves"]:
+		profile.inventory_armour_ids.append(piece)
+		EquipmentService.equip_armour(profile, piece)
+	current_arena = ItemDB.arena(&"arena.gravelmaw")
+	player_character = profile.to_character_data()
+	next_opponent = current_arena.champion.duplicate(true)
+	opponent_is_rival = false
+	last_combat_result = null
+	SceneRouter.goto_arena()
+	await get_tree().create_timer(2.0).timeout
+	for _turn in 12:
+		_capture_player_action()
+		await get_tree().create_timer(0.55).timeout
+	await get_tree().create_timer(2.5).timeout
+	get_viewport().get_texture().get_image().save_png(dir.path_join("arena_champion.png"))
 	get_tree().quit(0)
 
 

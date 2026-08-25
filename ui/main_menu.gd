@@ -26,7 +26,28 @@ func _ready() -> void:
 	_version.text = tr("menu.version").format({
 		"version": ProjectSettings.get_setting("application/config/version", "0.0.0"),
 	})
+	_show_crest()
 	_refresh()
+
+
+## Arena crest above the title, when the art is installed. Purely decorative:
+## the menu is complete without it (charter §27).
+func _show_crest() -> void:
+	var crest: Texture2D = ArtLibrary.ui(&"logo_crest")
+	if crest == null:
+		return
+	var box := _title.get_parent() as BoxContainer
+	if box == null or box.has_node(^"Crest"):
+		return
+	var frame := TextureRect.new()
+	frame.name = "Crest"
+	frame.texture = crest
+	frame.custom_minimum_size = Vector2(0, 96)
+	frame.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	frame.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(frame)
+	box.move_child(frame, _title.get_index())
 
 
 func _refresh() -> void:
