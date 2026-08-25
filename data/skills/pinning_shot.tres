@@ -22,3 +22,4 @@ applies_status = ExtResource("2")
 point_cost = 2
 required_level = 3
 allowed_weapon_classes = Array[int]([5])
+crowd_appeal = 2

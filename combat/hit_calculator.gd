@@ -8,7 +8,8 @@ class_name HitCalculator
 static func accuracy_score(attacker: Combatant, accuracy_mod: int = 0) -> int:
 	var weapon_bonus: int = attacker.get_weapon().accuracy_bonus if attacker.get_weapon() != null else 0
 	return attacker.attack_rating + weapon_bonus + accuracy_mod \
-			+ StatusEffectSystem.accuracy_mod(attacker)
+			+ StatusEffectSystem.accuracy_mod(attacker) \
+			+ CrowdSystem.accuracy_bonus(attacker)
 
 
 ## `stance_override`: pass an Enums.Stance value to evaluate a hypothetical

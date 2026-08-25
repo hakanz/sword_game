@@ -52,6 +52,7 @@ func _ready() -> void:
 	_update_world_offset()
 	EventBus.combatant_died.connect(
 			func(_c: Combatant) -> void: AudioManager.play(&"death"))
+	EventBus.crowd_state_changed.connect(_on_crowd_state_changed)
 
 	player = Combatant.new()
 	player.name = "PlayerCombatant"
@@ -336,6 +337,19 @@ func _finish() -> void:
 	victor.rig.play_victory()
 	await _delay(1.6)
 	SceneRouter.goto_results()
+
+
+## The pit changing its mind is an EVENT, not a stat tick: only the two ends
+## of the meter get a roar/groan, so the feedback stays meaningful (V2 §54).
+func _on_crowd_state_changed(fighter: Combatant, state: int, rising: bool) -> void:
+	if GameManager.smoke_test:
+		return
+	if rising and state >= CrowdSystem.State.EXCITED:
+		AudioManager.play(&"crowd_roar", "Ambience")
+		_spawn_float_text(fighter, tr("combat.float.crowd_up"), Color(1.0, 0.72, 0.32), 26)
+	elif not rising and state <= CrowdSystem.State.BORED:
+		AudioManager.play(&"crowd_groan", "Ambience")
+		_spawn_float_text(fighter, tr("combat.float.crowd_down"), Color(0.72, 0.7, 0.78), 22)
 
 
 func _foe_of(actor: Combatant) -> Combatant:

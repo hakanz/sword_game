@@ -8,6 +8,8 @@ signal hp_changed(current: int, max_value: int)
 signal energy_changed(current: int, max_value: int)
 signal armour_changed(current: int, max_value: int)
 signal stance_changed(new_stance: Enums.Stance)
+## Crowd standing changed (CrowdSystem). Runtime only — never persisted.
+signal crowd_changed(value: int, state: CrowdSystem.State)
 signal died
 
 var data: CharacterData = null
@@ -72,6 +74,10 @@ var move_cells: int = 1
 ## strikes that actually landed — stalling with filler moves earns less XP.
 var actions_taken: int = 0
 var hits_landed: int = 0
+
+## Standing with the audience for THIS fight (charter §19 / V2 §54).
+## Starts Neutral, resets every duel, never saved.
+var crowd: int = CrowdSystem.START
 
 ## Consecutive DEFEND actions (leaky counter) — the AI applies diminishing
 ## returns to turtling so two cautious fighters can never deadlock.
@@ -271,3 +277,8 @@ func set_stance(new_stance: Enums.Stance) -> void:
 ## a defend stance lasts until the defender's next turn begins.
 func on_turn_started() -> void:
 	set_stance(Enums.Stance.NEUTRAL)
+	# The pit throws its weight behind its favourite (V2 §54). Small on
+	# purpose: a build that ignores Charisma must stay viable.
+	var boon: int = CrowdSystem.energy_boon(self)
+	if boon > 0:
+		restore_energy(boon)

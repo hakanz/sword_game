@@ -48,6 +48,15 @@ static func get_stream(sfx_name: StringName) -> AudioStreamWAV:
 			samples = _mix([_tone(0.12, 1320.0, 16.0, 0.4), _tone(0.12, 1980.0, 20.0, 0.25)])
 		&"victory":
 			samples = _note_run([392.0, 494.0, 587.0, 784.0], 0.14)
+		&"crowd_roar":
+			# A pit going up: filtered noise swelling under two shouted
+			# overtones. Long and soft so it sits BEHIND the impact cues.
+			samples = _mix([
+				_swell(0.9), _tone(0.55, 210.0, 2.2, 0.12), _tone(0.5, 320.0, 2.6, 0.09),
+			])
+		&"crowd_groan":
+			# The same crowd losing interest: a short downward mutter.
+			samples = _mix([_swell(0.5, 0.55), _sine_sweep(0.45, 190.0, 120.0, 3.0, 0.14)])
 		&"defeat":
 			samples = _note_run([330.0, 262.0, 196.0], 0.2)
 		_:
@@ -101,6 +110,22 @@ static func _sine_sweep(
 		var hz: float = lerpf(hz_from, hz_to, t / duration)
 		phase += TAU * hz / SAMPLE_RATE
 		out[i] = sin(phase) * exp(-decay * t) * amplitude
+	return out
+
+
+## Heavily low-passed noise under a slow rise-and-fall envelope — a crowd,
+## not a swing: no transient, just a swell.
+static func _swell(duration: float, amplitude: float = 1.0) -> PackedFloat32Array:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 24680
+	var count: int = int(duration * SAMPLE_RATE)
+	var out := PackedFloat32Array()
+	out.resize(count)
+	var filtered: float = 0.0
+	for i in count:
+		var t: float = float(i) / SAMPLE_RATE
+		filtered += (rng.randf_range(-1.0, 1.0) - filtered) * 0.045
+		out[i] = filtered * pow(sin(PI * t / duration), 1.6) * 2.4 * amplitude
 	return out
 
 

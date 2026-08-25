@@ -20,3 +20,4 @@ range_extend = 0
 point_cost = 2
 required_level = 1
 allowed_weapon_classes = Array[int]([1, 2, 3, 4])
+crowd_appeal = 2

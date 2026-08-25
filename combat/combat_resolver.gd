@@ -88,6 +88,12 @@ static func execute(
 	actor.actions_taken += 1
 	if result.hit:
 		actor.hits_landed += 1
+
+	# The pit passes judgement on what it just watched (V2 §54). Applied
+	# HERE so the §35 simulator feels the crowd exactly as a played fight
+	# does — one execution path, no presentation-only gameplay.
+	CrowdSystem.shift(actor, CrowdSystem.delta_for(result, ctx.round_number))
+	CrowdSystem.shift(result.target, CrowdSystem.defender_delta(result))
 	return result
 
 

@@ -30,6 +30,10 @@ enum Target {
 ## Extends the weapon's maximum range by this many distance bands.
 @export_range(0, 3) var range_extend: int = 0
 
+## How much the pit enjoys this move on top of the base skill reward
+## (V2 §54's "taunt-tagged skill", as data instead of a hardcoded id list).
+@export_range(0, 20) var crowd_appeal: int = 0
+
 @export_group("Status")
 ## Applied to the target on hit (FOE) or to self (SELF buffs).
 @export var applies_status: StatusEffectData
