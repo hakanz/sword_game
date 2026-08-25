@@ -31,8 +31,9 @@ const FREEZE_TIME_SCALE: float = 0.06
 const CRIT_HIT_STOP_MULTIPLIER: float = 1.8
 ## `reduced_fx` shortens the freeze instead of removing the readability cue.
 const REDUCED_FX_HIT_STOP_SCALE: float = 0.4
-## Safety rail: a freeze may never outlast a blink.
-const MAX_HIT_STOP: float = 0.24
+## Safety rail: a freeze may never outlast a blink. Raised alongside the
+## session-9 pacing pass so a heavy crit is not silently clipped by the cap.
+const MAX_HIT_STOP: float = 0.32
 
 const WINDUP := &"windup"
 const SWING := &"swing"
@@ -46,45 +47,69 @@ const STYLE := &"style"
 
 ## Per-WeaponClass pacing. Seconds for the time keys, world pixels for
 ## `lunge`, radians for the arm angles, multiplier for `shake`.
+##
+## Session 9 (owner directive: "a notch slower, let the player see it"): the
+## table was slowed by a fixed factor per key — windup x1.20, swing x1.20,
+## recovery x1.35, hit-stop x1.30. Weighted deliberately, not uniformly: the
+## unreadable part was never the wind-up, it was that the blow resolved and the
+## turn moved on before the impact effects could register, so most of the extra
+## time goes to the beat AFTER the hit. Fixed factors keep the light-to-heavy
+## ordering the tests lock down.
 ## Light-to-heavy ordering is the design contract the tests lock down:
 ## UNARMED < SWORD < SPEAR < AXE < BLUNT for windup/recovery/hit-stop.
 const TIMING: Dictionary = {
 	Enums.WeaponClass.UNARMED: {
-		WINDUP: 0.09, SWING: 0.08, RECOVERY: 0.15, HIT_STOP: 0.035,
+		WINDUP: 0.108, SWING: 0.096, RECOVERY: 0.203, HIT_STOP: 0.046,
 		SHAKE: 0.75, LUNGE: 30.0, WIND_ANGLE: -0.7, FOLLOW_ANGLE: 1.0,
 		STYLE: Style.SWING,
 	},
 	Enums.WeaponClass.SWORD: {
-		WINDUP: 0.12, SWING: 0.09, RECOVERY: 0.19, HIT_STOP: 0.055,
+		WINDUP: 0.144, SWING: 0.108, RECOVERY: 0.257, HIT_STOP: 0.072,
 		SHAKE: 0.95, LUNGE: 34.0, WIND_ANGLE: -0.85, FOLLOW_ANGLE: 1.15,
 		STYLE: Style.SWING,
 	},
 	Enums.WeaponClass.AXE: {
-		WINDUP: 0.20, SWING: 0.11, RECOVERY: 0.27, HIT_STOP: 0.095,
+		WINDUP: 0.24, SWING: 0.132, RECOVERY: 0.365, HIT_STOP: 0.124,
 		SHAKE: 1.35, LUNGE: 40.0, WIND_ANGLE: -1.15, FOLLOW_ANGLE: 1.45,
 		STYLE: Style.SWING,
 	},
 	Enums.WeaponClass.BLUNT: {
-		WINDUP: 0.23, SWING: 0.12, RECOVERY: 0.30, HIT_STOP: 0.115,
+		WINDUP: 0.276, SWING: 0.144, RECOVERY: 0.405, HIT_STOP: 0.15,
 		SHAKE: 1.5, LUNGE: 38.0, WIND_ANGLE: -1.25, FOLLOW_ANGLE: 1.5,
 		STYLE: Style.SWING,
 	},
 	Enums.WeaponClass.SPEAR: {
-		WINDUP: 0.15, SWING: 0.10, RECOVERY: 0.21, HIT_STOP: 0.06,
+		WINDUP: 0.18, SWING: 0.12, RECOVERY: 0.284, HIT_STOP: 0.078,
 		SHAKE: 1.0, LUNGE: 48.0, WIND_ANGLE: -0.35, FOLLOW_ANGLE: 0.25,
 		STYLE: Style.THRUST,
 	},
 	Enums.WeaponClass.RANGED: {
-		WINDUP: 0.19, SWING: 0.10, RECOVERY: 0.20, HIT_STOP: 0.045,
+		WINDUP: 0.228, SWING: 0.12, RECOVERY: 0.27, HIT_STOP: 0.059,
 		SHAKE: 0.8, LUNGE: 0.0, WIND_ANGLE: -0.55, FOLLOW_ANGLE: -0.45,
 		STYLE: Style.AIM,
 	},
 	Enums.WeaponClass.MAGICAL: {
-		WINDUP: 0.21, SWING: 0.10, RECOVERY: 0.24, HIT_STOP: 0.07,
+		WINDUP: 0.252, SWING: 0.12, RECOVERY: 0.324, HIT_STOP: 0.091,
 		SHAKE: 0.9, LUNGE: 12.0, WIND_ANGLE: -1.0, FOLLOW_ANGLE: 0.15,
 		STYLE: Style.CAST,
 	},
 }
+
+## Beats that are not weapon-dependent: the pauses the controller holds so a
+## resolved action can be read before the next one starts. They live here
+## because charter rule 10 puts combat-feel pacing in ONE table, and tuning the
+## fight's rhythm should never mean hunting through the controller for stray
+## `await` durations. Also slowed in the session-9 pass.
+const BEAT_AFTER_ACTION: float = 0.34
+const BEAT_SKILL: float = 0.52
+const BEAT_MOVE: float = 0.38
+const BEAT_REST: float = 0.46
+const BEAT_SWITCH: float = 0.46
+const BEAT_BLOCK: float = 0.38
+const BEAT_TAUNT: float = 0.45
+const BEAT_STATUS_TICK: float = 0.46
+const BEAT_STUN_SKIPPED: float = 0.7
+
 
 ## Guards against overlapping freezes (a DoT kill landing inside a crit
 ## freeze must not stack two time_scale writes).

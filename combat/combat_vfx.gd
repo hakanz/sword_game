@@ -15,6 +15,13 @@ class_name CombatVfx
 const BLOOD_SETTING := "vfx_blood"
 const BLOOD_DEFAULT: bool = true
 
+## One knob for how long every effect lingers (owner directive, session 9: the
+## effects were leaving the screen before the player could see them). Applied
+## inside `_emit` and `_flash`, so the per-effect numbers below stay readable as
+## RELATIVE weights and only this changes when the pacing does. Deliberately
+## NOT in CombatFeel: that table times the FIGHT, this times the sparks.
+const LINGER: float = 1.35
+
 
 static func blood_enabled() -> bool:
 	return bool(SaveManager.get_setting(BLOOD_SETTING, BLOOD_DEFAULT))
@@ -219,7 +226,7 @@ static func _emit(
 	particles.one_shot = true
 	particles.emitting = false
 	particles.amount = amount
-	particles.lifetime = lifetime
+	particles.lifetime = lifetime * LINGER
 	particles.explosiveness = 0.95
 	particles.direction = direction
 	particles.spread = spread
@@ -260,11 +267,15 @@ static func _flash(parent: Node, pos: Vector2, texture: Texture2D, width: float,
 	var base: float = width / size.x
 	sprite.scale = Vector2(base, base) * 0.8
 	parent.add_child(sprite)
+	var held: float = seconds * LINGER
 	var tween: Tween = sprite.create_tween()
 	tween.set_parallel(true)
-	tween.tween_property(sprite, "scale", Vector2(base, base) * 1.15, seconds) \
+	tween.tween_property(sprite, "scale", Vector2(base, base) * 1.18, held) \
 			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.tween_property(sprite, "modulate:a", 0.0, seconds) \
+	# Holds full brightness for the first third and THEN fades: a flash that
+	# starts fading on frame one never registers as anything.
+	tween.tween_property(sprite, "modulate:a", 0.0, held * 0.7) \
+			.set_delay(held * 0.3) \
 			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tween.chain().tween_callback(sprite.queue_free)
 

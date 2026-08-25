@@ -117,7 +117,7 @@ func _run_combat() -> void:
 			# Stunned: the action is lost, but end-of-turn resolution still runs.
 			EventBus.turn_skipped.emit(actor)
 			_spawn_float_text(actor, tr("status.stun.name") + "!", Color(0.95, 0.85, 0.3))
-			await _delay(0.6)
+			await _delay(CombatFeel.BEAT_STUN_SKIPPED)
 		else:
 			var decision: CombatDecision
 			if actor.is_player_controlled and not GameManager.smoke_test:
@@ -146,7 +146,7 @@ func _run_combat() -> void:
 		var ticks: Array[StatusEffectSystem.TickResult] = StatusEffectSystem.tick_turn_end(actor)
 		if not ticks.is_empty():
 			EventBus.status_ticked.emit(actor, ticks)
-			await _delay(0.35)
+			await _delay(CombatFeel.BEAT_STATUS_TICK)
 
 		# Death check (charter §11) — combat ends immediately on a kill
 		# (including a fighter succumbing to their own wounds' DoTs).
@@ -194,7 +194,7 @@ func _execute(actor: Combatant, decision: CombatDecision) -> void:
 		await _present_strike(result, foe, weapon_class)
 		if decision.type == Enums.ActionType.SKILL and decision.skill.taunts:
 			actor.rig.play_taunt()
-			await _delay(0.35)
+			await _delay(CombatFeel.BEAT_TAUNT)
 	else:
 		match result.action:
 			Enums.ActionType.SKILL:
@@ -206,28 +206,28 @@ func _execute(actor: Combatant, decision: CombatDecision) -> void:
 							result.applied_status.tint)
 					CombatVfx.spawn_status_burst(world_root,
 							actor.position + Vector2(0, -100), result.applied_status)
-				await _delay(0.4)
+				await _delay(CombatFeel.BEAT_SKILL)
 			Enums.ActionType.DEFEND:
 				# Charter §25 "Block": the guard coming up is its own beat.
 				actor.rig.play_block()
-				await _delay(0.3)
+				await _delay(CombatFeel.BEAT_BLOCK)
 			Enums.ActionType.APPROACH, Enums.ActionType.RETREAT:
 				AudioManager.play(&"step")
 				_animate_step(actor, absi(actor.cell - cell_before))
-				await _delay(0.3)
+				await _delay(CombatFeel.BEAT_MOVE)
 			Enums.ActionType.REST:
 				actor.rig.play_rest()
 				CombatVfx.spawn_sparks(world_root, actor.position + Vector2(0, -90),
 						Color(0.5, 0.9, 0.45), 12, true)
 				if result.hp_restored > 0:
 					_spawn_float_text(actor, "+%d" % result.hp_restored, Color(0.5, 0.9, 0.45))
-				await _delay(0.35)
+				await _delay(CombatFeel.BEAT_REST)
 			Enums.ActionType.SWITCH_WEAPON:
 				AudioManager.play(&"switch")
 				actor.rig.play_switch_flourish()
 				_spawn_float_text(actor, tr(actor.get_weapon().name_key),
 						Color(0.85, 0.85, 0.95))
-				await _delay(0.35)
+				await _delay(CombatFeel.BEAT_SWITCH)
 			_:
 				pass
 
@@ -253,7 +253,7 @@ func _execute(actor: Combatant, decision: CombatDecision) -> void:
 	if result.killed:
 		foe.death_announced = true
 		EventBus.combatant_died.emit(foe)
-	await _delay(0.25)
+	await _delay(CombatFeel.BEAT_AFTER_ACTION)
 
 
 ## Placeholder arrow flight from archer to target (misses sail past).
