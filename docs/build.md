@@ -5,6 +5,18 @@ Engine: **Godot 4.4.1-stable, pinned** (AI_GUIDE.md). Local binary on this machi
 Export templates: official 4.4.1 `.tpz` installed under
 `%APPDATA%\Godot\export_templates\4.4.1.stable\`.
 
+## Import gotcha (bites every session)
+A run with `-s res://tests/test_runner.gd` uses the LAST IMPORTED state. After adding a
+new `class_name` script or new rows to `localization/strings.csv`, run
+
+```
+godot --headless --path . --import
+```
+
+first, or the tests fail with "Identifier X not declared" / "key has no translation" for
+code and strings that are perfectly correct on disk (the global class list and the
+compiled `.translation` files are both import products).
+
 ## Verification (run before every export/commit)
 ```
 godot --headless --path . --import
